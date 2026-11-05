@@ -1,0 +1,443 @@
+(function () {
+  'use strict';
+
+  var L = window.LC;
+  var UI = window.LCUI;
+  var A = L.A;
+  var O = L.O;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var S = L.newState();
+  var BASE = {};
+  var store = null;
+  var mode = 'local';
+  var conn = 'online';
+  var me = null;
+  var auto = false;
+  var autoTimer = null;
+  var arrowMode = 'all';
+  var manualTarget = '';
+  var lastFxSeq = null;
+  var firstState = true;
+  var popupState = null;
+
+  function loadMe() {
+    var q = new URLSearchParams(location.search);
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem('lc-me') || 'null'); } catch (e) { saved = null; }
+    if (saved && saved.room && !q.get('room')) { return saved; }
+    if (q.get('room')) { return { room: q.get('room'), role: (saved && saved.role) || 'player', unitId: (saved && saved.unitId) || '' }; }
+    return null;
+  }
+  function saveMe() {
+    try { sessionStorage.setItem('lc-me', JSON.stringify(me)); } catch (e) { /* 保存できなくても動作は続ける */ }
+  }
+
+  function rng() { return Math.random(); }
+
+  function onState(raw) {
+    var n = L.normalize(raw || {});
+    BASE = L.clone(n);
+    S = Object.assign(L.newState(), n);
+    S.units = S.units || {};
+    S.pieces = A(S.pieces);
+    S.plan = A(S.plan);
+    S.log = A(S.log);
+    S.fx = S.fx || { seq: 0, items: [] };
+    S.fx.items = A(S.fx.items);
+    render();
+  }
+
+  function commit(fn) {
+    if (!store) { return; }
+    var next = L.clone(S);
+    fn(next, rng);
+    var patch = window.LCStore.diffPatch(BASE, next, 3);
+    if (!Object.keys(patch).length) { return; }
+    BASE = L.clone(next);
+    S = next;
+    render();
+    store.write(patch);
+  }
+
+  function ctxOf() {
+    var u = me.unitId ? S.units[me.unitId] : null;
+    var kpgm = me.role === 'kp' || me.role === 'gm';
+    var ctx = {
+      me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget,
+      canSeeEnemySpeed: kpgm,
+      showEnemyTargets: S.phase !== 'enemy' || kpgm,
+      canSeeChoice: function (x) { return me.role === 'kp' || me.unitId === x.id || S.phase !== 'player'; },
+      pairs: null, targeting: false, selectedPid: null
+    };
+    ctx.pairs = S.phase === 'process' && S.proc && S.proc.pairs ? S.proc.pairs : L.computePairs(S);
+    if (me.role === 'player' && u && !u.dead && !u.stagger && S.phase === 'player' && u.choice && u.choice.sel && u.choice.sel !== 'stag') {
+      var sk = L.chosenSkill(S, u);
+      ctx.targeting = !!(sk && sk.kind === 'attack');
+      ctx.selectedPid = u.choice.target || null;
+    }
+    return ctx;
+  }
+
+  function setHtml(el, html) {
+    if (el.innerHTML === html) { return; }
+    var ae = document.activeElement;
+    if (ae && el.contains(ae) && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName) && ae.type !== 'button') { return; }
+    el.innerHTML = html;
+  }
+
+  function render() {
+    if (!me) { return; }
+    var ctx = ctxOf();
+    setHtml($('head'), UI.head(S, ctx));
+    setHtml($('stage'), UI.stage(S, ctx));
+    setHtml($('panel'), me.role === 'player' ? UI.playerPanel(S, ctx) : UI.gmPanel(S, ctx));
+    setHtml($('plan'), UI.planList(S, ctx));
+    setHtml($('kp'), UI.kpPanel(S, ctx) + (me.role === 'gm' ? '' : ''));
+    $('panel').hidden = !$('panel').innerHTML;
+    $('plan').hidden = !$('plan').innerHTML;
+    $('kp').hidden = !$('kp').innerHTML;
+    var logEl = $('log');
+    var before = logEl.querySelector('.log-body');
+    var atBottom = !before || before.scrollTop + before.clientHeight >= before.scrollHeight - 8;
+    setHtml(logEl, UI.logHtml(S));
+    var body = logEl.querySelector('.log-body');
+    if (body && atBottom) { body.scrollTop = body.scrollHeight; }
+    document.body.dataset.phase = S.phase;
+    drawArrows(ctx);
+    playFx();
+    updateAuto();
+    refreshPopup();
+  }
+
+  function playFx() {
+    var seq = S.fx ? S.fx.seq : 0;
+    if (firstState) { firstState = false; lastFxSeq = seq; return; }
+    if (seq === lastFxSeq) { return; }
+    lastFxSeq = seq;
+    A(S.fx.items).forEach(function (it, i) {
+      var sel = it.p === null || it.p === undefined ? '[data-tok="' + it.u + '"]' : '[data-part="' + it.u + '|' + it.p + '"]';
+      var host = document.querySelector('#stage ' + sel);
+      if (!host) { return; }
+      var span = document.createElement('span');
+      span.className = 'fx ' + (it.kind || 'dmg');
+      span.textContent = it.text;
+      span.style.animationDelay = (i * 0.18) + 's';
+      host.appendChild(span);
+      setTimeout(function () { if (span.parentNode) { span.parentNode.removeChild(span); } }, 2200 + i * 180);
+    });
+  }
+
+  function center(el, base) {
+    var r = el.getBoundingClientRect();
+    return { x: r.left - base.left + r.width / 2, y: r.top - base.top + r.height / 2, w: r.width, h: r.height };
+  }
+
+  function drawArrows(ctx) {
+    var svg = $('arrows');
+    var wrap = svg.parentNode;
+    var base = wrap.getBoundingClientRect();
+    svg.setAttribute('width', wrap.scrollWidth);
+    svg.setAttribute('height', wrap.scrollHeight);
+    svg.setAttribute('viewBox', '0 0 ' + wrap.scrollWidth + ' ' + wrap.scrollHeight);
+    if (arrowMode === 'off' || S.phase === 'setup' || S.phase === 'over') { svg.innerHTML = ''; return; }
+    var kpgm = me.role === 'kp' || me.role === 'gm';
+    var defs = '';
+    var colors = { gold: 'rgb(240, 200, 90)', red: 'rgb(230, 80, 80)', blue: 'rgb(120, 190, 240)' };
+    Object.keys(colors).forEach(function (k) {
+      defs += '<marker id="ah-' + k + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="' + colors[k] + '"/></marker>';
+    });
+    var out = '<defs>' + defs + '</defs>';
+    function line(a, b, color, dashed, spark, dim) {
+      var dx = b.x - a.x;
+      var dy = b.y - a.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ax = a.x + dx / len * 18;
+      var ay = a.y + dy / len * 18;
+      var bx = b.x - dx / len * 18;
+      var by = b.y - dy / len * 18;
+      var s = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
+        (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + (spark ? ' marker-start="url(#ah-' + color + ')"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
+      if (spark) { s += '<text x="' + ((ax + bx) / 2).toFixed(1) + '" y="' + ((ay + by) / 2 + 6).toFixed(1) + '" text-anchor="middle" font-size="20" fill="' + colors.gold + '">✸</text>'; }
+      return s;
+    }
+    function tokEl(id) { return document.querySelector('#stage [data-tok="' + id + '"] .token, #stage [data-tok="' + id + '"].token'); }
+    function pieceEl(pid) { return document.querySelector('#stage [data-piece="' + pid + '"]'); }
+    var pairs = ctx.pairs || { matchOf: {} };
+    var drawnMatch = {};
+    Object.keys(S.units).forEach(function (id) {
+      var u = S.units[id];
+      if (u.side !== 'ally' || u.dead || u.stagger || !u.choice || !u.choice.target) { return; }
+      if (S.phase === 'enemy') { return; }
+      var sk = L.chosenSkill(S, u);
+      if (!sk || sk.kind !== 'attack') { return; }
+      if (arrowMode === 'mine' && me.unitId !== id) { return; }
+      var te = tokEl(id);
+      var pe = pieceEl(u.choice.target);
+      if (!te || !pe) { return; }
+      var matched = pairs.matchOf[u.choice.target] === id;
+      if (matched) { drawnMatch[u.choice.target] = true; }
+      out += line(center(te, base), center(pe, base), matched ? 'gold' : 'blue', S.phase === 'player' && !u.choice.confirmed, matched, u.choice.acted);
+    });
+    A(S.pieces).forEach(function (P) {
+      if (!P.target || drawnMatch[P.pid]) { return; }
+      if (S.phase === 'enemy' && !kpgm) { return; }
+      var sk = L.pieceSkill(S, P);
+      if (!sk || sk.kind !== 'attack') { return; }
+      if (arrowMode === 'mine' && me.unitId !== P.target) { return; }
+      var te = tokEl(P.target);
+      var pe = pieceEl(P.pid);
+      if (!te || !pe) { return; }
+      out += line(center(pe, base), center(te, base), 'red', S.phase === 'enemy', false, P.acted);
+    });
+    svg.innerHTML = out;
+  }
+
+  function updateAuto() {
+    var should = auto && me && me.role === 'kp' && S.phase === 'process';
+    if (should && !autoTimer) {
+      autoTimer = setInterval(function () {
+        if (!auto || S.phase !== 'process') { return; }
+        commit(function (s) { L.stepProcess(s, rng); });
+      }, 1500);
+    }
+    if (!should && autoTimer) { clearInterval(autoTimer); autoTimer = null; if (S.phase !== 'process') { auto = false; } }
+  }
+
+  function showPopup(kind, id) {
+    popupState = { kind: kind, id: id };
+    refreshPopup();
+  }
+  function refreshPopup() {
+    var el = $('popup');
+    if (!popupState) { el.hidden = true; el.innerHTML = ''; return; }
+    var html = '';
+    if (popupState.kind === 'part') { html = UI.partPopup(S, popupState.id, ctxOf()); }
+    if (popupState.kind === 'unit') { html = UI.unitPopup(S, popupState.id); }
+    if (popupState.kind === 'piece') { html = UI.piecePopup(S, popupState.id); }
+    if (!html) { popupState = null; el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    var next = '<div class="popup-card">' + html + '<button type="button" class="btn" data-act="close">閉じる</button></div>';
+    if (el.innerHTML !== next) { el.innerHTML = next; }
+  }
+
+  function targetRef() {
+    var sel = $('mTarget');
+    var v = (sel && sel.value) || manualTarget;
+    if (!v) { return null; }
+    var s = v.split('|');
+    return { u: s[0], p: s[1] === '' || s[1] === undefined ? null : Number(s[1]) };
+  }
+
+  function readNum(id) {
+    var el = $(id);
+    if (!el || el.value === '') { return null; }
+    var n = Number(el.value);
+    return isFinite(n) ? n : null;
+  }
+
+  function loadText(text, kindLabel) {
+    var parsed = L.parseSetup(text);
+    if (parsed.errors.length) { alert(kindLabel + 'の読み込みでエラーがあります。\n' + parsed.errors.join('\n')); return false; }
+    commit(function (s) { L.loadUnits(s, parsed.units, rng); });
+    return true;
+  }
+
+  function fetchJson(url) {
+    return fetch(url).then(function (r) { if (!r.ok) { throw new Error(url + ' (' + r.status + ')'); } return r.text(); });
+  }
+
+  var actions = {
+    close: function () { popupState = null; refreshPopup(); },
+    leave: function () {
+      if (store) { store.close(); }
+      store = null;
+      try { sessionStorage.removeItem('lc-me'); } catch (e) { /* 無視 */ }
+      location.href = location.pathname;
+    },
+    noop: function () {},
+    'info-part': function (el) { showPopup('part', el.dataset.ref); },
+    'info-unit': function (el) { showPopup('unit', el.dataset.id); },
+    'info-piece': function (el) { showPopup('piece', el.dataset.pid); },
+    target: function (el) {
+      var id = me.unitId;
+      commit(function (s) { L.setTarget(s, id, el.dataset.pid, Date.now()); });
+    },
+    sel: function (el) {
+      var id = me.unitId;
+      commit(function (s) { L.selectChoice(s, id, el.dataset.sel, Date.now()); });
+    },
+    confirm: function () {
+      var id = me.unitId;
+      commit(function (s) { var u = s.units[id]; if (u && L.canConfirm(s, u)) { u.choice.confirmed = true; } });
+    },
+    unconfirm: function () {
+      var id = me.unitId;
+      commit(function (s) { var u = s.units[id]; if (u && u.choice) { u.choice.confirmed = false; } });
+    },
+    'gm-confirm': function () {
+      var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && sk.kind === 'attack' && !P.target; });
+      if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃は行われません)')) { return; }
+      commit(function (s) { L.gmConfirm(s); });
+    },
+    'load-sample': function () {
+      Promise.all([fetchJson('sample/party.json'), fetchJson('sample/enemies.json')]).then(function (r) {
+        loadText(r[0], '味方'); loadText(r[1], '敵');
+      }).catch(function (e) { alert('サンプルを読み込めませんでした(ファイルを直接開いている場合は、公開したURLからお試しください)。\n' + e.message); });
+    },
+    'load-allies': function () { var t = $('jsonAllies').value.trim(); if (t) { loadText(t, '味方'); $('jsonAllies').value = ''; } },
+    'load-enemies': function () { var t = $('jsonEnemies').value.trim(); if (t) { loadText(t, '敵'); $('jsonEnemies').value = ''; } },
+    begin: function () { commit(function (s) { L.beginCombat(s, rng); }); },
+    reset: function () {
+      if (!confirm('このルームの戦闘データをすべて削除します。よろしいですか?')) { return; }
+      auto = false;
+      if (store) { store.reset(); }
+      S = L.newState();
+      BASE = {};
+      render();
+    },
+    'start-process': function () {
+      if (!L.allConfirmed(S) && !confirm('確定していない味方がいます。このまま戦闘を開始しますか?(未確定の味方は行動しません)')) { return; }
+      commit(function (s) { L.buildPlan(s, rng); });
+    },
+    step: function () { commit(function (s) { L.stepProcess(s, rng); }); },
+    auto: function () { auto = !auto; render(); },
+    finish: function () {
+      auto = false;
+      commit(function (s) { var n = 0; while (s.phase === 'process' && L.stepProcess(s, rng) && n < 400) { n += 1; } });
+    },
+    'next-round': function () { commit(function (s) { L.startRound(s, rng); }); },
+    'm-hp': function () {
+      var ref = targetRef(); var v = readNum('mHp');
+      if (!ref || v === null) { return; }
+      commit(function (s) {
+        var g = L.getB(s, ref); if (!g) { return; }
+        var info = L.hpInfo(g.unit, g.part);
+        var nv = L.clamp(Math.floor(v), 0, info.max);
+        if (g.part && g.unit.kind === 'abnormality') {
+          g.unit.hp = L.clamp(g.unit.hp + (nv - g.part.dur), 0, g.unit.maxHp);
+          g.part.dur = nv;
+          if (nv <= 0 && g.part.destroyable) { g.part.destroyed = true; }
+        } else { g.unit.hp = nv; if (nv <= 0) { g.unit.dead = true; } }
+        L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の体力を ' + nv + ' にした');
+        L.checkStagger(s, g.ref);
+        L.checkEnd(s);
+      });
+    },
+    'm-sp': function () {
+      var ref = targetRef(); var v = readNum('mSp');
+      if (!ref || v === null) { return; }
+      commit(function (s) { var g = L.getB(s, ref); if (g) { g.b.sp = L.clamp(Math.floor(v), L.SP_MIN, L.SP_MAX); L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の精神力を ' + g.b.sp + ' にした'); } });
+    },
+    'm-st-add': function () {
+      var ref = targetRef(); var key = $('mSt').value;
+      var p = readNum('mP'); var c = readNum('mC');
+      if (!ref || !L.STATUS[key]) { return; }
+      commit(function (s) {
+        var g = L.getB(s, ref); if (!g) { return; }
+        var def = L.STATUS[key];
+        L.addStatus(g.b, key, def.type === 'pc' ? { p: p || 0, c: c || 0 } : { v: p || 0 });
+        L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' に ' + def.label + ' を付与');
+      });
+    },
+    'm-st-del': function () {
+      var ref = targetRef(); var key = $('mSt').value;
+      if (!ref) { return; }
+      commit(function (s) { var g = L.getB(s, ref); if (g && g.b.st) { Object.keys(g.b.st).forEach(function (k) { if (L.statusParts(k).base === key) { delete g.b.st[k]; } }); L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の ' + L.STATUS[key].label + ' を解除'); } });
+    },
+    'm-vib': function () { var ref = targetRef(); if (ref) { commit(function (s) { L.vibrationBurst(s, ref, rng); }); } },
+    'm-stag-clear': function () { var ref = targetRef(); if (ref) { commit(function (s) { var g = L.getB(s, ref); if (g) { g.b.stagger = null; L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の混乱を回復'); } }); } },
+    'm-revive': function () { var ref = targetRef(); if (ref) { commit(function (s) { L.reviveUnit(s, ref); L.log(s, '【手動】' + L.nameOf(s, ref) + ' が復帰'); }); } },
+    'm-ego': function () {
+      var ref = targetRef(); if (!ref) { return; }
+      var u = S.units[ref.u];
+      var egos = A(u && u.egos);
+      if (!egos.length) { alert('E.G.Oが登録されていません'); return; }
+      var idx = 0;
+      if (egos.length > 1) {
+        var ans = prompt(egos.map(function (e, i) { return i + ': ' + e.name; }).join('\n') + '\n使用する番号を入力してください', '0');
+        if (ans === null) { return; }
+        idx = Number(ans) || 0;
+      }
+      commit(function (s) { L.applyEgo(s, ref.u, idx); });
+    },
+    'm-flag': function () {
+      var ref = targetRef(); var name = $('mFlag').value.trim();
+      if (!ref || !name) { return; }
+      commit(function (s) { var u = s.units[ref.u]; if (u) { u.flags = u.flags || {}; u.flags[name] = !u.flags[name]; L.log(s, '【手動】' + u.name + ' のフラグ「' + name + '」を ' + (u.flags[name] ? 'ON' : 'OFF') + ' にした'); } });
+    }
+  };
+
+  var changes = {
+    unit: function (el) { me.unitId = el.value; saveMe(); render(); },
+    arrows: function (el) { arrowMode = el.value; render(); },
+    mtarget: function (el) { manualTarget = el.value; },
+    ptarget: function (el) {
+      var pid = el.dataset.pid;
+      commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = el.value || null; } }); });
+    },
+    pskill: function (el) {
+      if (!el.value) { return; }
+      var u = el.dataset.u; var p = Number(el.dataset.p);
+      var v = el.value;
+      commit(function (s) { L.rebuildPiecesFor(s, u, p, v === '-' ? [] : [v]); });
+      el.value = '';
+    },
+    file: function (el) {
+      var f = el.files && el.files[0];
+      if (!f) { return; }
+      var r = new FileReader();
+      r.onload = function () { $(el.dataset.to).value = String(r.result); };
+      r.readAsText(f);
+    }
+  };
+
+  document.addEventListener('click', function (ev) {
+    if (ev.target.id === 'popup') { actions.close(); return; }
+    var el = ev.target.closest('[data-act]');
+    if (!el || !actions[el.dataset.act]) { return; }
+    if (el.disabled) { return; }
+    ev.preventDefault();
+    actions[el.dataset.act](el);
+  });
+  document.addEventListener('change', function (ev) {
+    var el = ev.target.closest('[data-change]');
+    if (el && changes[el.dataset.change]) { changes[el.dataset.change](el); }
+  });
+  window.addEventListener('resize', function () { if (me) { drawArrows(ctxOf()); } });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { actions.close(); } });
+
+  function enter() {
+    $('lobby').hidden = true;
+    $('main').hidden = false;
+    saveMe();
+    window.LCStore.create({
+      roomId: me.room,
+      onState: onState,
+      onStatus: function (st, msg) { conn = st === 'online' ? 'online' : 'offline'; if (st === 'error') { alert('接続エラー: ' + msg); } render(); }
+    }).then(function (st) {
+      store = st;
+      mode = st.mode;
+      render();
+    }).catch(function (e) {
+      alert('接続できませんでした。設定を確認してください。\n' + e.message);
+      $('lobby').hidden = false;
+      $('main').hidden = true;
+    });
+  }
+
+  function init() {
+    me = loadMe();
+    $('lobbyMode').textContent = window.LCStore.hasFirebase() ? 'Firebase に接続して共有します。' : 'Firebase が未設定のため、同じブラウザ内(タブ間)のローカル動作になります。';
+    if (me && me.room) { enter(); return; }
+    $('lobby').hidden = false;
+    $('lobbyJoin').addEventListener('click', function () {
+      var room = $('lobbyRoom').value.trim().replace(/[.#$\[\]\/]/g, '_');
+      if (!room) { alert('ルームIDを入力してください'); return; }
+      me = { room: room, role: $('lobbyRole').value, unitId: '' };
+      enter();
+    });
+  }
+
+  init();
+}());
