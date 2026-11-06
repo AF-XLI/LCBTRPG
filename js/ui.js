@@ -51,7 +51,7 @@
 
   function statusHtml(icon, glyph, color, pw, cnt, inert, title) {
     return '<span class="st' + (inert ? ' inert' : '') + '" style="--c: ' + color + ';" title="' + esc(title) + '">' +
-      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="image/icon/status/' + esc(icon) + '" alt="" onerror="this.remove()"></span>' +
+      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="image/icon/status/' + esc(icon) + '" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>' +
       '<span class="st-v">' + esc(pw) + '</span>' +
       '<span class="st-c">' + esc(cnt) + '</span></span>';
   }
