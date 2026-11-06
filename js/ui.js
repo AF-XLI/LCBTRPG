@@ -88,12 +88,12 @@
     return out;
   }
 
-  function hpBar(info, lines, cls) {
+  function hpBar(info, lines, cls, curOnly) {
     var ratio = info.max > 0 ? Math.max(0, Math.min(1, info.cur / info.max)) : 0;
     var marks = A(lines).map(function (l) {
       return '<i class="mark" style="left: ' + (Math.min(100, l / info.max * 100)).toFixed(1) + '%;"></i>';
     }).join('');
-    return '<div class="bar ' + (cls || '') + '"><div class="fill" style="width: ' + (ratio * 100).toFixed(1) + '%;"></div>' + marks + '<span class="num">' + info.cur + '/' + info.max + '</span></div>';
+    return '<div class="bar ' + (cls || '') + '"><div class="fill" style="width: ' + (ratio * 100).toFixed(1) + '%;"></div>' + marks + '<span class="num">' + (curOnly ? info.cur : info.cur + '/' + info.max) + '</span></div>';
   }
 
   function spChip(b) {
@@ -147,10 +147,10 @@
     var g = L.getB(S, { u: p.u, p: p.p });
     if (!g) { return ''; }
     var info = L.hpInfo(g.unit, g.part);
-    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3><div class="line">' + (g.part && g.unit.kind === 'abnormality' ? '耐久' : '体力') + '</div>' + hpBar(info, g.b.lines, '') +
-      '<div class="line">精神力 ' + spChip(g.b) + staggerChip(g.b) + '</div><div class="badges">' + badges(g.b) + '</div>' +
+    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3><div class="line">' + (g.part && g.unit.kind === 'abnormality' ? '耐久' : '体力') + '</div>' + hpBar(info, g.b.lines, '', g.unit.side === 'enemy') +
+      '<div class="line">' + (g.b.noSp ? '' : '精神力 ' + spChip(g.b)) + staggerChip(g.b) + '</div><div class="badges">' + badges(g.b) + '</div>' +
       resistTable(g.b);
-    if (g.unit.kind === 'abnormality') { html += '<p class="note">全体の体力 ' + g.unit.hp + '/' + g.unit.maxHp + '</p>'; }
+    if (g.unit.kind === 'abnormality') { html += '<p class="note">全体の体力 ' + g.unit.hp + '</p>'; }
     var skills = O(g.b.skills);
     var keys = Object.keys(skills);
     if (keys.length) {
@@ -162,7 +162,7 @@
   function unitPopup(S, id) {
     var u = S.units[id];
     if (!u) { return ''; }
-    var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '') +
+    var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '', u.side === 'enemy') +
       '<div class="line">精神力 ' + spChip(u) + ' 速度 ' + L.num(u.spd, 0) + ' (' + u.speed[0] + '〜' + u.speed[1] + ')' + staggerChip(u) + '</div>' +
       '<div class="badges">' + badges(u) + '</div>' + resistTable(u);
     html += '<h4>スキル</h4>';
@@ -397,12 +397,18 @@
   }
   function hpRow(label, info, lines, labelColor) {
     var marks = A(lines).map(function (l) { return info.max > 0 ? Math.min(100, l / info.max * 100) : 0; });
-    return barRow(label, info.cur + '/' + info.max, pctOf(info.cur, info.max), C.red, labelColor || C.label, marks);
+    return barRow(label, String(info.cur), pctOf(info.cur, info.max), C.red, labelColor || C.label, marks);
   }
   function spRow(label, sp, labelColor) {
     var v = L.num(sp, 0);
     var w = v <= -45 ? 3 : Math.max(3, Math.round(spPct(v)));
     return barRow(label, (v > 0 ? '+' : '') + v, w, spBarColor(v), labelColor || C.label, []);
+  }
+
+  function spDot(sp) {
+    var v = L.num(sp, 0);
+    var c = spCircle(v);
+    return '<span class="e-sp" style="background: ' + c.bg + '; color: ' + c.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(v) * 100) + '%">' + v + '</span>';
   }
 
   function mergedBadges(parts) {
@@ -474,7 +480,7 @@
     var stag = '';
     if (multi && pi !== null) {
       var part = u.parts[pi];
-      bars = hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + spRow('精神力', part.sp, C.gold);
+      bars = hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + (part.noSp ? '' : spRow('精神力', part.sp, C.gold));
       bad = badges(part);
       act = ' data-act="info-part" data-ref="' + esc(u.id + '|' + pi) + '"';
       stag = staggerChip(part);
@@ -483,7 +489,7 @@
       bad = mergedBadges(u.parts);
     } else {
       var p0 = u.parts[0];
-      bars = hpRow('体力', L.hpInfo(u), p0.lines) + spRow('精神力', p0.sp);
+      bars = '<div class="e-hp">' + hpRow('体力', L.hpInfo(u), p0.lines) + (p0.noSp ? '' : spDot(p0.sp)) + '</div>';
       bad = badges(p0);
       act = ' data-act="info-part" data-ref="' + esc(u.id + '|0') + '"';
       stag = staggerChip(p0);
