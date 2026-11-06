@@ -117,7 +117,7 @@
   }
 
   function initBearerCommon(b, max, rng) {
-    b.sp = clamp(num(b.sp, 0), SP_MIN, SP_MAX);
+    b.sp = b.noSp ? 0 : clamp(num(b.sp, 0), SP_MIN, SP_MAX);
     b.speed = A(b.speed).length === 2 ? [num(b.speed[0], 1), num(b.speed[1], 1)] : [1, 1];
     b.st = O(b.st);
     b.next = O(b.next);
@@ -156,6 +156,8 @@
       if (u.kind === 'normal') { u.parts = [u.parts[0]]; }
       u.parts.forEach(function (p, idx) {
         p.name = p.name || ('部位' + (idx + 1));
+        if (p.noSp === undefined) { p.noSp = !!u.noSp; }
+        p.noSp = !!p.noSp;
         if (u.kind === 'abnormality') {
           p.maxDur = Math.max(1, num(p.maxDur, 50));
           p.dur = clamp(num(p.dur, p.maxDur), 0, p.maxDur);
