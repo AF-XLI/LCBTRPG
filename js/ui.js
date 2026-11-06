@@ -6,7 +6,7 @@
   var O = L.O;
 
   var PHASE_LABEL = { setup: '準備', enemy: '敵の行動決定', player: '味方の行動選択', process: '戦闘処理', roundEnd: 'ラウンド終了', over: '決着' };
-  var ROLE_LABEL = { kp: 'KP', gm: 'GM', player: 'プレイヤー', observer: '観戦' };
+  var ROLE_LABEL = { gm: 'GM', player: 'プレイヤー', observer: '観戦' };
   var SEL_LABEL = { c0: 'カード1', c1: 'カード2', def: '守備' };
   var SUB_LABEL = { guard: '防御', evade: '回避' };
 
@@ -16,31 +16,12 @@
     });
   }
 
-  function sinColor(sin) { return L.SINS[sin] ? L.SINS[sin].color : 'rgb(150, 150, 150)'; }
   function kindLabel(sk) {
     if (!sk) { return ''; }
     if (sk.kind === 'defense') { return SUB_LABEL[sk.sub] || '防御'; }
     return L.KIND_LABEL[sk.kind] || '';
   }
 
-  function frameSvg(sin, tier) {
-    var c = sinColor(sin);
-    function poly(r) {
-      var pts = [];
-      for (var i = 0; i < 7; i += 1) {
-        var a = -Math.PI / 2 + i * 2 * Math.PI / 7;
-        pts.push((50 + r * Math.cos(a)).toFixed(1) + ',' + (50 + r * Math.sin(a)).toFixed(1));
-      }
-      return pts.join(' ');
-    }
-    var t = Math.max(1, Math.min(4, L.num(tier, 1)));
-    var html = '<svg class="frame" viewBox="0 0 100 100" aria-hidden="true">';
-    html += '<polygon points="' + poly(47) + '" fill="rgb(24, 22, 26)" stroke="' + c + '" stroke-width="4"/>';
-    if (t >= 2) { html += '<polygon points="' + poly(40) + '" fill="none" stroke="' + c + '" stroke-width="1.5" opacity="0.8"/>'; }
-    if (t >= 3) { html += '<polygon points="' + poly(34) + '" fill="none" stroke="' + c + '" stroke-width="1.5" opacity="0.6"/>'; }
-    if (t >= 4) { html += '<polygon points="' + poly(50) + '" fill="none" stroke="rgb(240, 200, 90)" stroke-width="2"/>'; }
-    return html + '</svg>';
-  }
 
   function badges(b) {
     var st = O(b && b.st);
@@ -96,129 +77,13 @@
     return '<span class="face init">' + esc(String(name || '?').charAt(0)) + '</span>';
   }
 
-  function allyToken(u, ctx) {
-    var info = L.hpInfo(u);
-    var ratio = info.max > 0 ? Math.max(0, Math.min(1, info.cur / info.max)) : 0;
-    var R = 34;
-    var C = 2 * Math.PI * R;
-    var vis = C * 280 / 360;
-    var sp = L.num(u.sp, 0);
-    var spCls = sp <= -45 ? 'low' : (sp >= 45 ? 'high' : '');
-    var ring = '<svg class="ring" viewBox="0 0 84 84" aria-hidden="true">' +
-      '<circle cx="42" cy="42" r="' + R + '" class="track" stroke-dasharray="' + vis.toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(85 42 42)"/>' +
-      '<circle cx="42" cy="42" r="' + R + '" class="gauge" stroke-dasharray="' + (vis * ratio).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(85 42 42)"/>' +
-      '</svg>';
-    var spd = u.dead ? '' : '<span class="spd" title="速度">' + L.num(u.spd, 0) + '</span>';
-    return '<div class="token ' + (u.dead ? 'dead' : '') + '" data-tok="' + esc(u.id) + '">' + ring + portrait(u.name, u.img) + spd +
-      '<span class="spc ' + spCls + '">' + sp + '</span></div>';
-  }
 
-  function allyCard(S, u, ctx) {
-    var info = L.hpInfo(u);
-    var ch = u.choice;
-    var status = '';
-    if (u.dead) { status = '<span class="tag down">戦闘不能</span>'; }
-    else if (!u.stagger && ch && S.phase !== 'enemy' && S.phase !== 'setup') {
-      var sk = L.chosenSkill(S, u);
-      var label = ch.sel === 'def' ? '守備' : (sk ? sk.name || '' : '');
-      status = '<span class="tag ' + (ch.confirmed ? 'ok' : 'wait') + '">' + (ch.confirmed ? '確定' : '選択中') + (S.phase === 'player' && !ctx.canSeeChoice(u) ? '' : (label ? ': ' + esc(label) : '')) + '</span>';
-    }
-    var mine = ctx.me && ctx.me.unitId === u.id ? ' mine' : '';
-    return '<div class="ally' + mine + '" data-act="info-unit" data-id="' + esc(u.id) + '">' +
-      allyToken(u, ctx) +
-      '<div class="ally-body"><div class="name">' + esc(u.name) + '</div>' + hpBar(info, u.lines, 'ally-bar') +
-      '<div class="line">' + spChip(u) + staggerChip(u) + status + '</div>' +
-      '<div class="badges">' + badges(u) + '</div></div></div>';
-  }
 
-  function pieceHtml(S, P, ctx) {
-    var sk = L.pieceSkill(S, P);
-    var g = L.getB(S, L.pieceRef(P));
-    var out = L.isOut(g);
-    var cls = 'piece';
-    if (P.acted) { cls += ' acted'; }
-    if (g && g.b.stagger) { cls += ' staggered'; }
-    var targeting = ctx.targeting && sk && !out;
-    var act = targeting ? 'target' : 'info-piece';
-    var coins = sk ? A(sk.coins).length : 0;
-    var pairs = ctx.pairs || { matchOf: {} };
-    var matched = pairs.matchOf[P.pid];
-    var targetName = '';
-    if (P.target && S.units[P.target] && ctx.showEnemyTargets) { targetName = '→' + S.units[P.target].name; }
-    return '<button type="button" class="' + cls + (ctx.selectedPid === P.pid ? ' picked' : '') + (matched ? ' matched' : '') + '" data-act="' + act + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '">' +
-      frameSvg(sk && sk.sin, sk && sk.tier) +
-      '<span class="p-body"><span class="p-name">' + esc(sk ? sk.name : '?') + '</span>' +
-      '<span class="p-meta">' + esc(kindLabel(sk)) + ' ' + L.num(sk && sk.base, 0) + '+' + coins + '枚</span>' +
-      '<span class="p-tgt">' + esc(targetName) + '</span></span></button>';
-  }
 
-  function blankHtml(S, unitId, pi, ctx) {
-    var pid = L.pieceId(unitId, pi, 'b');
-    return '<button type="button" class="piece blank' + (ctx.selectedPid === pid ? ' picked' : '') + '" data-act="' + (ctx.targeting ? 'target' : 'noop') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '">' +
-      '<span class="p-body"><span class="p-name">空き</span><span class="p-meta">スキルなし</span></span></button>';
-  }
 
-  function partHtml(S, u, pi, ctx) {
-    var part = u.parts[pi];
-    var multi = u.kind === 'abnormality';
-    var info = L.hpInfo(u, part);
-    var pieces = A(S.pieces).filter(function (P) { return P.unitId === u.id && P.partIdx === pi; });
-    var inner = '';
-    if (part.destroyed) {
-      inner = '<div class="piece destroyed"><span class="p-body"><span class="p-name">破壊</span></span></div>';
-    } else if (pieces.length) {
-      inner = pieces.map(function (P) { return pieceHtml(S, P, ctx); }).join('');
-    } else if (S.phase !== 'setup' && S.phase !== 'over') {
-      inner = blankHtml(S, u.id, pi, ctx);
-    }
-    var spd = ctx.canSeeEnemySpeed ? '<span class="espd" title="速度(KP/GM のみ)">速' + L.num(part.spd, 0) + '</span>' : '';
-    var showSp = u.kind === 'normal' || ctx.canSeeEnemySpeed;
-    return '<div class="part ' + (part.destroyed ? 'destroyed' : '') + '" data-part="' + esc(u.id + '|' + pi) + '">' +
-      '<div class="part-head" data-act="info-part" data-ref="' + esc(u.id + '|' + pi) + '">' +
-      (multi ? '<span class="part-name">' + esc(part.name) + '</span>' : '') +
-      (multi ? hpBar(info, part.lines, 'part-bar') : '') +
-      (showSp ? spChip(part) : '') + staggerChip(part) + spd +
-      '</div><div class="badges">' + badges(part) + '</div>' +
-      '<div class="pieces">' + inner + '</div></div>';
-  }
 
-  function enemyCard(S, u, ctx) {
-    var info = L.hpInfo(u);
-    var body = u.parts.map(function (p, i) { return partHtml(S, u, i, ctx); }).join('');
-    var head = '<div class="e-head"><span class="e-face">' + portrait(u.name, u.img) + '</span><div class="e-title"><div class="name">' + esc(u.name) + '</div>' +
-      hpBar(info, u.kind === 'normal' ? u.parts[0].lines : [], 'enemy-bar') + '</div></div>';
-    return '<div class="enemy ' + (u.dead ? 'dead' : '') + ' ' + u.kind + '" data-tok="' + esc(u.id) + '">' + head + '<div class="parts">' + body + '</div></div>';
-  }
 
-  function stage(S, ctx) {
-    var enemies = [];
-    var allies = [];
-    Object.keys(S.units).forEach(function (id) {
-      var u = S.units[id];
-      if (u.side === 'enemy') { enemies.push(u); } else { allies.push(u); }
-    });
-    enemies.sort(function (a, b) { return a.ord - b.ord; });
-    allies.sort(function (a, b) { return a.ord - b.ord; });
-    if (!enemies.length && !allies.length) {
-      return '<p class="empty">まだキャラクターがいません。KPが準備パネルからJSONを読み込んでください。</p>';
-    }
-    return '<div class="row enemies">' + (enemies.map(function (u) { return enemyCard(S, u, ctx); }).join('') || '<p class="empty">敵がいません</p>') + '</div>' +
-      '<div class="row allies">' + (allies.map(function (u) { return allyCard(S, u, ctx); }).join('') || '<p class="empty">味方がいません</p>') + '</div>';
-  }
 
-  function head(S, ctx) {
-    var me = ctx.me;
-    var allyOpts = '';
-    Object.keys(S.units).forEach(function (id) {
-      if (S.units[id].side === 'ally') { allyOpts += '<option value="' + esc(id) + '"' + (me.unitId === id ? ' selected' : '') + '>' + esc(S.units[id].name) + '</option>'; }
-    });
-    var unitSel = me.role === 'player' ? '<label class="inline">操作キャラ<select data-change="unit"><option value="">選択</option>' + allyOpts + '</select></label>' : '';
-    var filter = '<label class="inline">矢印<select data-change="arrows"><option value="all"' + (ctx.arrowMode === 'all' ? ' selected' : '') + '>すべて</option><option value="mine"' + (ctx.arrowMode === 'mine' ? ' selected' : '') + '>自分のみ</option><option value="off"' + (ctx.arrowMode === 'off' ? ' selected' : '') + '>なし</option></select></label>';
-    return '<div class="head-main"><b class="room">' + esc(me.room) + '</b><span class="chip">' + ROLE_LABEL[me.role] + '</span>' +
-      '<span class="chip round">R' + S.round + '</span><span class="chip phase">' + PHASE_LABEL[S.phase] + '</span>' +
-      '<span class="chip conn ' + ctx.conn + '">' + (ctx.mode === 'firebase' ? (ctx.conn === 'online' ? '接続中' : '切断') : 'ローカル') + '</span></div>' +
-      '<div class="head-sub">' + unitSel + filter + '<button type="button" class="btn small" data-act="leave">退室</button></div>';
-  }
 
   function skillDetail(sk, title) {
     if (!sk) { return '<p class="empty">スキルがありません</p>'; }
@@ -247,10 +112,10 @@
     var g = L.getB(S, { u: p.u, p: p.p });
     if (!g) { return ''; }
     var info = L.hpInfo(g.unit, g.part);
-    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3>' + hpBar(info, g.b.lines, '') +
+    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3><div class="line">' + (g.part && g.unit.kind === 'abnormality' ? '耐久' : '体力') + '</div>' + hpBar(info, g.b.lines, '') +
       '<div class="line">精神力 ' + spChip(g.b) + staggerChip(g.b) + '</div><div class="badges">' + badges(g.b) + '</div>' +
       resistTable(g.b);
-    if (g.unit.kind === 'normal') { html += '<p class="note">体力 ' + g.unit.hp + '/' + g.unit.maxHp + '</p>'; }
+    if (g.unit.kind === 'abnormality') { html += '<p class="note">全体の体力 ' + g.unit.hp + '/' + g.unit.maxHp + '</p>'; }
     var skills = O(g.b.skills);
     var keys = Object.keys(skills);
     if (keys.length) {
@@ -262,7 +127,7 @@
   function unitPopup(S, id) {
     var u = S.units[id];
     if (!u) { return ''; }
-    var html = '<h3>' + esc(u.name) + '</h3>' + hpBar(L.hpInfo(u), u.lines, '') +
+    var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '') +
       '<div class="line">精神力 ' + spChip(u) + ' 速度 ' + L.num(u.spd, 0) + ' (' + u.speed[0] + '〜' + u.speed[1] + ')' + staggerChip(u) + '</div>' +
       '<div class="badges">' + badges(u) + '</div>' + resistTable(u);
     html += '<h4>スキル</h4>';
@@ -277,54 +142,10 @@
     return '<h3>' + esc(L.nameOf(S, L.pieceRef(P))) + '</h3>' + skillDetail(sk);
   }
 
-  function playerPanel(S, ctx) {
-    var me = ctx.me;
-    if (me.role !== 'player') { return ''; }
-    var u = S.units[me.unitId];
-    if (!u) { return '<h3>行動選択</h3><p class="empty">上部で操作するキャラクターを選んでください。</p>'; }
-    if (u.dead) { return '<h3>' + esc(u.name) + '</h3><p class="empty">戦闘不能です。</p>'; }
-    if (S.phase === 'setup') { return '<h3>' + esc(u.name) + '</h3><p class="empty">戦闘開始をお待ちください。</p>'; }
-    var hand = L.handOf(S, u);
-    var ch = u.choice || {};
-    var editable = S.phase === 'player' && !u.stagger;
-    var html = '<h3>' + esc(u.name) + ' の行動</h3>';
-    if (u.stagger) { return html + '<p class="empty">混乱しているため行動できません。</p>'; }
-    var cards = [['c0', hand.sel[0]], ['c1', hand.sel[1]], ['def', hand.def]];
-    html += '<div class="hand">';
-    cards.forEach(function (c) {
-      var card = c[1];
-      var sk = card && card.skill;
-      var active = ch.sel === c[0];
-      html += '<button type="button" class="card' + (active ? ' picked' : '') + '" data-act="sel" data-sel="' + c[0] + '"' + (editable && sk ? '' : ' disabled') + ' style="--c: ' + sinColor(sk && sk.sin) + ';">' +
-        '<span class="card-t">' + SEL_LABEL[c[0]] + (card && card.num ? ' (' + card.num + ')' : '') + '</span>' +
-        '<b>' + esc(sk ? sk.name : '-') + '</b><span class="card-m">' + esc(kindLabel(sk)) + ' ' + L.num(sk && sk.base, 0) + '+' + (sk ? A(sk.coins).length : 0) + '枚</span></button>';
-    });
-    html += '</div>';
-    if (hand.preview && hand.preview.skill) {
-      html += '<p class="note">次のカード: ' + esc(hand.preview.skill.name) + ' (' + hand.preview.num + ')</p>';
-    }
-    var sel = L.chosenSkill(S, u);
-    if (sel) { html += skillDetail(sel); }
-    if (ch.sel && ch.sel !== 'def' && sel && sel.kind === 'attack') {
-      var P = L.getPiece(S, ch.target);
-      html += '<p class="note">対象: ' + (P ? '<b>' + esc(L.nameOf(S, L.pieceRef(P))) + (P.blank ? '(空き)' : ' 「' + esc((L.pieceSkill(S, P) || {}).name || '') + '」') + '</b>' : '<b class="warn">未選択</b>(敵のスキル枠を押してください)') + '</p>';
-    } else if (ch.sel === 'def' || (sel && sel.kind !== 'attack')) {
-      html += '<p class="note">守備: 相手の攻撃に応じて自動で処理されます。</p>';
-    }
-    if (editable) {
-      if (ch.confirmed) { html += '<button type="button" class="btn" data-act="unconfirm">確定を取り消す</button>'; }
-      else { html += '<button type="button" class="btn primary" data-act="confirm"' + (L.canConfirm(S, u) ? '' : ' disabled') + '>この行動で確定</button>'; }
-    } else if (S.phase === 'enemy') {
-      html += '<p class="note">敵の行動が決まるまでお待ちください。</p>';
-    } else if (S.phase === 'process') {
-      html += '<p class="note">戦闘処理中です。</p>';
-    }
-    return html;
-  }
 
   function gmPanel(S, ctx) {
     var me = ctx.me;
-    if (me.role !== 'kp' && me.role !== 'gm') { return ''; }
+    if (me.role !== 'gm') { return ''; }
     if (S.phase !== 'enemy') { return ''; }
     var allies = Object.keys(S.units).filter(function (id) { return S.units[id].side === 'ally' && !S.units[id].dead; });
     var html = '<h3>敵の行動決定</h3>';
@@ -334,11 +155,11 @@
       if (!sk) { return; }
       any = true;
       var ref = L.nameOf(S, L.pieceRef(P)) + ' 「' + sk.name + '」';
-      if (sk.kind === 'defense' || sk.kind === 'counter') {
-        html += '<div class="grow"><span>' + esc(ref) + '</span><span class="note">' + esc(kindLabel(sk)) + '(対象なし)</span></div>';
+      if (sk.kind === 'counter') {
+        html += '<div class="grow"><span>' + esc(ref) + '</span><span class="note">反撃(対象なし)</span></div>';
         return;
       }
-      html += '<label class="grow"><span>' + esc(ref) + '</span><select data-change="ptarget" data-pid="' + esc(P.pid) + '"><option value="">対象を選択</option>' +
+      html += '<label class="grow"><span>' + esc(ref) + (sk.kind === 'defense' ? '(' + esc(kindLabel(sk)) + ')' : '') + '</span><select data-change="ptarget" data-pid="' + esc(P.pid) + '"><option value="">' + (sk.kind === 'defense' ? '合わせる味方を選択' : '対象を選択') + '</option>' +
         allies.map(function (id) { return '<option value="' + esc(id) + '"' + (P.target === id ? ' selected' : '') + '>' + esc(S.units[id].name) + '</option>'; }).join('') + '</select></label>';
     });
     if (!any) { html += '<p class="empty">敵のスキルがありません。</p>'; }
@@ -390,9 +211,9 @@
     return '<h3>ログ</h3><div class="log-body">' + lines.map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '</div>';
   }
 
-  function kpPanel(S, ctx) {
-    if (ctx.me.role !== 'kp') { return ''; }
-    var html = '<h3>KP操作</h3>';
+  function toolsPanel(S, ctx) {
+    if (ctx.me.role !== 'gm') { return ''; }
+    var html = '<h3>GM操作</h3>';
     if (S.phase === 'setup') {
       html += '<p class="note">味方と敵のJSONを読み込み、戦闘を開始します。形式はREADMEをご覧ください。</p>' +
         '<div class="btns"><button type="button" class="btn" data-act="load-sample">サンプルを読み込む</button></div>' +
@@ -456,8 +277,355 @@
       '<p class="note">加算の手動補助です。状態の付与は既存の値に加算されます。</p></details>';
   }
 
+  var SIN_COLORS = {
+    envy: 'rgb(150, 70, 220)',
+    wrath: 'rgb(220, 60, 50)',
+    pride: 'rgb(70, 120, 230)',
+    gluttony: 'rgb(110, 190, 70)',
+    lust: 'rgb(240, 140, 50)',
+    gloom: 'rgb(60, 190, 200)',
+    sloth: 'rgb(230, 200, 60)'
+  };
+  var C = {
+    gold: 'rgb(230, 180, 50)',
+    red: 'rgb(232, 104, 96)',
+    blue: 'rgb(96, 168, 224)',
+    yellow: 'rgb(230, 200, 60)',
+    alert: 'rgb(232, 70, 60)',
+    label: 'rgb(220, 205, 200)'
+  };
+
+  function sinColor(sin) { return SIN_COLORS[sin] || 'rgb(150, 140, 140)'; }
+
+  function pctOf(a, b) { return b > 0 ? Math.max(0, Math.min(100, Math.round(a / b * 100))) : 0; }
+  function spPct(sp) { return (L.num(sp, 0) + 45) / 90 * 100; }
+  function spBarColor(sp) {
+    var p = spPct(sp);
+    return p <= 0 ? C.alert : (p <= 25 ? C.yellow : C.blue);
+  }
+  function spCircle(sp) {
+    var v = L.num(sp, 0);
+    if (v <= -45) { return { bg: 'rgb(232, 70, 60)', fg: 'rgb(255, 255, 255)' }; }
+    if (v >= 45) { return { bg: 'rgb(96, 168, 224)', fg: 'rgb(24, 14, 14)' }; }
+    return { bg: 'rgb(84, 64, 60)', fg: 'rgb(240, 230, 225)' };
+  }
+
+  function frameSvg(sin, tier, kind) {
+    var cx = 30;
+    var cy = 30;
+    function pts(r) {
+      var a = [];
+      for (var i = 0; i < 7; i += 1) {
+        var t = (-90 + 360 / 7 * i) * Math.PI / 180;
+        a.push((cx + r * Math.cos(t)).toFixed(1) + ',' + (cy + r * Math.sin(t)).toFixed(1));
+      }
+      return a.join(' ');
+    }
+    if (kind === 'destroyed') {
+      return '<svg class="frame" viewBox="0 0 60 60" aria-hidden="true"><polygon points="' + pts(25) + '" fill="rgb(30, 22, 22)" stroke="rgb(100, 90, 88)" stroke-width="2" stroke-dasharray="5 4"/>' +
+        '<path d="M20 20 L40 40 M40 20 L20 40" stroke="rgb(150, 135, 130)" stroke-width="3" stroke-linecap="round"/></svg>';
+    }
+    if (kind === 'blank') {
+      return '<svg class="frame" viewBox="0 0 60 60" aria-hidden="true"><polygon points="' + pts(25) + '" fill="rgb(40, 28, 28)" stroke="rgb(150, 135, 130)" stroke-width="3"/></svg>';
+    }
+    var c = sinColor(sin);
+    var lv = Math.max(1, Math.min(4, L.num(tier, 1)));
+    var s = '<svg class="frame" viewBox="0 0 60 60" aria-hidden="true">';
+    s += '<polygon points="' + pts(27.5) + '" fill="none" stroke="rgb(10, 6, 6)" stroke-width="7"/>';
+    s += '<polygon points="' + pts(25) + '" fill="rgb(40, 26, 28)" stroke="' + c + '" stroke-width="4"/>';
+    if (lv >= 2) { s += '<polygon points="' + pts(29) + '" fill="none" stroke="' + c + '" stroke-width="1.5" opacity="0.8"/>'; }
+    if (lv >= 3) {
+      for (var i = 0; i < 3; i += 1) {
+        var t = (-90 + 360 / 7 * (i + 5)) * Math.PI / 180;
+        s += '<path d="M' + (cx + 26 * Math.cos(t)).toFixed(1) + ' ' + (cy + 26 * Math.sin(t)).toFixed(1) + ' L' + (cx + 31 * Math.cos(t)).toFixed(1) + ' ' + (cy + 31 * Math.sin(t)).toFixed(1) + '" stroke="' + c + '" stroke-width="4" stroke-linecap="round"/>';
+      }
+    }
+    if (lv >= 4) { s += '<polygon points="' + pts(30) + '" fill="none" stroke="rgb(240, 200, 90)" stroke-width="1.5"/>'; }
+    return s + '</svg>';
+  }
+
+  function barRow(label, text, pct, color, labelColor, marks) {
+    var ticks = A(marks).map(function (m) { return '<i class="tick" style="left: ' + m.toFixed(1) + '%;"></i>'; }).join('');
+    return '<div class="bar-row"><div class="bar-label" style="color: ' + labelColor + ';"><span>' + label + '</span><span>' + text + '</span></div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width: ' + pct + '%; background: ' + color + ';"></div>' + ticks + '</div></div>';
+  }
+  function hpRow(label, info, lines, labelColor) {
+    var marks = A(lines).map(function (l) { return info.max > 0 ? Math.min(100, l / info.max * 100) : 0; });
+    return barRow(label, info.cur + '/' + info.max, pctOf(info.cur, info.max), C.red, labelColor || C.label, marks);
+  }
+  function spRow(label, sp, labelColor) {
+    var v = L.num(sp, 0);
+    var w = v <= -45 ? 3 : Math.max(3, Math.round(spPct(v)));
+    return barRow(label, (v > 0 ? '+' : '') + v, w, spBarColor(v), labelColor || C.label, []);
+  }
+
+  function mergedBadges(parts) {
+    var total = {};
+    A(parts).forEach(function (p) {
+      var st = O(p.st);
+      Object.keys(st).forEach(function (k) {
+        var t = total[k] || (total[k] = {});
+        Object.keys(st[k]).forEach(function (f) {
+          t[f] = typeof st[k][f] === 'number' ? (t[f] || 0) + st[k][f] : st[k][f];
+        });
+      });
+    });
+    return badges({ st: total });
+  }
+
+  function pieceHtml(S, P, ctx, u, pi) {
+    var part = u.parts[pi];
+    var multi = u.kind === 'abnormality';
+    var sk = L.pieceSkill(S, P);
+    var g = L.getB(S, L.pieceRef(P));
+    var out = L.isOut(g);
+    var cls = 'piece';
+    if (P.acted) { cls += ' acted'; }
+    if (g && g.b.stagger) { cls += ' staggered'; }
+    if (ctx.pressed[u.id] === P.pid) { cls += ' pressed'; }
+    if (ctx.selectedPid === P.pid) { cls += ' picked'; }
+    var can = ctx.canSetTarget && sk && !out && (!ctx.targetAttackOnly || sk.kind === 'attack');
+    var sub = multi ? part.name : '';
+    if (sk && sk.kind !== 'attack') { sub += (sub ? '・' : '') + kindLabel(sk); }
+    var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
+    return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
+      '<span class="p-label">' + esc(sk ? sk.name : '?') + '</span>' +
+      '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier) + '<span class="p-letter">' + esc(letter) + '</span></span>' +
+      '<span class="p-sub">' + esc(sub) + '</span></button>';
+  }
+
+  function blankHtml(S, u, pi, ctx) {
+    var part = u.parts[pi];
+    var multi = u.kind === 'abnormality';
+    var pid = L.pieceId(u.id, pi, 'b');
+    var can = ctx.canSetTarget && !ctx.targetAttackOnly;
+    var cls = 'piece blank' + (ctx.pressed[u.id] === pid ? ' pressed' : '') + (ctx.selectedPid === pid ? ' picked' : '');
+    var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
+    return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
+      '<span class="p-label muted">ブランク</span>' +
+      '<span class="p-frame">' + frameSvg(null, 0, 'blank') + '<span class="p-letter">' + esc(letter) + '</span></span>' +
+      '<span class="p-sub">' + esc(multi ? part.name : '') + '</span></button>';
+  }
+
+  function destroyedHtml(u, pi) {
+    var part = u.parts[pi];
+    return '<div class="piece destroyed" data-part="' + esc(u.id + '|' + pi) + '"><span class="p-label muted">破壊済</span>' +
+      '<span class="p-frame">' + frameSvg(null, 0, 'destroyed') + '</span><span class="p-sub">' + esc(part.name) + '</span></div>';
+  }
+
+  function enemyColumn(S, u, ctx) {
+    var multi = u.kind === 'abnormality';
+    var pid = ctx.pressed[u.id];
+    var pp = pid ? L.parsePid(pid) : null;
+    var pi = multi && pp && u.parts[pp.p] ? pp.p : null;
+    var bars;
+    var bad;
+    var act = '';
+    var stag = '';
+    if (multi && pi !== null) {
+      var part = u.parts[pi];
+      bars = hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + spRow('精神力', part.sp, C.gold);
+      bad = badges(part);
+      act = ' data-act="info-part" data-ref="' + esc(u.id + '|' + pi) + '"';
+      stag = staggerChip(part);
+    } else if (multi) {
+      bars = hpRow('体力', L.hpInfo(u), []);
+      bad = mergedBadges(u.parts);
+    } else {
+      var p0 = u.parts[0];
+      bars = hpRow('体力', L.hpInfo(u), p0.lines) + spRow('精神力', p0.sp);
+      bad = badges(p0);
+      act = ' data-act="info-part" data-ref="' + esc(u.id + '|0') + '"';
+      stag = staggerChip(p0);
+    }
+    var pieces = '';
+    u.parts.forEach(function (part, i) {
+      if (part.destroyed) { pieces += destroyedHtml(u, i); return; }
+      var list = A(S.pieces).filter(function (P) { return P.unitId === u.id && P.partIdx === i; });
+      if (list.length) { pieces += list.map(function (P) { return pieceHtml(S, P, ctx, u, i); }).join(''); }
+      else if (S.phase !== 'setup' && S.phase !== 'over') { pieces += blankHtml(S, u, i, ctx); }
+    });
+    var sil = u.img ? '<img class="sil-img" src="' + esc(u.img) + '" alt="">' : '<span class="sil-text">立ち絵</span>';
+    return '<div class="e-col ' + u.kind + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '">' +
+      '<div class="e-top"><div class="e-name"><span>' + esc(u.name) + '</span>' + stag + '</div>' + bars + '</div>' +
+      '<div class="e-badges">' + bad + '</div>' +
+      '<div class="e-sil"' + act + '>' + sil + '</div>' +
+      '<div class="pieces">' + pieces + '</div></div>';
+  }
+
+  function allyColumn(S, u, ctx) {
+    var info = L.hpInfo(u);
+    var pct = pctOf(info.cur, info.max);
+    var deg = (2.8 * pct).toFixed(1);
+    var ring = 'conic-gradient(from 190deg, rgb(232, 104, 96) 0deg ' + deg + 'deg, rgb(70, 46, 44) ' + deg + 'deg 280deg, transparent 280deg 360deg)';
+    var circle = spCircle(u.sp);
+    var ch = u.choice;
+    var showChoice = S.phase === 'player' || S.phase === 'process' || S.phase === 'roundEnd';
+    var skill = '';
+    var skillCls = '';
+    if (showChoice && !u.dead) {
+      if (u.stagger) { skill = '—'; skillCls = ' muted'; }
+      else if (ch && ch.sel) {
+        var sk = L.chosenSkill(S, u);
+        skill = sk ? sk.name || '' : '';
+        if (!skill) { skill = '未選択'; skillCls = ' muted'; }
+      } else { skill = '未選択'; skillCls = ' muted'; }
+    }
+    var state = '';
+    if (u.dead) { state = '<span class="a-state down">戦闘不能</span>'; }
+    else if (u.stagger) { state = '<span class="a-state stag">混乱' + (u.stagger.level > 1 ? ' Lv' + u.stagger.level : '') + '</span>'; }
+    else if (S.phase === 'player') { state = ch && ch.confirmed ? '<span class="a-state ok">確定済</span>' : '<span class="a-state wait">選択中</span>'; }
+    else if (S.phase === 'enemy') { state = '<span class="a-state muted">待機中</span>'; }
+    else if (S.phase === 'process' || S.phase === 'roundEnd') { state = ch && ch.acted ? '<span class="a-state ok">行動済</span>' : ''; }
+    var spd = S.phase === 'setup' || u.dead ? '&nbsp;' : String(L.num(u.spd, 0));
+    var face = u.img ? '<img class="a-img" src="' + esc(u.img) + '" alt="">' : esc(String(u.name || '?').charAt(0));
+    return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '" data-act="info-unit" data-id="' + esc(u.id) + '">' +
+      '<span class="a-skill' + skillCls + '">' + esc(skill) + '&nbsp;</span>' +
+      '<span class="a-spd" title="速度">' + spd + '</span>' +
+      '<div class="a-ring" style="background: ' + ring + ';"><span class="a-face">' + face + '</span>' +
+      '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
+      '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
+      '<span class="a-name">' + esc(u.name) + '</span>' + state +
+      '<div class="a-badges">' + badges(u) + '</div></div>';
+  }
+
+  function stage(S, ctx) {
+    var enemies = [];
+    var allies = [];
+    Object.keys(S.units).forEach(function (id) {
+      var u = S.units[id];
+      if (u.side === 'enemy') { enemies.push(u); } else { allies.push(u); }
+    });
+    if (!enemies.length && !allies.length) {
+      return '<p class="empty">まだキャラクターがいません。GMが準備パネルからJSONを読み込んでください。</p>';
+    }
+    enemies.sort(function (a, b) { return a.ord - b.ord; });
+    allies.sort(function (a, b) {
+      var d = (a.dead ? 1 : 0) - (b.dead ? 1 : 0);
+      if (d) { return d; }
+      if (S.phase !== 'setup') { var s = L.num(b.spd, 0) - L.num(a.spd, 0); if (s) { return s; } }
+      return a.ord - b.ord;
+    });
+    var legend = '<div class="legend"><span class="lg gold">マッチ(敵と味方がぶつかる)</span><span class="lg red">敵の一方攻撃</span><span class="lg blue">味方の一方攻撃</span><span class="lg dash">確定前</span></div>' +
+      '<p class="legend-note">黄色の数字=速度 / 枠の色=罪悪、装飾=スキルの強さ / 敵のスキル駒を押すと、全体の体力が部位の耐久と精神力に切り替わります</p>';
+    return '<div class="row enemies">' + (enemies.map(function (u) { return enemyColumn(S, u, ctx); }).join('') || '<p class="empty">敵がいません</p>') + '</div>' +
+      '<div class="row allies">' + (allies.map(function (u) { return allyColumn(S, u, ctx); }).join('') || '<p class="empty">味方がいません</p>') + '</div>' + legend;
+  }
+
+  function head(S, ctx) {
+    var me = ctx.me;
+    var total = 0;
+    var done = 0;
+    Object.keys(S.units).forEach(function (id) {
+      var u = S.units[id];
+      if (u.side !== 'ally' || u.dead) { return; }
+      total += 1;
+      if (u.choice && u.choice.confirmed) { done += 1; }
+    });
+    var count = S.phase === 'player' ? '<span class="count">確定 ' + done + ' / ' + total + '</span>' : '';
+    var btn = '';
+    if (me.role === 'gm') {
+      var map = { enemy: ['gm-confirm', '敵の行動を確定'], player: ['start-process', '戦闘開始'], process: ['step', '1手進める'], roundEnd: ['next-round', '次のラウンドへ'] };
+      if (map[S.phase]) { btn = '<button type="button" class="btn head-btn" data-act="' + map[S.phase][0] + '">' + map[S.phase][1] + '</button>'; }
+    }
+    return '<div class="head-main"><b class="title">戦闘卓</b><span class="room">部屋 ' + esc(me.room) + '</span></div>' +
+      '<div class="head-center">ラウンド ' + S.round + ' ・ ' + PHASE_LABEL[S.phase] + '</div>' +
+      '<div class="head-right">' + count + btn + '<span class="chip">' + ROLE_LABEL[me.role] + '</span>' +
+      '<span class="chip conn ' + ctx.conn + '">' + (ctx.mode === 'firebase' ? (ctx.conn === 'online' ? '接続中' : '切断') : 'ローカル') + '</span>' +
+      '<button type="button" class="btn small ghost" data-act="leave">退室</button></div>';
+  }
+
+  function viewPanel(S, ctx) {
+    var me = ctx.me;
+    var html = '';
+    if (me.role === 'player') {
+      var opts = '';
+      Object.keys(S.units).forEach(function (id) {
+        if (S.units[id].side === 'ally') { opts += '<option value="' + esc(id) + '"' + (me.unitId === id ? ' selected' : '') + '>' + esc(S.units[id].name) + '</option>'; }
+      });
+      html += '<label class="inline-field">操作キャラ<select data-change="unit"><option value="">選択してください</option>' + opts + '</select></label>';
+    }
+    var modes = me.role === 'player' ? [['all', '全員'], ['mine', '自分に関わるものだけ'], ['off', 'なし']] : [['all', '表示'], ['off', 'なし']];
+    html += '<h3>矢印の表示</h3><div class="seg">' + modes.map(function (m) {
+      return '<button type="button" class="seg-b' + (ctx.arrowMode === m[0] ? ' on' : '') + '" data-act="arrows" data-mode="' + m[0] + '">' + m[1] + '</button>';
+    }).join('') + '</div>';
+    return html;
+  }
+
+  function skillRow(S, u, key, card, ch, editable) {
+    var sk = card && card.skill;
+    var active = ch.sel === key;
+    var sin = sk && L.SINS[sk.sin] ? L.SINS[sk.sin].label : '';
+    var phys = sk ? L.PHYS[sk.phys] || '' : '';
+    var kind = sk && sk.kind !== 'attack' ? kindLabel(sk) : '';
+    var sub = [kind, phys, sin].filter(function (x) { return x; }).join('・');
+    var nums = sk ? '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') : '';
+    var no = key === 'def' ? 'スキル0' : 'スキル' + (card && card.num ? card.num : '');
+    return '<button type="button" class="srow' + (active ? ' picked' : '') + '" data-act="sel" data-sel="' + key + '"' + (editable && sk ? '' : ' disabled') + ' style="--c: ' + sinColor(sk && sk.sin) + ';">' +
+      '<span class="s-top"><b>' + esc(sk ? sk.name : '-') + '</b><span class="s-no">' + esc(no) + '</span>' + (active ? '<span class="s-pick">選択中</span>' : '') + '</span>' +
+      '<span class="s-sub">' + esc(sub) + (sub && nums ? ' ／ ' : '') + esc(nums) + '</span>' +
+      (active && sk && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
+  }
+
+  function playerPanel(S, ctx) {
+    var me = ctx.me;
+    if (me.role !== 'player') { return ''; }
+    var u = S.units[me.unitId];
+    if (!u) { return '<h3>あなたの選択</h3><p class="empty">下の「操作キャラ」から選んでください。</p>'; }
+    var head1 = '<h3><span>あなたの選択 <b>' + esc(u.name) + '</b></span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
+    if (u.dead) { return head1 + '<p class="empty">戦闘不能です。</p>'; }
+    if (S.phase === 'setup') { return head1 + '<p class="empty">戦闘開始をお待ちください。</p>'; }
+    if (u.stagger) { return head1 + '<p class="empty">混乱しているため行動できません。</p>'; }
+    var hand = L.handOf(S, u);
+    var ch = u.choice || {};
+    var editable = S.phase === 'player';
+    var html = head1 + '<p class="hint">① スキルを押す → ② 敵のスキル駒を押す</p>';
+    html += skillRow(S, u, 'c0', hand.sel[0], ch, editable) + skillRow(S, u, 'c1', hand.sel[1], ch, editable) + skillRow(S, u, 'def', hand.def, ch, editable);
+    if (hand.preview && hand.preview.skill) {
+      html += '<p class="note">次のカード: ' + esc(hand.preview.skill.name) + ' (スキル' + hand.preview.num + ')</p>';
+    }
+    var sel = L.chosenSkill(S, u);
+    var needs = sel && (sel.kind === 'attack' || sel.kind === 'defense');
+    if (needs) {
+      var P = ch.target ? L.getPiece(S, ch.target) : null;
+      var pairs = ctx.pairs || { matchOf: {}, allyMatch: {} };
+      var isDef = sel.kind === 'defense';
+      if (!P) {
+        html += '<p class="target warn">対象 → 未選択</p><p class="expl">' + (isDef ? '合わせる敵の攻撃スキル駒' : '攻撃する敵のスキル駒') + 'を押してください。' + (ctx.canSetTarget ? '' : '(もう一度スキルを押すと選び直せます)') + '</p>';
+      } else {
+        var g = L.getB(S, L.pieceRef(P));
+        var matched = pairs.matchOf[P.pid] === u.id;
+        var name = L.nameOf(S, L.pieceRef(P)) + (P.blank ? '(空き)' : '「' + ((L.pieceSkill(S, P) || {}).name || '') + '」');
+        var faster = g && L.num(u.spd, 0) > L.num(g.b.spd, 0);
+        var why;
+        if (matched) {
+          why = faster ? '速度が相手より上なので、自動でマッチ相手になり、相手の対象があなたに変わります。' : '相手があなたを狙っているので、マッチになります。';
+          if (isDef) { why = faster ? '速度が相手より上なので、守備を合わせられ、相手の対象があなたに変わります。' : '相手があなたを狙っているので、守備を合わせられます。'; }
+        } else if (pairs.matchOf[P.pid]) {
+          why = '同じ駒を後から選んだ味方がマッチ相手になるため、' + (isDef ? 'この守備は発動しません。' : '一方攻撃になります。');
+        } else if (P.blank) {
+          why = 'スキルを使わない部位への一方攻撃です。';
+        } else {
+          why = isDef ? '相手の方が速く、あなたを狙っていないため、この守備は発動しません。' : '相手の方が速く、あなたを狙っていないため、一方攻撃になります。';
+        }
+        html += '<p class="target">対象 → ' + esc(name) + (matched ? ' (マッチ)' : '') + '</p><p class="expl">' + esc(why) + (editable ? ' 確定前なら、もう一度スキルを押して選び直せます。' : '') + '</p>';
+      }
+    } else if (sel && sel.kind === 'counter') {
+      html += '<p class="expl">反撃: 最初に攻撃を受けた相手に、速度や矢印に関係なく自動で反撃します。</p>';
+    }
+    if (editable) {
+      if (ch.confirmed) { html += '<button type="button" class="btn confirm" data-act="unconfirm">確定を取り消す</button>'; }
+      else { html += '<button type="button" class="btn confirm primary" data-act="confirm"' + (L.canConfirm(S, u) ? '' : ' disabled') + '>確定する</button>'; }
+    } else if (S.phase === 'enemy') {
+      html += '<p class="note">敵の行動が決まるまでお待ちください。</p>';
+    } else if (S.phase === 'process') {
+      html += '<p class="note">戦闘処理中です。</p>';
+    }
+    return html;
+  }
+
   root.LCUI = {
-    esc: esc, stage: stage, head: head, playerPanel: playerPanel, gmPanel: gmPanel, kpPanel: kpPanel, planList: planList, logHtml: logHtml,
+    esc: esc, stage: stage, head: head, viewPanel: viewPanel, playerPanel: playerPanel, gmPanel: gmPanel, toolsPanel: toolsPanel, planList: planList, logHtml: logHtml,
     partPopup: partPopup, unitPopup: unitPopup, piecePopup: piecePopup, PHASE_LABEL: PHASE_LABEL
   };
 }(typeof self !== 'undefined' ? self : this));

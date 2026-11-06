@@ -483,7 +483,7 @@
   function gmConfirm(state) {
     A(state.pieces).forEach(function (p) {
       var sk = pieceSkill(state, p);
-      if (sk && (sk.kind === 'defense' || sk.kind === 'counter')) { p.target = null; }
+      if (sk && sk.kind === 'counter') { p.target = null; }
     });
     state.phase = 'player';
   }
@@ -494,10 +494,10 @@
       var u = state.units[id];
       if (u.side !== 'ally' || u.dead || u.stagger) { return; }
       var ch = u.choice;
-      if (!ch || ch.sel === 'def' || !ch.target) { return; }
+      if (!ch || !ch.target) { return; }
       var sk = chosenSkill(state, u);
-      if (!sk || sk.kind !== 'attack') { return; }
-      list.push({ id: id, ts: num(ch.ts, 0), pid: ch.target, spd: u.spd });
+      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
+      list.push({ id: id, ts: num(ch.ts, 0), pid: ch.target, spd: u.spd, def: sk.kind === 'defense' });
     });
     list.sort(function (a, b) { return a.ts - b.ts; });
     return list;
@@ -511,16 +511,19 @@
   function computePairs(state) {
     var matchOf = {};
     var allyMatch = {};
+    var defenders = {};
     allyChoiceList(state).forEach(function (a) {
       var P = getPiece(state, a.pid);
       if (!P) { return; }
       var sk = pieceSkill(state, P);
       if (sk && sk.kind !== 'attack') { return; }
-      if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; }
-      else if (P.target === a.id && !matchOf[P.pid]) { matchOf[P.pid] = a.id; }
+      if (a.def && !sk) { return; }
+      if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
+      else if (P.target === a.id && !matchOf[P.pid]) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
     });
     Object.keys(matchOf).forEach(function (pid) { allyMatch[matchOf[pid]] = pid; });
-    return { matchOf: matchOf, allyMatch: allyMatch };
+    Object.keys(defenders).forEach(function (pid) { if (!defenders[pid]) { delete defenders[pid]; } });
+    return { matchOf: matchOf, allyMatch: allyMatch, defenders: defenders };
   }
 
   function allConfirmed(state) {
@@ -536,10 +539,10 @@
   function canConfirm(state, unit) {
     var ch = unit.choice;
     if (!ch) { return false; }
-    if (ch.sel === 'def' || ch.sel === 'stag' || ch.sel === 'none') { return true; }
+    if (ch.sel === 'stag' || ch.sel === 'none') { return true; }
     var sk = chosenSkill(state, unit);
     if (!sk) { return false; }
-    if (sk.kind === 'defense' || sk.kind === 'counter') { return true; }
+    if (sk.kind === 'counter') { return true; }
     return !!ch.target;
   }
 
@@ -767,6 +770,7 @@
       applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1);
     }
     if (hit) { applyGrants(state, atk.ref, defRef, skill, 'hit'); }
+    return hit;
   }
 
   function consumeBranch(state, g, consume) {
@@ -820,6 +824,7 @@
       var sk = O(g.unit.skills)[0];
       var t = reactiveType(sk);
       if (!t) { return null; }
+      if (t !== 'counter' && !ch.defActive) { return null; }
       return {
         type: t,
         ref: defRef,
@@ -835,7 +840,7 @@
       if (found || P.unitId !== defRef.u || P.partIdx !== (defRef.p || 0)) { return; }
       var sk2 = pieceSkill(state, P);
       var t2 = reactiveType(sk2);
-      if (t2) {
+      if (t2 && (t2 === 'counter' || P.defActive)) {
         found = {
           type: t2,
           ref: defRef,
@@ -881,7 +886,7 @@
       var lg = getB(state, loser.ref);
       if (!isOut(wg) && !isOut(lg)) {
         if (winner.skill.kind === 'attack' || winner.skill.kind === 'counter') {
-          attackSeq(state, winner, loser.ref, matches, rng);
+          attackWithReactive(state, winner, loser.ref, matches, rng);
         } else {
           log(state, '  ' + nameOf(state, winner.ref) + ' は攻撃を防いだ');
           fx(state, winner.ref, '防御', 'guard');
@@ -898,9 +903,27 @@
     return { ref: pieceRef(P), skill: skill, coins: skill.coins.slice() };
   }
 
+  function activateEnemyDefense(state, allyId, partRef) {
+    var g = getB(state, partRef);
+    if (!g || g.unit.side !== 'enemy' || isOut(g) || g.b.stagger) { return; }
+    A(state.pieces).forEach(function (P) {
+      if (P.unitId !== partRef.u || P.partIdx !== (partRef.p || 0) || P.target !== allyId || P.defActive) { return; }
+      var sk = pieceSkill(state, P);
+      var t = reactiveType(sk);
+      if (t === 'guard' || t === 'evade') {
+        P.defActive = true;
+        log(state, nameOf(state, partRef) + ' の' + (t === 'evade' ? '回避' : '防御') + '「' + (sk.name || '') + '」が発動可能になった');
+      }
+    });
+  }
+
   function engage(state, atk, defRef, rng) {
+    attackWithReactive(state, atk, defRef, 0, rng);
+  }
+
+  function attackWithReactive(state, atk, defRef, matches, rng) {
     var react = findReactive(state, defRef);
-    if (!react) { attackSeq(state, atk, defRef, 0, rng); return; }
+    if (!react) { attackSeq(state, atk, defRef, matches, rng); return; }
     var skill = resolveSkill(state, defRef, react.raw, null);
     if (react.type === 'guard') {
       if (!react.used) {
@@ -911,18 +934,19 @@
         log(state, nameOf(state, defRef) + ' が防御「' + (skill.name || '') + '」でバリア ' + gr.power + ' を獲得');
         fx(state, defRef, 'バリア+' + gr.power, 'guard');
       }
-      attackSeq(state, atk, defRef, 0, rng);
+      attackSeq(state, atk, defRef, matches, rng);
       return;
     }
     if (react.type === 'evade') {
       var ev = { ref: defRef, skill: skill, active: !react.evadeOff, fail: react.fail };
-      attackSeq(state, atk, defRef, 0, rng, ev);
+      attackSeq(state, atk, defRef, matches, rng, ev);
       return;
     }
-    var doCounter = !react.used;
-    if (doCounter) { react.mark(); }
-    attackSeq(state, atk, defRef, 0, rng);
+    var gb = getB(state, defRef);
+    var landed = attackSeq(state, atk, defRef, matches, rng);
+    var doCounter = !react.used && (gb.unit.side === 'ally' || landed);
     if (!doCounter) { return; }
+    react.mark();
     var dg = getB(state, defRef);
     var ag = getB(state, atk.ref);
     if (isOut(dg) || isOut(ag) || dg.b.stagger) {
@@ -948,7 +972,9 @@
       if (u.dead) { return; }
       if (u.side === 'ally') {
         var ch = u.choice;
-        if (!ch || ch.sel === 'stag' || ch.sel === 'none') { return; }
+        if (!ch || ch.sel === 'stag' || ch.sel === 'none' || ch.sel === 'def') { return; }
+        var bsk = chosenSkill(state, u);
+        if (bsk && (bsk.kind === 'defense' || bsk.kind === 'counter')) { return; }
         entries.push({ kind: 'ally', unitId: id, spd: u.spd, done: false });
       }
     });
@@ -960,10 +986,10 @@
     state.plan = sorted;
     state.proc = { i: 0, pairs: computePairs(state) };
     state.phase = 'process';
-    A(state.pieces).forEach(function (P) { P.acted = false; P.defUsed = false; });
+    A(state.pieces).forEach(function (P) { P.acted = false; P.defUsed = false; P.defActive = false; P.evadeOff = false; });
     Object.keys(state.units).forEach(function (id) {
       var u = state.units[id];
-      if (u.side === 'ally' && u.choice) { u.choice.acted = false; u.choice.defUsed = false; }
+      if (u.side === 'ally' && u.choice) { u.choice.acted = false; u.choice.defUsed = false; u.choice.defActive = false; u.choice.evadeOff = false; }
     });
     log(state, '--- 戦闘開始 ---');
   }
@@ -997,6 +1023,7 @@
     ch.acted = true;
     log(state, u.name + ' が「' + (skill.name || '') + '」で ' + nameOf(state, pieceRef(P)) + ' を攻撃');
     var pairs = state.proc.pairs || { matchOf: {} };
+    activateEnemyDefense(state, u.id, pieceRef(P));
     var X = sideOfAlly(state, u, skill);
     var partnerOk = false;
     if (pairs.matchOf[P.pid] === u.id && !P.blank && !P.acted) {
@@ -1043,6 +1070,12 @@
     var skill = resolveSkill(state, ref, sk0, { u: allyId, p: null });
     applyGrants(state, ref, { u: allyId, p: null }, skill, 'use');
     log(state, nameOf(state, ref) + ' が「' + (skill.name || '') + '」で ' + au.name + ' を攻撃');
+    if (O(pairs.defenders)[P.pid] && au.choice && !au.stagger) {
+      au.choice.defActive = true;
+      au.choice.acted = true;
+      var dsk = chosenSkill(state, au);
+      log(state, au.name + ' の' + (dsk && dsk.sub === 'evade' ? '回避' : '防御') + '「' + (dsk ? dsk.name || '' : '') + '」が発動可能になった');
+    }
     var X = sideOfPiece(state, P, skill);
     var partnerOk = false;
     if (pairs.matchOf[P.pid] === allyId && au.choice && !au.choice.acted && !au.stagger) {
@@ -1055,6 +1088,7 @@
       if (ae) { ae.done = true; }
       var askill = resolveSkill(state, { u: au.id, p: null }, chosenSkill(state, au), ref);
       applyGrants(state, { u: au.id, p: null }, ref, askill, 'use');
+      activateEnemyDefense(state, au.id, ref);
       clash(state, X, sideOfAlly(state, au, askill), rng);
     } else {
       engage(state, X, { u: allyId, p: null }, rng);
@@ -1116,7 +1150,7 @@
       if (u.side !== 'ally' || u.dead) { return; }
       var ch = u.choice;
       ensureDeck(u, rng);
-      if (ch && ch.acted) {
+      if (ch && (ch.acted || ch.sel === 'def')) {
         var q = A(u.deck.q);
         if (ch.sel === 'def') { q.splice(0, 1); }
         else if (ch.sel === 'c0') { q.splice(0, 1); }
@@ -1154,7 +1188,7 @@
     var old = u.choice || {};
     u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, confirmed: false, ts: ts };
     var sk = chosenSkill(state, u);
-    if (sel === 'def' || (sk && (sk.kind === 'defense' || sk.kind === 'counter'))) { u.choice.target = null; }
+    if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { u.choice.target = null; }
   }
   function setTarget(state, unitId, pid, ts) {
     var u = state.units[unitId];

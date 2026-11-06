@@ -20,11 +20,14 @@
   var lastFxSeq = null;
   var firstState = true;
   var popupState = null;
+  var pressed = {};
+  var retarget = false;
 
   function loadMe() {
     var q = new URLSearchParams(location.search);
     var saved = null;
     try { saved = JSON.parse(sessionStorage.getItem('lc-me') || 'null'); } catch (e) { saved = null; }
+    if (saved && saved.role === 'kp') { saved.role = 'gm'; }
     if (saved && saved.room && !q.get('room')) { return saved; }
     if (q.get('room')) { return { room: q.get('room'), role: (saved && saved.role) || 'player', unitId: (saved && saved.unitId) || '' }; }
     return null;
@@ -62,19 +65,22 @@
 
   function ctxOf() {
     var u = me.unitId ? S.units[me.unitId] : null;
-    var kpgm = me.role === 'kp' || me.role === 'gm';
+    var kpgm = me.role === 'gm';
     var ctx = {
-      me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget,
+      me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false,
       canSeeEnemySpeed: kpgm,
       showEnemyTargets: S.phase !== 'enemy' || kpgm,
-      canSeeChoice: function (x) { return me.role === 'kp' || me.unitId === x.id || S.phase !== 'player'; },
+      canSeeChoice: function (x) { return me.role === 'gm' || me.unitId === x.id || S.phase !== 'player'; },
       pairs: null, targeting: false, selectedPid: null
     };
     ctx.pairs = S.phase === 'process' && S.proc && S.proc.pairs ? S.proc.pairs : L.computePairs(S);
     if (me.role === 'player' && u && !u.dead && !u.stagger && S.phase === 'player' && u.choice && u.choice.sel && u.choice.sel !== 'stag') {
       var sk = L.chosenSkill(S, u);
-      ctx.targeting = !!(sk && sk.kind === 'attack');
+      var isDefSel = !!(sk && sk.kind === 'defense');
+      ctx.targeting = !!(sk && (sk.kind === 'attack' || isDefSel));
+      ctx.targetAttackOnly = isDefSel;
       ctx.selectedPid = u.choice.target || null;
+      ctx.canSetTarget = ctx.targeting && (retarget || !ctx.selectedPid);
     }
     return ctx;
   }
@@ -91,12 +97,14 @@
     var ctx = ctxOf();
     setHtml($('head'), UI.head(S, ctx));
     setHtml($('stage'), UI.stage(S, ctx));
+    setHtml($('view'), UI.viewPanel(S, ctx));
     setHtml($('panel'), me.role === 'player' ? UI.playerPanel(S, ctx) : UI.gmPanel(S, ctx));
     setHtml($('plan'), UI.planList(S, ctx));
-    setHtml($('kp'), UI.kpPanel(S, ctx) + (me.role === 'gm' ? '' : ''));
+    setHtml($('gmtools'), UI.toolsPanel(S, ctx));
+    $('view').hidden = !$('view').innerHTML;
     $('panel').hidden = !$('panel').innerHTML;
     $('plan').hidden = !$('plan').innerHTML;
-    $('kp').hidden = !$('kp').innerHTML;
+    $('gmtools').hidden = !$('gmtools').innerHTML;
     var logEl = $('log');
     var before = logEl.querySelector('.log-body');
     var atBottom = !before || before.scrollTop + before.clientHeight >= before.scrollHeight - 8;
@@ -141,9 +149,9 @@
     svg.setAttribute('height', wrap.scrollHeight);
     svg.setAttribute('viewBox', '0 0 ' + wrap.scrollWidth + ' ' + wrap.scrollHeight);
     if (arrowMode === 'off' || S.phase === 'setup' || S.phase === 'over') { svg.innerHTML = ''; return; }
-    var kpgm = me.role === 'kp' || me.role === 'gm';
+    var kpgm = me.role === 'gm';
     var defs = '';
-    var colors = { gold: 'rgb(240, 200, 90)', red: 'rgb(230, 80, 80)', blue: 'rgb(120, 190, 240)' };
+    var colors = { gold: 'rgb(230, 180, 50)', red: 'rgb(232, 104, 96)', blue: 'rgb(110, 200, 235)' };
     Object.keys(colors).forEach(function (k) {
       defs += '<marker id="ah-' + k + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="' + colors[k] + '"/></marker>';
     });
@@ -152,17 +160,44 @@
       var dx = b.x - a.x;
       var dy = b.y - a.y;
       var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ax = a.x + dx / len * 18;
-      var ay = a.y + dy / len * 18;
-      var bx = b.x - dx / len * 18;
-      var by = b.y - dy / len * 18;
+      var ax = a.x + dx / len * 4;
+      var ay = a.y + dy / len * 4;
+      var bx = b.x - dx / len * 4;
+      var by = b.y - dy / len * 4;
       var s = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
         (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + (spark ? ' marker-start="url(#ah-' + color + ')"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
       if (spark) { s += '<text x="' + ((ax + bx) / 2).toFixed(1) + '" y="' + ((ay + by) / 2 + 6).toFixed(1) + '" text-anchor="middle" font-size="20" fill="' + colors.gold + '">✸</text>'; }
       return s;
     }
-    function tokEl(id) { return document.querySelector('#stage [data-tok="' + id + '"] .token, #stage [data-tok="' + id + '"].token'); }
-    function pieceEl(pid) { return document.querySelector('#stage [data-piece="' + pid + '"]'); }
+    function splitLine(pc, ac, dashed, dim) {
+      var mx = (pc.x + ac.x) / 2;
+      var my = (pc.y + ac.y) / 2;
+      var dx = ac.x - pc.x;
+      var dy = ac.y - pc.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len;
+      var uy = dy / len;
+      function seg(x1, y1, x2, y2, color) {
+        return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
+          (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
+      }
+      return seg(mx, my, pc.x - ux * 4, pc.y - uy * 4, 'blue') + seg(mx, my, ac.x + ux * 4, ac.y + uy * 4, 'red');
+    }
+    var used = {};
+    function tokEl(id) {
+      var el = document.querySelector('#stage .ally[data-tok="' + id + '"] .a-ring');
+      if (!el) { return null; }
+      var c = center(el, base);
+      var n = used[id] || 0;
+      used[id] = n + 1;
+      return { x: c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, y: c.y - c.h / 2 - 38 };
+    }
+    function pieceEl(pid) {
+      var el = document.querySelector('#stage [data-piece="' + pid + '"] .p-frame');
+      if (!el) { return null; }
+      var c = center(el, base);
+      return { x: c.x, y: c.y + c.h / 2 + 14 };
+    }
     var pairs = ctx.pairs || { matchOf: {} };
     var drawnMatch = {};
     Object.keys(S.units).forEach(function (id) {
@@ -170,31 +205,36 @@
       if (u.side !== 'ally' || u.dead || u.stagger || !u.choice || !u.choice.target) { return; }
       if (S.phase === 'enemy') { return; }
       var sk = L.chosenSkill(S, u);
-      if (!sk || sk.kind !== 'attack') { return; }
+      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
       if (arrowMode === 'mine' && me.unitId !== id) { return; }
       var te = tokEl(id);
       var pe = pieceEl(u.choice.target);
       if (!te || !pe) { return; }
       var matched = pairs.matchOf[u.choice.target] === id;
+      var dashed = S.phase === 'player' && !u.choice.confirmed;
       if (matched) { drawnMatch[u.choice.target] = true; }
-      out += line(center(te, base), center(pe, base), matched ? 'gold' : 'blue', S.phase === 'player' && !u.choice.confirmed, matched, u.choice.acted);
+      if (matched && sk.kind === 'defense') {
+        out += splitLine(pe, te, dashed, u.choice.defActive);
+      } else {
+        out += line(te, pe, matched ? 'gold' : 'blue', dashed, matched, u.choice.acted);
+      }
     });
     A(S.pieces).forEach(function (P) {
       if (!P.target || drawnMatch[P.pid]) { return; }
       if (S.phase === 'enemy' && !kpgm) { return; }
       var sk = L.pieceSkill(S, P);
-      if (!sk || sk.kind !== 'attack') { return; }
+      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
       if (arrowMode === 'mine' && me.unitId !== P.target) { return; }
       var te = tokEl(P.target);
       var pe = pieceEl(P.pid);
       if (!te || !pe) { return; }
-      out += line(center(pe, base), center(te, base), 'red', S.phase === 'enemy', false, P.acted);
+      out += line(pe, te, 'red', S.phase === 'enemy', false, P.acted);
     });
     svg.innerHTML = out;
   }
 
   function updateAuto() {
-    var should = auto && me && me.role === 'kp' && S.phase === 'process';
+    var should = auto && me && me.role === 'gm' && S.phase === 'process';
     if (should && !autoTimer) {
       autoTimer = setInterval(function () {
         if (!auto || S.phase !== 'process') { return; }
@@ -259,12 +299,28 @@
     'info-part': function (el) { showPopup('part', el.dataset.ref); },
     'info-unit': function (el) { showPopup('unit', el.dataset.id); },
     'info-piece': function (el) { showPopup('piece', el.dataset.pid); },
+    press: function (el) {
+      var pid = el.dataset.pid;
+      var uid = pid.split('|')[0];
+      var u = S.units[uid];
+      if (u && u.kind === 'abnormality') { pressed[uid] = pressed[uid] === pid ? null : pid; }
+      var blank = /\|b$/.test(pid);
+      if (!blank) { popupState = { kind: 'piece', id: pid }; }
+      render();
+    },
+    arrows: function (el) { arrowMode = el.dataset.mode; render(); },
     target: function (el) {
       var id = me.unitId;
+      var pid = el.dataset.pid;
+      var uid = pid.split('|')[0];
+      var u = S.units[uid];
+      if (u && u.kind === 'abnormality') { pressed[uid] = pid; }
+      retarget = false;
       commit(function (s) { L.setTarget(s, id, el.dataset.pid, Date.now()); });
     },
     sel: function (el) {
       var id = me.unitId;
+      retarget = true;
       commit(function (s) { L.selectChoice(s, id, el.dataset.sel, Date.now()); });
     },
     confirm: function () {
@@ -276,8 +332,8 @@
       commit(function (s) { var u = s.units[id]; if (u && u.choice) { u.choice.confirmed = false; } });
     },
     'gm-confirm': function () {
-      var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && sk.kind === 'attack' && !P.target; });
-      if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃は行われません)')) { return; }
+      var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && (sk.kind === 'attack' || sk.kind === 'defense') && !P.target; });
+      if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃・守備は行われません)')) { return; }
       commit(function (s) { L.gmConfirm(s); });
     },
     'load-sample': function () {
@@ -395,6 +451,11 @@
   document.addEventListener('click', function (ev) {
     if (ev.target.id === 'popup') { actions.close(); return; }
     var el = ev.target.closest('[data-act]');
+    if (!el && ev.target.closest('#stage')) {
+      var had = Object.keys(pressed).some(function (k) { return pressed[k]; });
+      if (had) { pressed = {}; render(); }
+      return;
+    }
     if (!el || !actions[el.dataset.act]) { return; }
     if (el.disabled) { return; }
     ev.preventDefault();
