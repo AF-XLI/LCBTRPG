@@ -22,6 +22,9 @@
   var popupState = null;
   var pressed = {};
   var retarget = false;
+  var gmPick = null;
+  var logOpen = false;
+  var prevPhase = null;
 
   function loadMe() {
     var q = new URLSearchParams(location.search);
@@ -67,7 +70,7 @@
     var u = me.unitId ? S.units[me.unitId] : null;
     var kpgm = me.role === 'gm';
     var ctx = {
-      me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false,
+      me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false, gmPick: gmPick,
       canSeeEnemySpeed: kpgm,
       showEnemyTargets: S.phase !== 'enemy' || kpgm,
       canSeeChoice: function (x) { return me.role === 'gm' || me.unitId === x.id || S.phase !== 'player'; },
@@ -97,20 +100,25 @@
     var ctx = ctxOf();
     setHtml($('head'), UI.head(S, ctx));
     setHtml($('stage'), UI.stage(S, ctx));
-    setHtml($('view'), UI.viewPanel(S, ctx));
     setHtml($('panel'), me.role === 'player' ? UI.playerPanel(S, ctx) : UI.gmPanel(S, ctx));
     setHtml($('plan'), UI.planList(S, ctx));
     setHtml($('gmtools'), UI.toolsPanel(S, ctx));
-    $('view').hidden = !$('view').innerHTML;
     $('panel').hidden = !$('panel').innerHTML;
     $('plan').hidden = !$('plan').innerHTML;
     $('gmtools').hidden = !$('gmtools').innerHTML;
-    var logEl = $('log');
-    var before = logEl.querySelector('.log-body');
-    var atBottom = !before || before.scrollTop + before.clientHeight >= before.scrollHeight - 8;
-    setHtml(logEl, UI.logHtml(S));
-    var body = logEl.querySelector('.log-body');
-    if (body && atBottom) { body.scrollTop = body.scrollHeight; }
+    setHtml($('dock'), UI.dock(S, ctx));
+    $('dock').hidden = !$('dock').innerHTML;
+    if (prevPhase !== null && prevPhase !== 'process' && S.phase === 'process') { logOpen = true; }
+    prevPhase = S.phase;
+    var logEl = $('logwin');
+    logEl.hidden = !logOpen;
+    if (logOpen) {
+      var before = logEl.querySelector('.log-body');
+      var atBottom = !before || before.scrollTop + before.clientHeight >= before.scrollHeight - 8;
+      setHtml(logEl, '<div class="lw-head"><b>ログ(ラウンド ' + S.round + ')</b><button type="button" class="btn small ghost" data-act="log-toggle">閉じる</button></div>' + UI.logHtml(S));
+      var body = logEl.querySelector('.log-body');
+      if (body && atBottom) { body.scrollTop = body.scrollHeight; }
+    }
     document.body.dataset.phase = S.phase;
     drawArrows(ctx);
     playFx();
@@ -156,41 +164,38 @@
       defs += '<marker id="ah-' + k + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="' + colors[k] + '"/></marker>';
     });
     var out = '<defs>' + defs + '</defs>';
-    function line(a, b, color, dashed, spark, dim) {
+    function seg(x1, y1, x2, y2, color, dashed, dim) {
+      return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
+        (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
+    }
+    function unit(a, b) {
       var dx = b.x - a.x;
       var dy = b.y - a.y;
       var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ax = a.x + dx / len * 4;
-      var ay = a.y + dy / len * 4;
-      var bx = b.x - dx / len * 4;
-      var by = b.y - dy / len * 4;
-      var s = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
-        (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + (spark ? ' marker-start="url(#ah-' + color + ')"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
-      if (spark) { s += '<text x="' + ((ax + bx) / 2).toFixed(1) + '" y="' + ((ay + by) / 2 + 6).toFixed(1) + '" text-anchor="middle" font-size="20" fill="' + colors.gold + '">✸</text>'; }
-      return s;
+      return { x: dx / len, y: dy / len };
     }
-    function splitLine(pc, ac, dashed, dim) {
-      var mx = (pc.x + ac.x) / 2;
-      var my = (pc.y + ac.y) / 2;
-      var dx = ac.x - pc.x;
-      var dy = ac.y - pc.y;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ux = dx / len;
-      var uy = dy / len;
-      function seg(x1, y1, x2, y2, color) {
-        return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="' + colors[color] + '" stroke-width="2.5"' +
-          (dashed ? ' stroke-dasharray="6 5"' : '') + (dim ? ' opacity="0.35"' : '') + ' marker-end="url(#ah-' + color + ')"/>';
-      }
-      return seg(mx, my, pc.x - ux * 4, pc.y - uy * 4, 'blue') + seg(mx, my, ac.x + ux * 4, ac.y + uy * 4, 'red');
+    function line(a, b, color, dashed, dim) {
+      var u = unit(a, b);
+      return seg(a.x + u.x * 4, a.y + u.y * 4, b.x - u.x * 4, b.y - u.y * 4, color, dashed, dim);
+    }
+    function meet(ac, pc, cA, cP, dashedA, spark, dim) {
+      var mx = (ac.x + pc.x) / 2;
+      var my = (ac.y + pc.y) / 2;
+      var ua = unit(ac, pc);
+      var gap = spark ? 14 : 6;
+      var s = seg(ac.x + ua.x * 4, ac.y + ua.y * 4, mx - ua.x * gap, my - ua.y * gap, cA, dashedA, dim) +
+        seg(pc.x - ua.x * 4, pc.y - ua.y * 4, mx + ua.x * gap, my + ua.y * gap, cP, false, dim);
+      if (spark) { s += '<text x="' + mx.toFixed(1) + '" y="' + (my + 7).toFixed(1) + '" text-anchor="middle" font-size="22" fill="' + colors.gold + '">✸</text>'; }
+      return s;
     }
     var used = {};
     function tokEl(id) {
-      var el = document.querySelector('#stage .ally[data-tok="' + id + '"] .a-ring');
+      var el = document.querySelector('#stage .ally[data-tok="' + id + '"] .a-piece .p-frame');
       if (!el) { return null; }
       var c = center(el, base);
       var n = used[id] || 0;
       used[id] = n + 1;
-      return { x: c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, y: c.y - c.h / 2 - 38 };
+      return { x: c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, y: c.y - c.h / 2 - 2 };
     }
     function pieceEl(pid) {
       var el = document.querySelector('#stage [data-piece="' + pid + '"] .p-frame');
@@ -214,9 +219,11 @@
       var dashed = S.phase === 'player' && !u.choice.confirmed;
       if (matched) { drawnMatch[u.choice.target] = true; }
       if (matched && sk.kind === 'defense') {
-        out += splitLine(pe, te, dashed, u.choice.defActive);
+        out += meet(te, pe, 'blue', 'red', dashed, false, u.choice.defActive);
+      } else if (matched) {
+        out += meet(te, pe, 'gold', 'gold', dashed, true, u.choice.acted);
       } else {
-        out += line(te, pe, matched ? 'gold' : 'blue', dashed, matched, u.choice.acted);
+        out += line(te, pe, 'blue', dashed, u.choice.acted);
       }
     });
     A(S.pieces).forEach(function (P) {
@@ -228,7 +235,7 @@
       var te = tokEl(P.target);
       var pe = pieceEl(P.pid);
       if (!te || !pe) { return; }
-      out += line(pe, te, 'red', S.phase === 'enemy', false, P.acted);
+      out += line(pe, te, 'red', S.phase === 'enemy', P.acted);
     });
     svg.innerHTML = out;
   }
@@ -254,6 +261,7 @@
     var html = '';
     if (popupState.kind === 'part') { html = UI.partPopup(S, popupState.id, ctxOf()); }
     if (popupState.kind === 'unit') { html = UI.unitPopup(S, popupState.id); }
+    if (popupState.kind === 'skill') { html = UI.skillPopup(S, ctxOf()); }
     if (popupState.kind === 'piece') { html = UI.piecePopup(S, popupState.id); }
     if (!html) { popupState = null; el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
@@ -308,6 +316,32 @@
       if (!blank) { popupState = { kind: 'piece', id: pid }; }
       render();
     },
+    'log-toggle': function () { logOpen = !logOpen; render(); },
+    'gm-pick': function (el) {
+      var pid = el.dataset.pid;
+      var uid = pid.split('|')[0];
+      var u = S.units[uid];
+      if (u && u.kind === 'abnormality') { pressed[uid] = pid; }
+      gmPick = gmPick === pid ? null : pid;
+      render();
+    },
+    'ally-piece': function (el) {
+      var id = el.dataset.id;
+      var u = S.units[id];
+      if (!u) { return; }
+      if (me.role === 'gm' && S.phase === 'enemy' && gmPick && !u.dead) {
+        var pid = gmPick;
+        gmPick = null;
+        commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = id; } }); });
+        return;
+      }
+      if (me.role === 'player' && me.unitId === id && S.phase === 'player' && !u.dead && !u.stagger) {
+        popupState = { kind: 'skill', id: id };
+        refreshPopup();
+        return;
+      }
+      showPopup('unit', id);
+    },
     arrows: function (el) { arrowMode = el.dataset.mode; render(); },
     target: function (el) {
       var id = me.unitId;
@@ -321,6 +355,7 @@
     sel: function (el) {
       var id = me.unitId;
       retarget = true;
+      popupState = null;
       commit(function (s) { L.selectChoice(s, id, el.dataset.sel, Date.now()); });
     },
     confirm: function () {
@@ -453,7 +488,7 @@
     var el = ev.target.closest('[data-act]');
     if (!el && ev.target.closest('#stage')) {
       var had = Object.keys(pressed).some(function (k) { return pressed[k]; });
-      if (had) { pressed = {}; render(); }
+      if (had || gmPick) { pressed = {}; gmPick = null; render(); }
       return;
     }
     if (!el || !actions[el.dataset.act]) { return; }
