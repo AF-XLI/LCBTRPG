@@ -86,10 +86,11 @@
           "noSp": false,
           "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "gluttony": "weak", "wrath": "normal", "lust": "normal", "sloth": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
           "skills": {
+            "dodge": { "name": "身をかわす", "kind": "defense", "sub": "evade", "sin": "gluttony", "phys": "slash", "tier": 1, "base": 2, "coins": [3, 3], "text": "回避" },
             "claw": { "name": "切り裂き", "kind": "attack", "sin": "gluttony", "phys": "slash", "tier": 2, "base": 5, "coins": [3, 3, 3], "text": "対象に火傷2/2を付与", "grants": [{ "status": "burn", "p": 2, "c": 2, "to": "target", "when": "hit" }] }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["claw"]] }
+            { "name": "通常", "loop": [["claw"], ["dodge"]] }
           ]
         }
       ]
