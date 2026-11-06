@@ -516,8 +516,7 @@
       var P = getPiece(state, a.pid);
       if (!P) { return; }
       var sk = pieceSkill(state, P);
-      if (sk && sk.kind !== 'attack') { return; }
-      if (a.def && !sk) { return; }
+      if (!sk || sk.kind !== 'attack') { return; }
       if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
       else if (P.target === a.id && !matchOf[P.pid]) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
     });
