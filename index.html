@@ -14,8 +14,7 @@
     <label class="field">ルームID<input id="lobbyRoom" type="text" maxlength="40" placeholder="例: table1" autocomplete="off"></label>
     <label class="field">役割
       <select id="lobbyRole">
-        <option value="kp">KP(進行・全操作)</option>
-        <option value="gm">GM(敵の行動決定)</option>
+        <option value="gm">GM(進行・敵の行動決定・全操作)</option>
         <option value="player" selected>プレイヤー</option>
         <option value="observer">観戦</option>
       </select>
@@ -31,9 +30,10 @@
         <svg id="arrows" class="arrows" xmlns="http://www.w3.org/2000/svg"></svg>
       </section>
       <aside class="side">
+        <div id="view" class="panel view"></div>
         <div id="panel" class="panel"></div>
         <div id="plan" class="plan"></div>
-        <div id="kp" class="panel"></div>
+        <div id="gmtools" class="panel"></div>
         <div id="log" class="log"></div>
       </aside>
     </div>
