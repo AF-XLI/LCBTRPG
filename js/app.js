@@ -182,10 +182,19 @@
       var mx = (ac.x + pc.x) / 2;
       var my = (ac.y + pc.y) / 2;
       var ua = unit(ac, pc);
-      var gap = spark ? 14 : 6;
+      var gap = 3;
       var s = seg(ac.x + ua.x * 4, ac.y + ua.y * 4, mx - ua.x * gap, my - ua.y * gap, cA, dashedA, dim) +
         seg(pc.x - ua.x * 4, pc.y - ua.y * 4, mx + ua.x * gap, my + ua.y * gap, cP, false, dim);
-      if (spark) { s += '<text x="' + mx.toFixed(1) + '" y="' + (my + 7).toFixed(1) + '" text-anchor="middle" font-size="22" fill="' + colors.gold + '">✸</text>'; }
+      if (spark) {
+        var rays = '';
+        for (var i = 0; i < 10; i += 1) {
+          var t = Math.PI * 2 * i / 10 + 0.3;
+          var r1 = i % 2 ? 6 : 5;
+          var r2 = i % 2 ? 12 : 17;
+          rays += '<line x1="' + (Math.cos(t) * r1).toFixed(1) + '" y1="' + (Math.sin(t) * r1).toFixed(1) + '" x2="' + (Math.cos(t) * r2).toFixed(1) + '" y2="' + (Math.sin(t) * r2).toFixed(1) + '"/>';
+        }
+        s += '<g transform="translate(' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')"' + (dim ? ' opacity="0.35"' : '') + '><g class="spark">' + rays + '<circle r="3.5"/></g></g>';
+      }
       return s;
     }
     var used = {};
@@ -261,6 +270,7 @@
     var html = '';
     if (popupState.kind === 'part') { html = UI.partPopup(S, popupState.id, ctxOf()); }
     if (popupState.kind === 'unit') { html = UI.unitPopup(S, popupState.id); }
+    if (popupState.kind === 'allypiece') { html = UI.allyPiecePopup(S, popupState.id, ctxOf()); }
     if (popupState.kind === 'skill') { html = UI.skillPopup(S, ctxOf()); }
     if (popupState.kind === 'piece') { html = UI.piecePopup(S, popupState.id); }
     if (!html) { popupState = null; el.hidden = true; el.innerHTML = ''; return; }
@@ -316,6 +326,7 @@
       if (!blank) { popupState = { kind: 'piece', id: pid }; }
       render();
     },
+    'skill-list': function () { popupState = { kind: 'skill', id: me.unitId }; refreshPopup(); },
     'log-toggle': function () { logOpen = !logOpen; render(); },
     'gm-pick': function (el) {
       var pid = el.dataset.pid;
@@ -335,6 +346,8 @@
         commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = id; } }); });
         return;
       }
+      var shown = S.phase !== 'enemy' && !u.dead && !u.stagger && u.choice && u.choice.sel && L.chosenSkill(S, u);
+      if (shown) { showPopup('allypiece', id); return; }
       if (me.role === 'player' && me.unitId === id && S.phase === 'player' && !u.dead && !u.stagger) {
         popupState = { kind: 'skill', id: id };
         refreshPopup();
