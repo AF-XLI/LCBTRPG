@@ -207,8 +207,9 @@
   }
 
   function logHtml(S) {
-    var lines = A(S.log);
-    return '<h3>ログ</h3><div class="log-body">' + lines.map(function (t) { return '<div>' + esc(t) + '</div>'; }).join('') + '</div>';
+    var key = 'R' + S.round + ' ';
+    var lines = A(S.log).filter(function (t) { return String(t).indexOf(key) === 0; });
+    return '<div class="log-body">' + lines.map(function (t) { return '<div>' + esc(String(t).slice(key.length)) + '</div>'; }).join('') + '</div>';
   }
 
   function toolsPanel(S, ctx) {
@@ -388,7 +389,9 @@
     var sub = multi ? part.name : '';
     if (sk && sk.kind !== 'attack') { sub += (sub ? '・' : '') + kindLabel(sk); }
     var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
-    return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
+    var gmAct = ctx.me.role === 'gm' && S.phase === 'enemy' && sk && !out && (sk.kind === 'attack' || sk.kind === 'defense');
+    if (ctx.gmPick === P.pid) { cls += ' picked'; }
+    return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-label">' + esc(sk ? sk.name : '?') + '</span>' +
       '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier) + '<span class="p-letter">' + esc(letter) + '</span></span>' +
       '<span class="p-sub">' + esc(sub) + '</span></button>';
@@ -460,16 +463,26 @@
     var ring = 'conic-gradient(from 190deg, rgb(232, 104, 96) 0deg ' + deg + 'deg, rgb(70, 46, 44) ' + deg + 'deg 280deg, transparent 280deg 360deg)';
     var circle = spCircle(u.sp);
     var ch = u.choice;
-    var showChoice = S.phase === 'player' || S.phase === 'process' || S.phase === 'roundEnd';
-    var skill = '';
-    var skillCls = '';
-    if (showChoice && !u.dead) {
-      if (u.stagger) { skill = '—'; skillCls = ' muted'; }
-      else if (ch && ch.sel) {
-        var sk = L.chosenSkill(S, u);
-        skill = sk ? sk.name || '' : '';
-        if (!skill) { skill = '未選択'; skillCls = ' muted'; }
-      } else { skill = '未選択'; skillCls = ' muted'; }
+    var showPiece = S.phase !== 'setup' && S.phase !== 'over';
+    var sk = null;
+    var pieceCls = 'piece a-piece';
+    var label = '未選択';
+    var sub = '';
+    var kind = 'blank';
+    if (u.dead) { label = ''; kind = 'destroyed'; }
+    else if (u.stagger) { label = '混乱'; }
+    else if (ch && ch.sel && S.phase !== 'enemy') {
+      sk = L.chosenSkill(S, u);
+      if (sk) { label = sk.name || ''; kind = 'skill'; sub = sk.kind !== 'attack' ? kindLabel(sk) : ''; }
+    }
+    if (ctx.gmPick && !u.dead) { pieceCls += ' picked'; }
+    if (ch && ch.acted) { pieceCls += ' acted'; }
+    var piece = '';
+    if (showPiece) {
+      piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' +
+        '<span class="p-label' + (kind === 'skill' ? '' : ' muted') + '">' + esc(label) + '</span>' +
+        '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier, kind) + '</span>' +
+        '<span class="p-sub">' + esc(sub) + '</span></button>';
     }
     var state = '';
     if (u.dead) { state = '<span class="a-state down">戦闘不能</span>'; }
@@ -480,7 +493,7 @@
     var spd = S.phase === 'setup' || u.dead ? '&nbsp;' : String(L.num(u.spd, 0));
     var face = u.img ? '<img class="a-img" src="' + esc(u.img) + '" alt="">' : esc(String(u.name || '?').charAt(0));
     return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '" data-act="info-unit" data-id="' + esc(u.id) + '">' +
-      '<span class="a-skill' + skillCls + '">' + esc(skill) + '&nbsp;</span>' +
+      piece +
       '<span class="a-spd" title="速度">' + spd + '</span>' +
       '<div class="a-ring" style="background: ' + ring + ';"><span class="a-face">' + face + '</span>' +
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
@@ -528,29 +541,26 @@
       var map = { enemy: ['gm-confirm', '敵の行動を確定'], player: ['start-process', '戦闘開始'], process: ['step', '1手進める'], roundEnd: ['next-round', '次のラウンドへ'] };
       if (map[S.phase]) { btn = '<button type="button" class="btn head-btn" data-act="' + map[S.phase][0] + '">' + map[S.phase][1] + '</button>'; }
     }
-    return '<div class="head-main"><b class="title">戦闘卓</b><span class="room">部屋 ' + esc(me.room) + '</span></div>' +
-      '<div class="head-center">ラウンド ' + S.round + ' ・ ' + PHASE_LABEL[S.phase] + '</div>' +
-      '<div class="head-right">' + count + btn + '<span class="chip">' + ROLE_LABEL[me.role] + '</span>' +
-      '<span class="chip conn ' + ctx.conn + '">' + (ctx.mode === 'firebase' ? (ctx.conn === 'online' ? '接続中' : '切断') : 'ローカル') + '</span>' +
-      '<button type="button" class="btn small ghost" data-act="leave">退室</button></div>';
-  }
-
-  function viewPanel(S, ctx) {
-    var me = ctx.me;
-    var html = '';
+    var tools = '';
     if (me.role === 'player') {
       var opts = '';
       Object.keys(S.units).forEach(function (id) {
         if (S.units[id].side === 'ally') { opts += '<option value="' + esc(id) + '"' + (me.unitId === id ? ' selected' : '') + '>' + esc(S.units[id].name) + '</option>'; }
       });
-      html += '<label class="inline-field">操作キャラ<select data-change="unit"><option value="">選択してください</option>' + opts + '</select></label>';
+      tools += '<label class="inline">操作キャラ<select data-change="unit"><option value="">選択</option>' + opts + '</select></label>';
     }
-    var modes = me.role === 'player' ? [['all', '全員'], ['mine', '自分に関わるものだけ'], ['off', 'なし']] : [['all', '表示'], ['off', 'なし']];
-    html += '<h3>矢印の表示</h3><div class="seg">' + modes.map(function (m) {
+    var modes = me.role === 'player' ? [['all', '矢印:全員'], ['mine', '自分のみ'], ['off', 'なし']] : [['all', '矢印:表示'], ['off', 'なし']];
+    tools += '<span class="seg">' + modes.map(function (m) {
       return '<button type="button" class="seg-b' + (ctx.arrowMode === m[0] ? ' on' : '') + '" data-act="arrows" data-mode="' + m[0] + '">' + m[1] + '</button>';
-    }).join('') + '</div>';
-    return html;
+    }).join('') + '</span><button type="button" class="btn small ghost" data-act="log-toggle">ログ</button>';
+    return '<div class="head-main"><b class="title">戦闘卓</b><span class="room">部屋 ' + esc(me.room) + '</span></div>' +
+      '<div class="head-center">ラウンド ' + S.round + ' ・ ' + PHASE_LABEL[S.phase] + '</div>' +
+      '<div class="head-right">' + tools + count + btn + '<span class="chip">' + ROLE_LABEL[me.role] + '</span>' +
+      '<span class="chip conn ' + ctx.conn + '">' + (ctx.mode === 'firebase' ? (ctx.conn === 'online' ? '接続中' : '切断') : 'ローカル') + '</span>' +
+      '<button type="button" class="btn small ghost" data-act="leave">退室</button></div>';
   }
+
+  function viewPanel() { return ''; }
 
   function skillRow(S, u, key, card, ch, editable) {
     var sk = card && card.skill;
@@ -567,65 +577,37 @@
       (active && sk && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
   }
 
-  function playerPanel(S, ctx) {
+  function skillPopup(S, ctx) {
     var me = ctx.me;
-    if (me.role !== 'player') { return ''; }
     var u = S.units[me.unitId];
-    if (!u) { return '<h3>あなたの選択</h3><p class="empty">下の「操作キャラ」から選んでください。</p>'; }
-    var head1 = '<h3><span>あなたの選択 <b>' + esc(u.name) + '</b></span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
-    if (u.dead) { return head1 + '<p class="empty">戦闘不能です。</p>'; }
-    if (S.phase === 'setup') { return head1 + '<p class="empty">戦闘開始をお待ちください。</p>'; }
-    if (u.stagger) { return head1 + '<p class="empty">混乱しているため行動できません。</p>'; }
+    if (!u || u.dead || u.stagger || S.phase !== 'player') { return ''; }
     var hand = L.handOf(S, u);
     var ch = u.choice || {};
-    var editable = S.phase === 'player';
-    var html = head1 + '<p class="hint">① スキルを押す → ② 敵のスキル駒を押す</p>';
-    html += skillRow(S, u, 'c0', hand.sel[0], ch, editable) + skillRow(S, u, 'c1', hand.sel[1], ch, editable) + skillRow(S, u, 'def', hand.def, ch, editable);
+    var html = '<h3><span>' + esc(u.name) + ' のスキル</span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
+    html += skillRow(S, u, 'c0', hand.sel[0], ch, true) + skillRow(S, u, 'c1', hand.sel[1], ch, true) + skillRow(S, u, 'def', hand.def, ch, true);
     if (hand.preview && hand.preview.skill) {
       html += '<p class="note">次のカード: ' + esc(hand.preview.skill.name) + ' (スキル' + hand.preview.num + ')</p>';
-    }
-    var sel = L.chosenSkill(S, u);
-    var needs = sel && (sel.kind === 'attack' || sel.kind === 'defense');
-    if (needs) {
-      var P = ch.target ? L.getPiece(S, ch.target) : null;
-      var pairs = ctx.pairs || { matchOf: {}, allyMatch: {} };
-      var isDef = sel.kind === 'defense';
-      if (!P) {
-        html += '<p class="target warn">対象 → 未選択</p><p class="expl">' + (isDef ? '合わせる敵の攻撃スキル駒' : '攻撃する敵のスキル駒') + 'を押してください。' + (ctx.canSetTarget ? '' : '(もう一度スキルを押すと選び直せます)') + '</p>';
-      } else {
-        var g = L.getB(S, L.pieceRef(P));
-        var matched = pairs.matchOf[P.pid] === u.id;
-        var name = L.nameOf(S, L.pieceRef(P)) + (P.blank ? '(空き)' : '「' + ((L.pieceSkill(S, P) || {}).name || '') + '」');
-        var faster = g && L.num(u.spd, 0) > L.num(g.b.spd, 0);
-        var why;
-        if (matched) {
-          why = faster ? '速度が相手より上なので、自動でマッチ相手になり、相手の対象があなたに変わります。' : '相手があなたを狙っているので、マッチになります。';
-          if (isDef) { why = faster ? '速度が相手より上なので、守備を合わせられ、相手の対象があなたに変わります。' : '相手があなたを狙っているので、守備を合わせられます。'; }
-        } else if (pairs.matchOf[P.pid]) {
-          why = '同じ駒を後から選んだ味方がマッチ相手になるため、' + (isDef ? 'この守備は発動しません。' : '一方攻撃になります。');
-        } else if (P.blank) {
-          why = 'スキルを使わない部位への一方攻撃です。';
-        } else {
-          why = isDef ? '相手の方が速く、あなたを狙っていないため、この守備は発動しません。' : '相手の方が速く、あなたを狙っていないため、一方攻撃になります。';
-        }
-        html += '<p class="target">対象 → ' + esc(name) + (matched ? ' (マッチ)' : '') + '</p><p class="expl">' + esc(why) + (editable ? ' 確定前なら、もう一度スキルを押して選び直せます。' : '') + '</p>';
-      }
-    } else if (sel && sel.kind === 'counter') {
-      html += '<p class="expl">反撃: 最初に攻撃を受けた相手に、速度や矢印に関係なく自動で反撃します。</p>';
-    }
-    if (editable) {
-      if (ch.confirmed) { html += '<button type="button" class="btn confirm" data-act="unconfirm">確定を取り消す</button>'; }
-      else { html += '<button type="button" class="btn confirm primary" data-act="confirm"' + (L.canConfirm(S, u) ? '' : ' disabled') + '>確定する</button>'; }
-    } else if (S.phase === 'enemy') {
-      html += '<p class="note">敵の行動が決まるまでお待ちください。</p>';
-    } else if (S.phase === 'process') {
-      html += '<p class="note">戦闘処理中です。</p>';
     }
     return html;
   }
 
+  function playerPanel() { return ''; }
+
+  function dock(S, ctx) {
+    var me = ctx.me;
+    if (me.role !== 'player' || S.phase !== 'player') { return ''; }
+    var u = S.units[me.unitId];
+    if (!u || u.dead || u.stagger) { return ''; }
+    var ch = u.choice || {};
+    var hint = ch.confirmed ? '確定済みです' : '自分の駒を押してスキルを選び、敵の駒を押して対象を決めます';
+    var btn = ch.confirmed
+      ? '<button type="button" class="btn confirm" data-act="unconfirm">確定を取り消す</button>'
+      : '<button type="button" class="btn confirm primary" data-act="confirm"' + (L.canConfirm(S, u) ? '' : ' disabled') + '>確定する</button>';
+    return '<span class="dock-hint">' + esc(u.name) + ' ／ ' + hint + '</span>' + btn;
+  }
+
   root.LCUI = {
-    esc: esc, stage: stage, head: head, viewPanel: viewPanel, playerPanel: playerPanel, gmPanel: gmPanel, toolsPanel: toolsPanel, planList: planList, logHtml: logHtml,
+    esc: esc, stage: stage, head: head, viewPanel: viewPanel, playerPanel: playerPanel, skillPopup: skillPopup, dock: dock, gmPanel: gmPanel, toolsPanel: toolsPanel, planList: planList, logHtml: logHtml,
     partPopup: partPopup, unitPopup: unitPopup, piecePopup: piecePopup, PHASE_LABEL: PHASE_LABEL
   };
 }(typeof self !== 'undefined' ? self : this));
