@@ -35,7 +35,11 @@ function randomChoices(st, rng) {
     const sels = ['c0', 'c1', 'def'];
     L.selectChoice(st, id, sels[Math.floor(rng() * 3)], ts++);
     const sk = L.chosenSkill(st, u);
-    if (u.choice.sel !== 'def' && sk && sk.kind === 'attack') {
+    const isDef = sk && sk.kind === 'defense';
+    if (isDef) {
+      const atk = st.pieces.filter((P) => { const k = L.pieceSkill(st, P); return k && k.kind === 'attack' && !L.isOut(L.getB(st, L.pieceRef(P))); });
+      if (atk.length) { L.setTarget(st, id, atk[Math.floor(rng() * atk.length)].pid, ts++); }
+    } else if (sk && sk.kind === 'attack') {
       const alive = st.pieces.filter((P) => !L.isOut(L.getB(st, L.pieceRef(P))));
       const blanks = [];
       Object.keys(st.units).forEach((eid) => {
@@ -49,7 +53,7 @@ function randomChoices(st, rng) {
       const choices = alive.map((P) => P.pid).concat(blanks);
       if (choices.length) { L.setTarget(st, id, choices[Math.floor(rng() * choices.length)], ts++); }
     }
-    u.choice.confirmed = L.canConfirm(st, u);
+    u.choice.confirmed = L.canConfirm(st, u) || (isDef && !u.choice.target);
   });
 }
 
