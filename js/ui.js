@@ -23,10 +23,36 @@
   }
 
 
-  function statusHtml(id, glyph, color, pw, cnt, inert, title) {
+  var STATUS_ICON = {
+    vibration: 'tremor.png',
+    breath: 'poise.png',
+    paralysis: 'paralyze.webp',
+    dmgUp: 'damage-up.png',
+    dmgDown: 'damage-down.png',
+    protect: 'protection.png',
+    powerUp: 'power-up.png',
+    powerDown: 'power-down.png',
+    atkPowerUp: 'attack-power-up.png',
+    atkPowerDown: 'attack-power-down.png',
+    defPowerUp: 'defense-power-up.png',
+    defPowerDown: 'defense-power-down.png',
+    matchPowerUp: 'clash-power-up.png',
+    matchPowerDown: 'clash-power-down.png',
+    coinStrong: 'plus-coin-boost.png',
+    coinWeak: 'plus-coin-drop.png',
+    quick: 'haste.png'
+  };
+
+  function statusIcon(base, suf) {
+    if (suf && base === 'dmgUp') { return suf + '-dmg-up.png'; }
+    if (suf && base === 'protect') { return suf + '-protection.png'; }
+    return STATUS_ICON[base] || base + '.png';
+  }
+
+  function statusHtml(icon, glyph, color, pw, cnt, inert, title) {
     return '<span class="st' + (inert ? ' inert' : '') + '" style="--c: ' + color + ';" title="' + esc(title) + '">' +
+      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="image/icon/status/' + esc(icon) + '" alt="" onerror="this.remove()"></span>' +
       '<span class="st-v">' + esc(pw) + '</span>' +
-      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="images/status/' + esc(id) + '.png" alt="" onerror="this.remove()"></span>' +
       '<span class="st-c">' + esc(cnt) + '</span></span>';
   }
 
@@ -54,10 +80,10 @@
       }
       var suf = sp.suf ? (L.SINS[sp.suf] ? L.SINS[sp.suf].label : (L.PHYS[sp.suf] || sp.suf)) : '';
       var inert = def.type === 'pc' && L.num(s.p, 0) <= 0 && !def.keepPotency;
-      out += statusHtml(sp.base, def.glyph, def.color, pw, cnt, inert, def.label + (suf ? '(' + suf + ')' : '') + extra + ': ' + def.text);
+      out += statusHtml(statusIcon(sp.base, sp.suf), def.glyph, def.color, pw, cnt, inert, def.label + (suf ? '(' + suf + ')' : '') + extra + ': ' + def.text);
     });
     if (L.num(b && b.barrier, 0) > 0) {
-      out += statusHtml('barrier', '盾', 'rgb(110, 200, 235)', String(b.barrier), '', false, 'バリア: 追加の体力(ラウンド終了で消える)');
+      out += statusHtml('barrier.png', '盾', 'rgb(110, 200, 235)', String(b.barrier), '', false, 'バリア: 追加の体力(ラウンド終了で消える)');
     }
     return out;
   }
@@ -346,7 +372,7 @@
         '<path d="M20 20 L40 40 M40 20 L20 40" stroke="rgb(150, 135, 130)" stroke-width="3" stroke-linecap="round"/></svg>';
     }
     if (kind === 'blank') {
-      return '<svg class="frame" viewBox="0 0 60 60" aria-hidden="true"><polygon points="' + pts(25) + '" fill="rgb(40, 28, 28)" stroke="rgb(150, 135, 130)" stroke-width="3"/></svg>';
+      return '<img class="frame" src="image/skill/empty-action.png" alt="">';
     }
     var c = sinColor(sin);
     var lv = Math.max(1, Math.min(4, L.num(tier, 1)));
@@ -411,7 +437,7 @@
     var gmAct = ctx.me.role === 'gm' && S.phase === 'enemy' && sk && !out && (sk.kind === 'attack' || sk.kind === 'defense');
     if (ctx.gmPick === P.pid) { cls += ' picked'; }
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
-      '<span class="p-label">' + esc(sk ? sk.name : '?') + '</span>' +
+      '<span class="p-spd" title="速度">' + (g && g.b && !out ? L.num(g.b.spd, 0) : '&nbsp;') + '</span>' +
       '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier) + '<span class="p-letter">' + esc(letter) + '</span></span>' +
       '<span class="p-sub">' + esc(sub) + '</span></button>';
   }
@@ -422,10 +448,12 @@
     var pid = L.pieceId(u.id, pi, 'b');
     var can = ctx.canSetTarget && !ctx.targetAttackOnly;
     var cls = 'piece blank' + (ctx.pressed[u.id] === pid ? ' pressed' : '') + (ctx.selectedPid === pid ? ' picked' : '');
+    var bg = L.getB(S, { u: u.id, p: pi });
+    var blankSpd = bg && bg.b ? L.num(bg.b.spd, 0) : null;
     var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
-      '<span class="p-label muted">ブランク</span>' +
-      '<span class="p-frame">' + frameSvg(null, 0, 'blank') + '<span class="p-letter">' + esc(letter) + '</span></span>' +
+      '<span class="p-spd" title="速度">' + (blankSpd === null ? '&nbsp;' : blankSpd) + '</span>' +
+      '<span class="p-frame">' + frameSvg(null, 0, 'blank') + '</span>' +
       '<span class="p-sub">' + esc(multi ? part.name : '') + '</span></button>';
   }
 
