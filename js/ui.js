@@ -23,6 +23,13 @@
   }
 
 
+  function statusHtml(id, glyph, color, pw, cnt, inert, title) {
+    return '<span class="st' + (inert ? ' inert' : '') + '" style="--c: ' + color + ';" title="' + esc(title) + '">' +
+      '<span class="st-v">' + esc(pw) + '</span>' +
+      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="images/status/' + esc(id) + '.png" alt="" onerror="this.remove()"></span>' +
+      '<span class="st-c">' + esc(cnt) + '</span></span>';
+  }
+
   function badges(b) {
     var st = O(b && b.st);
     var order = Object.keys(L.STATUS);
@@ -35,20 +42,22 @@
       var def = L.STATUS[sp.base];
       if (!def) { return; }
       var s = st[k];
-      var val;
+      var pw;
+      var cnt = '';
+      var extra = '';
       if (def.type === 'pc') {
-        val = L.num(s.p, 0) + '/' + L.num(s.c, 0);
-        if (sp.base === 'vibration' && s.k && s.k !== 'vibration') { val += ' ' + esc(s.k); }
+        pw = String(L.num(s.p, 0));
+        cnt = String(L.num(s.c, 0));
+        if (sp.base === 'vibration' && s.k && s.k !== 'vibration') { extra = ' ' + s.k; }
       } else {
-        val = String(L.num(s.v, 0));
+        pw = String(L.num(s.v, 0));
       }
       var suf = sp.suf ? (L.SINS[sp.suf] ? L.SINS[sp.suf].label : (L.PHYS[sp.suf] || sp.suf)) : '';
       var inert = def.type === 'pc' && L.num(s.p, 0) <= 0 && !def.keepPotency;
-      out += '<span class="badge ' + (def.kind === 'buff' ? 'buff' : 'debuff') + (inert ? ' inert' : '') + '" style="--c: ' + def.color + ';" title="' + esc(def.label + (suf ? '(' + suf + ')' : '') + ': ' + def.text) + '">' +
-        '<b>' + esc(def.glyph) + '</b>' + esc(val) + '</span>';
+      out += statusHtml(sp.base, def.glyph, def.color, pw, cnt, inert, def.label + (suf ? '(' + suf + ')' : '') + extra + ': ' + def.text);
     });
     if (L.num(b && b.barrier, 0) > 0) {
-      out += '<span class="badge buff" style="--c: rgb(120, 190, 240);" title="バリア: 追加の体力(ラウンド終了で消える)"><b>盾</b>' + b.barrier + '</span>';
+      out += statusHtml('barrier', '盾', 'rgb(110, 200, 235)', String(b.barrier), '', false, 'バリア: 追加の体力(ラウンド終了で消える)');
     }
     return out;
   }
@@ -142,6 +151,16 @@
     return '<h3>' + esc(L.nameOf(S, L.pieceRef(P))) + '</h3>' + skillDetail(sk);
   }
 
+
+  function allyPiecePopup(S, id, ctx) {
+    var u = S.units[id];
+    if (!u) { return ''; }
+    var sk = L.chosenSkill(S, u);
+    var html = '<h3>' + esc(u.name) + '</h3>' + skillDetail(sk);
+    var own = ctx.me.role === 'player' && ctx.me.unitId === id && S.phase === 'player' && !u.dead && !u.stagger;
+    if (own) { html += '<div class="btns"><button type="button" class="btn" data-act="skill-list">スキルを選び直す</button></div>'; }
+    return html;
+  }
 
   function gmPanel(S, ctx) {
     var me = ctx.me;
@@ -492,13 +511,13 @@
     else if (S.phase === 'process' || S.phase === 'roundEnd') { state = ch && ch.acted ? '<span class="a-state ok">行動済</span>' : ''; }
     var spd = S.phase === 'setup' || u.dead ? '&nbsp;' : String(L.num(u.spd, 0));
     var face = u.img ? '<img class="a-img" src="' + esc(u.img) + '" alt="">' : esc(String(u.name || '?').charAt(0));
-    return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '" data-act="info-unit" data-id="' + esc(u.id) + '">' +
+    return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '">' +
       piece +
       '<span class="a-spd" title="速度">' + spd + '</span>' +
-      '<div class="a-ring" style="background: ' + ring + ';"><span class="a-face">' + face + '</span>' +
+      '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '" style="background: ' + ring + ';"><span class="a-face">' + face + '</span>' +
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
       '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
-      '<span class="a-name">' + esc(u.name) + '</span>' + state +
+      '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' + state +
       '<div class="a-badges">' + badges(u) + '</div></div>';
   }
 
@@ -608,6 +627,6 @@
 
   root.LCUI = {
     esc: esc, stage: stage, head: head, viewPanel: viewPanel, playerPanel: playerPanel, skillPopup: skillPopup, dock: dock, gmPanel: gmPanel, toolsPanel: toolsPanel, planList: planList, logHtml: logHtml,
-    partPopup: partPopup, unitPopup: unitPopup, piecePopup: piecePopup, PHASE_LABEL: PHASE_LABEL
+    partPopup: partPopup, unitPopup: unitPopup, piecePopup: piecePopup, allyPiecePopup: allyPiecePopup, PHASE_LABEL: PHASE_LABEL
   };
 }(typeof self !== 'undefined' ? self : this));
