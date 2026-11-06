@@ -84,7 +84,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 矢印: 金=マッチ(中央に ✸)/ 赤=敵の一方攻撃 / 水色=味方の一方攻撃 / 点線=未確定。右パネルの「矢印の表示」で切り替えられます。
 - 敵のスキル駒や部位を押すと詳細が出ます。体力バーの黄色い線は混乱の閾値です。
 - ログは戦闘開始時に窓で開き、そのラウンドの分だけを表示します(右上の「ログ」でも開閉できます)。
-- 敵の速度はGMにだけ表示されます。
+- 敵の速度は、敵スキル駒の上に表示されます。
 
 ## JSON の形式
 
@@ -94,6 +94,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - スキル: `name, kind, sin(罪悪), phys(物理), tier, base, coins:[各コインの加算], text, grants[]`。`grants` は `{status, p(威力), c(回数) または v(値), to:"target"|"self", when:"hit"|"use", coin:N, next:true}`。
 - 状態の ID: `burn bleed vibration rupture sinking breath charge paralysis bind dmgUp dmgDown fragile protect powerDown quick powerUp ...`(`js/logic.js` の `STATUS` 参照)。
 - 敵: `kind:"normal"`(1部位・体力と精神力あり)/ `"abnormality"`(体力共有・部位ごとに耐久と精神力。`destroyable` で破壊可能)。`skillSets:[{name, when, loop:[[スキルキー…],…]}]` で行動パターンを定義し、後ろにある条件一致が優先されます。
+- 精神力を持たない敵は `"noSp": true` を指定します(敵全体、または部位ごとに指定可。部位の指定が優先)。精神力の表示が消え、精神力の増減は無視され、コインの表確率は常に50%になります。
 - 条件付きダメージ補正は `dmgBonusIf`、スキル差し替えは `replace`、条件分岐は `branches` を使います。
 
 ## ルールの実装範囲
