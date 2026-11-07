@@ -31,7 +31,7 @@
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', glyph: '沈', color: 'rgb(80, 130, 210)', text: 'ダメージ時に威力分の精神力ダメージ' },
     breath: { label: '呼吸', type: 'pc', kind: 'buff', glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
     charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, charge: true, text: '消耗でスキルが強化される' },
-    specialCharge: { label: '特殊充電', type: 'pc', kind: 'buff', glyph: '特', color: 'rgb(240, 160, 70)', maxCount: 20, keepPotency: true, charge: true, text: '充電と同じ仕様の特殊な充電(消耗でスキルが強化される)' },
+    trance: { label: '夢現', type: 'pc', kind: 'buff', glyph: '夢', color: 'rgb(240, 160, 70)', maxCount: 20, keepPotency: true, charge: true, text: '充電と同じ仕様の特殊な充電(消耗でスキルが強化される)' },
     paralysis: { label: '麻痺', type: 'val', kind: 'debuff', glyph: '麻', color: 'rgb(200, 190, 90)', text: 'コイン威力を0にする(トスごとに-1)' },
     bind: { label: '束縛', type: 'val', kind: 'debuff', glyph: '縛', color: 'rgb(160, 130, 100)', text: '速度が減少' },
     dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', glyph: '攻↓', color: 'rgb(170, 140, 140)', max: 10, text: '与えるダメージが数値×10%減少' },
