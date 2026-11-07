@@ -92,14 +92,14 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 
 - 味方: `name, maxHp, sp(精神力), speed:[最小,最大], thr:[混乱閾値(%)…], resist(耐性), skills{0〜3}`。`skills.0` が守備(`kind:"defense"` の `sub` は `guard`=防御 / `evade`=回避、または `kind:"counter"`)、1〜3 が攻撃スキル。
 - スキル: `name, kind, sin(罪悪), phys(物理), tier, base, coins:[各コインの加算], text, grants[]`。`grants` は `{status, p(威力), c(回数) または v(値), to:"target"|"self", when:"hit"|"use", coin:N, next:true}`。
-- 状態の ID: `burn bleed vibration rupture sinking breath charge paralysis bind dmgUp dmgDown fragile protect powerDown quick powerUp ...`(`js/logic.js` の `STATUS` 参照)。
+- 状態の ID: `burn bleed vibration rupture sinking breath charge specialCharge paralysis bind dmgUp dmgDown fragile protect powerDown quick powerUp ...`(`js/logic.js` の `STATUS` 参照)。
 - 敵: `kind:"normal"`(1部位・体力と精神力あり)/ `"abnormality"`(体力共有・部位ごとに耐久と精神力。`destroyable` で破壊可能)。`skillSets:[{name, when, loop:[[スキルキー…],…]}]` で行動パターンを定義し、後ろにある条件一致が優先されます。
 - 精神力を持たない敵は `"noSp": true` を指定します(敵全体、または部位ごとに指定可。部位の指定が優先)。精神力の表示が消え、精神力の増減は無視され、コインの表確率は常に50%になります。
 - 条件付きダメージ補正は `dmgBonusIf`、スキル差し替えは `replace`、条件分岐は `branches` を使います。
 
 ## ルールの実装範囲
 
-実装済み: マッチ(威力同値は振り直し)、威力とダメージ計算(バフ枠×耐性枠・最低1)、精神力と表確率、状態異常(火傷/出血/振動/破裂/沈潜/呼吸/充電/麻痺 ほか)、混乱(体力閾値・多重・振動爆発)、デッキ(1,1,1,2,2,3 の山札)、守備スキル(防御=バリア / 回避=コイン単位で無効化 / 反撃。防御・回避は敵スキルに合わせて発動し、反撃だけは最初に攻撃を受けた相手に発動。敵の防御・回避は、GMが合わせた味方がその部位を攻撃したときに有効になり、敵の反撃は最初にコインが当たった相手に、ダメージが0でも発動する)、速度順の処理、ラウンド終了処理。
+実装済み: マッチ(威力同値は振り直し)、威力とダメージ計算(バフ枠×耐性枠・最低1)、精神力と表確率、状態異常(火傷/出血/振動/破裂/沈潜/呼吸/充電/特殊充電/麻痺 ほか)、混乱(体力閾値・多重・振動爆発)、デッキ(1,1,1,2,2,3 の山札)、守備スキル(防御=バリア / 回避=コイン単位で無効化 / 反撃。防御・回避は敵スキルに合わせて発動し、反撃だけは最初に攻撃を受けた相手に発動。敵の防御・回避は、GMが合わせた味方がその部位を攻撃したときに有効になり、敵の反撃は最初にコインが当たった相手に、ダメージが0でも発動する)、速度順の処理、ラウンド終了処理。
 
 ### 仮の扱い(要確認)
 
