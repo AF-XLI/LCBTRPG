@@ -310,6 +310,7 @@
       else { u.parts.forEach(function (p, pi) { opts += '<option value="' + esc(id) + '|' + pi + '">' + esc(L.nameOf(S, { u: id, p: pi })) + '</option>'; }); }
     });
     var stOpts = Object.keys(L.STATUS).map(function (k) { return '<option value="' + k + '">' + L.STATUS[k].label + '</option>'; }).join('');
+    var resOpts = L.RES_ORDER.map(function (k) { return '<option value="' + k + '">' + L.SINS[k].label + '(現在 ' + L.resOf(S, k) + ')</option>'; }).join('');
     var sel = ctx.manualTarget || '';
     return '<details class="more"><summary>手動補助(体力・精神力・状態など)</summary>' +
       '<label class="field">対象<select id="mTarget" data-change="mtarget">' + opts.replace('value="' + esc(sel) + '"', 'value="' + esc(sel) + '" selected') + '</select></label>' +
@@ -318,6 +319,7 @@
       '<div class="grow"><select id="mSt">' + stOpts + '</select><input id="mP" type="number" placeholder="威力/値"><input id="mC" type="number" placeholder="回数"><button type="button" class="btn small" data-act="m-st-add">付与</button></div>' +
       '<div class="grow"><button type="button" class="btn small" data-act="m-st-del">選択中の状態を解除</button><button type="button" class="btn small" data-act="m-vib">振動爆発</button></div>' +
       '<div class="grow"><button type="button" class="btn small" data-act="m-stag-clear">混乱を回復</button><button type="button" class="btn small" data-act="m-revive">復帰</button><button type="button" class="btn small" data-act="m-ego">E.G.O使用</button></div>' +
+      '<div class="grow"><select id="mRes">' + resOpts + '</select><input id="mResV" type="number" min="0" placeholder="資源の数"><button type="button" class="btn small" data-act="m-res">資源を設定</button></div>' +
       '<label class="grow"><input id="mFlag" type="text" placeholder="手動フラグ名"><button type="button" class="btn small" data-act="m-flag">切替</button></label>' +
       '<p class="note">加算の手動補助です。状態の付与は既存の値に加算されます。</p></details>';
   }
@@ -677,6 +679,62 @@
 
   function playerPanel() { return ''; }
 
+  var RES_DIR = 'image/icon/sin/';
+
+  function passiveItems(S, key) {
+    var allies = [];
+    var out = [];
+    Object.keys(S.units).forEach(function (id) {
+      if (S.units[id].side === 'ally') { allies.push(S.units[id]); }
+    });
+    allies.sort(function (a, b) { return a.ord - b.ord; });
+    allies.forEach(function (u) {
+      A(u[key]).forEach(function (p, i) { if (p) { out.push({ u: u, p: p, i: i }); } });
+    });
+    return out;
+  }
+
+  function passiveHtml(S, it, key) {
+    var ok = L.passiveOk(S, it.p);
+    var initial = Array.from(String(it.u.name || '?'))[0];
+    var inner = it.p.icon ? '<img src="' + esc(it.p.icon) + '" alt="">' : '<span>' + esc(initial) + '</span>';
+    return '<button type="button" class="pv-item' + (ok ? '' : ' off') + '" data-act="info-passive" data-ref="' + esc(it.u.id + '|' + key + '|' + it.i) + '" title="' + esc(it.p.name || '') + '">' + inner + '</button>';
+  }
+
+  function leftBar(S) {
+    var html = '';
+    ['passives', 'supportPassives'].forEach(function (key) {
+      var items = passiveItems(S, key);
+      if (!items.length) { return; }
+      html += '<div class="bracket pv-list">' + items.map(function (it) { return passiveHtml(S, it, key); }).join('') + '</div>';
+    });
+    return html;
+  }
+
+  function rightBar(S) {
+    if (!Object.keys(S.units).length) { return ''; }
+    return '<div class="bracket res-list">' + L.RES_ORDER.map(function (k) {
+      var label = L.SINS[k].label;
+      return '<div class="res-item" title="' + esc(label) + '"><img src="' + RES_DIR + k + '.png" alt="' + esc(label) + '"><span class="res-n">' + L.resOf(S, k) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  function passivePopup(S, ref) {
+    var s = String(ref || '').split('|');
+    var u = S.units[s[0]];
+    var p = u && A(u[s[1]])[Number(s[2])];
+    if (!p) { return ''; }
+    var kind = s[1] === 'supportPassives' ? 'サポートパッシブ' : 'パッシブ';
+    var need = O(p.need);
+    var conds = L.RES_ORDER.filter(function (k) { return L.num(need[k], 0) > 0; }).map(function (k) {
+      return esc(L.SINS[k].label) + '×' + L.num(need[k], 0) + '(現在 ' + L.resOf(S, k) + ')';
+    });
+    var html = '<h3>' + esc(p.name || kind) + '</h3><div class="line">' + esc(u.name) + ' / ' + kind + '</div>';
+    if (conds.length) { html += '<div class="line">発動条件: ' + conds.join(' ') + ' 保有 ' + (L.passiveOk(S, p) ? '(達成)' : '(未達成)') + '</div>'; }
+    if (p.text) { html += '<p class="note">' + esc(p.text).replace(/\n/g, '<br>') + '</p>'; }
+    return html;
+  }
+
   function dock(S, ctx) {
     var me = ctx.me;
     if (me.role !== 'player' || S.phase !== 'player') { return ''; }
@@ -692,6 +750,7 @@
 
   root.LCUI = {
     esc: esc, stage: stage, head: head, viewPanel: viewPanel, playerPanel: playerPanel, skillPopup: skillPopup, dock: dock, gmPanel: gmPanel, toolsPanel: toolsPanel, planList: planList, logHtml: logHtml,
+    leftBar: leftBar, rightBar: rightBar, passivePopup: passivePopup,
     partPopup: partPopup, unitPopup: unitPopup, piecePopup: piecePopup, allyPiecePopup: allyPiecePopup, PHASE_LABEL: PHASE_LABEL
   };
 }(typeof self !== 'undefined' ? self : this));
