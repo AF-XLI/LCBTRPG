@@ -708,6 +708,7 @@
       if (!items.length) { return; }
       html += '<div class="bracket pv-list">' + items.map(function (it) { return passiveHtml(S, it, key); }).join('') + '</div>';
     });
+    if (html) { html += '<button type="button" class="sidebar-tab" data-act="side-toggle" data-side="L" aria-label="パッシブ欄を開閉"></button>'; }
     return html;
   }
 
@@ -716,7 +717,7 @@
     return '<div class="bracket res-list">' + L.RES_ORDER.map(function (k) {
       var label = L.SINS[k].label;
       return '<div class="res-item" title="' + esc(label) + '"><img src="' + RES_DIR + k + '.png" alt="' + esc(label) + '"><span class="res-n">' + L.resOf(S, k) + '</span></div>';
-    }).join('') + '</div>';
+    }).join('') + '</div><button type="button" class="sidebar-tab" data-act="side-toggle" data-side="R" aria-label="資源欄を開閉"></button>';
   }
 
   function passivePopup(S, ref) {
