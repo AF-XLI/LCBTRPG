@@ -217,25 +217,19 @@
       return s;
     }
     var used = {};
-    function clampX(el, x, base) {
-      var row = el.closest('.row');
-      if (!row) { return x; }
-      var rr = row.getBoundingClientRect();
-      return Math.max(rr.left - base.left + 12, Math.min(rr.right - base.left - 12, x));
-    }
     function tokEl(id) {
       var el = document.querySelector('#stage .ally[data-tok="' + id + '"] .a-piece .p-frame');
       if (!el) { return null; }
       var c = center(el, base);
       var n = used[id] || 0;
       used[id] = n + 1;
-      return { x: clampX(el, c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, base), y: c.y - c.h / 2 - 2 };
+      return { x: c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, y: c.y - c.h / 2 - 2 };
     }
     function pieceEl(pid) {
       var el = document.querySelector('#stage [data-piece="' + pid + '"] .p-frame');
       if (!el) { return null; }
       var c = center(el, base);
-      return { x: clampX(el, c.x, base), y: c.y + c.h / 2 + 14 };
+      return { x: c.x, y: c.y + c.h / 2 + 14 };
     }
     var pairs = ctx.pairs || { matchOf: {} };
     var drawnMatch = {};
