@@ -25,8 +25,8 @@
   var STATUS_ICON = {
     vibration: 'tremor.png',
     breath: 'poise.png',
-    specialCharge: 'special-charge.png',
-    paralysis: 'paralyze.webp',
+    trance: 'trance.png',
+    paralysis: 'paralyze.png',
     dmgUp: 'damage-up.png',
     dmgDown: 'damage-down.png',
     protect: 'protection.png',
