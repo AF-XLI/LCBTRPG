@@ -12,6 +12,7 @@
   --text: rgb(240, 230, 225);
   --sub: rgb(160, 154, 170);
   --ok: rgb(110, 190, 110);
+  --bar-bg: rgb(21, 13, 13);
 }
  
 * {
@@ -214,23 +215,21 @@ h4 {
   flex-direction: column;
   gap: 0.375rem;
   padding: 0.5rem 0.375rem;
-  background: rgba(20, 12, 12, 0.8);
-  border: 0.125rem solid rgba(214, 168, 56, 0.85);
   pointer-events: auto;
 }
  
 .sidebar.left .bracket {
-  background: linear-gradient(to right, rgba(20, 12, 12, 0.85), rgba(20, 12, 12, 0.15));
-  border-image: linear-gradient(to right, rgba(214, 168, 56, 0.9), rgba(214, 168, 56, 0)) 1;
+  background: linear-gradient(var(--bar-bg), var(--bar-bg)) padding-box, linear-gradient(to right, rgba(214, 168, 56, 0.9), rgba(214, 168, 56, 0)) border-box;
+  border: 0.125rem solid transparent;
   border-inline-end: 0;
-  border-radius: 0;
+  border-radius: 0.75rem 0 0 0.75rem;
 }
  
 .sidebar.right .bracket {
-  background: linear-gradient(to left, rgba(20, 12, 12, 0.85), rgba(20, 12, 12, 0.15));
-  border-image: linear-gradient(to left, rgba(214, 168, 56, 0.9), rgba(214, 168, 56, 0)) 1;
+  background: linear-gradient(var(--bar-bg), var(--bar-bg)) padding-box, linear-gradient(to left, rgba(214, 168, 56, 0.9), rgba(214, 168, 56, 0)) border-box;
+  border: 0.125rem solid transparent;
   border-inline-start: 0;
-  border-radius: 0;
+  border-radius: 0 0.75rem 0.75rem 0;
 }
  
 .pv-item {
@@ -1513,11 +1512,8 @@ h4 {
     height: 4rem;
     margin: 0;
     padding: 0;
-    background: rgba(20, 12, 12, 0.88);
+    background: var(--bar-bg);
     border: 0.125rem solid rgba(214, 168, 56, 0.85);
-    color: var(--gold);
-    font-size: 0.875rem;
-    font-weight: bold;
     pointer-events: auto;
     transform: translateY(-50%);
   }
@@ -1531,16 +1527,21 @@ h4 {
     border-inline-end: 0;
     border-radius: 0.5rem 0 0 0.5rem;
   }
-  .sidebar.left .sidebar-tab::before {
-    content: ">>";
+  .sidebar-tab::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-block-start: 0.188rem solid var(--gold);
+    border-inline-end: 0.188rem solid var(--gold);
   }
-  .sidebar.right .sidebar-tab::before {
-    content: "<<";
-  }
-  .sidebar.left.open .sidebar-tab::before {
-    content: "<<";
-  }
+  .sidebar.left .sidebar-tab::before,
   .sidebar.right.open .sidebar-tab::before {
-    content: ">>";
+    transform: translateX(-0.125rem) rotate(45deg);
+  }
+  .sidebar.right .sidebar-tab::before,
+  .sidebar.left.open .sidebar-tab::before {
+    transform: translateX(0.125rem) rotate(-135deg);
   }
 }
