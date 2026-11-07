@@ -16,6 +16,7 @@
     pride: { label: '傲慢', color: 'rgb(70, 120, 230)' },
     envy: { label: '嫉妬', color: 'rgb(150, 70, 220)' }
   };
+  var RES_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
   var RES_MULT = { normal: 1, weak: 2, resist: 0.75 };
   var RES_LABEL = { normal: '普通', weak: '脆弱', resist: '抵抗' };
@@ -106,7 +107,41 @@
   function headsProb(sp) { return clamp(50 + num(sp, 0), 0, 100) / 100; }
 
   function newState() {
-    return { round: 0, phase: 'setup', units: {}, pieces: [], plan: [], proc: { i: 0 }, log: [], fx: { seq: 0, items: [] }, settings: { autoNext: false }, result: '' };
+    return { round: 0, phase: 'setup', units: {}, res: resEmpty(), pieces: [], plan: [], proc: { i: 0 }, log: [], fx: { seq: 0, items: [] }, settings: { autoNext: false }, result: '' };
+  }
+
+  function resEmpty() {
+    var r = {};
+    RES_ORDER.forEach(function (k) { r[k] = 0; });
+    return r;
+  }
+
+  function resOf(state, sin) { return Math.max(0, num(O(state && state.res)[sin], 0)); }
+
+  function gainRes(state, ref, skill, once) {
+    var g = getB(state, ref);
+    var sin = skill && skill.sin;
+    if (!g || g.unit.side !== 'ally' || !SINS[sin]) { return; }
+    if (once) {
+      var ch = g.unit.choice;
+      if (!ch || ch.resGot) { return; }
+      ch.resGot = true;
+    }
+    state.res = O(state.res);
+    state.res[sin] = resOf(state, sin) + 1;
+    log(state, '資源: ' + SINS[sin].label + ' +1(計' + state.res[sin] + ')');
+  }
+
+  function setRes(state, sin, value) {
+    if (!SINS[sin]) { return; }
+    state.res = O(state.res);
+    state.res[sin] = Math.max(0, Math.floor(num(value, 0)));
+    log(state, '【手動】資源: ' + SINS[sin].label + ' を ' + state.res[sin] + ' に設定');
+  }
+
+  function passiveOk(state, passive) {
+    var need = O(passive && passive.need);
+    return Object.keys(need).every(function (k) { return resOf(state, k) >= num(need[k], 0); });
   }
 
   function sanitizeId(id, fallback, used) {
@@ -500,6 +535,7 @@
   function beginCombat(state, rng) {
     state.round = 0;
     state.log = [];
+    state.res = resEmpty();
     Object.keys(state.units).forEach(function (id) {
       var u = state.units[id];
       if (u.side === 'ally') { u.deck = { q: [] }; }
@@ -1084,11 +1120,13 @@
         log(state, nameOf(state, defRef) + ' が防御「' + (skill.name || '') + '」でバリア ' + gr.power + ' を獲得');
         fx(state, defRef, 'バリア+' + gr.power, 'guard');
         applyGrants(state, defRef, atk.ref, skill, 'use');
+        gainRes(state, defRef, skill, true);
       }
       attackSeq(state, atk, defRef, matches, rng);
       return;
     }
     if (react.type === 'evade') {
+      gainRes(state, defRef, skill, true);
       var ev = { ref: defRef, skill: skill, active: !react.evadeOff, fail: react.fail };
       attackSeq(state, atk, defRef, matches, rng, ev);
       return;
@@ -1106,6 +1144,7 @@
     }
     log(state, nameOf(state, defRef) + ' が反撃「' + (skill.name || '') + '」');
     applyGrants(state, defRef, atk.ref, skill, 'use');
+    gainRes(state, defRef, skill, true);
     attackSeq(state, { ref: defRef, skill: skill, coins: skill.coins.slice() }, atk.ref, 0, rng);
   }
 
@@ -1172,6 +1211,7 @@
     }
     var skill = resolveSkill(state, { u: u.id, p: null }, base, pieceRef(P));
     applyGrants(state, { u: u.id, p: null }, pieceRef(P), skill, 'use');
+    gainRes(state, { u: u.id, p: null }, skill);
     ch.acted = true;
     log(state, u.name + ' が「' + (skill.name || '') + '」で ' + nameOf(state, pieceRef(P)) + ' を攻撃');
     var pairs = state.proc.pairs || { matchOf: {} };
@@ -1240,6 +1280,7 @@
       if (ae) { ae.done = true; }
       var askill = resolveSkill(state, { u: au.id, p: null }, chosenSkill(state, au), ref);
       applyGrants(state, { u: au.id, p: null }, ref, askill, 'use');
+      gainRes(state, { u: au.id, p: null }, askill);
       activateEnemyDefense(state, au.id, ref);
       clash(state, X, sideOfAlly(state, au, askill), rng);
     } else {
@@ -1414,7 +1455,7 @@
   }
 
   return {
-    SINS: SINS, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
+    SINS: SINS, RES_ORDER: RES_ORDER, resOf: resOf, gainRes: gainRes, setRes: setRes, passiveOk: passiveOk, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
     A: A, O: O, clone: clone, normalize: normalize, clamp: clamp, num: num, shuffle: shuffle, randInt: randInt,
     newState: newState, parseSetup: parseSetup, loadUnits: loadUnits, initUnit: initUnit,
     getB: getB, nameOf: nameOf, hpInfo: hpInfo, isOut: isOut, resBonus: resBonus, resMultOf: resMultOf, staggerPhysMult: staggerPhysMult, incap: incap,
