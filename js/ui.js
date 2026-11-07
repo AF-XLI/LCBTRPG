@@ -26,6 +26,7 @@
   var STATUS_ICON = {
     vibration: 'tremor.png',
     breath: 'poise.png',
+    specialCharge: 'special-charge.png',
     paralysis: 'paralyze.webp',
     dmgUp: 'damage-up.png',
     dmgDown: 'damage-down.png',
@@ -103,7 +104,8 @@
   }
 
   function staggerChip(b) {
-    if (!b.stagger) { return ''; }
+    if (!b.stagger && !b.panic) { return ''; }
+    if (!b.stagger) { return '<span class="stag">パニック</span>'; }
     return '<span class="stag">混乱' + (b.stagger.level > 1 ? ' Lv' + b.stagger.level : '') + '</span>';
   }
 
@@ -183,7 +185,7 @@
     if (!u) { return ''; }
     var sk = L.chosenSkill(S, u);
     var html = '<h3>' + esc(u.name) + '</h3>' + skillDetail(sk);
-    var own = ctx.me.role === 'player' && ctx.me.unitId === id && S.phase === 'player' && !u.dead && !u.stagger;
+    var own = ctx.me.role === 'player' && ctx.me.unitId === id && S.phase === 'player' && !u.dead && !L.incap(u);
     if (own) { html += '<div class="btns"><button type="button" class="btn" data-act="skill-list">スキルを選び直す</button></div>'; }
     return html;
   }
@@ -257,6 +259,16 @@
     return '<div class="log-body">' + lines.map(function (t) { return '<div>' + esc(String(t).slice(key.length)) + '</div>'; }).join('') + '</div>';
   }
 
+  function slotList(S) {
+    var list = L.enemyOrder(S);
+    if (list.length < 2) { return ''; }
+    return '<div class="slots"><h4>敵の配置(左から)</h4>' + list.map(function (u, i) {
+      return '<div class="slot"><span class="slot-n">' + (i + 1) + '</span><span class="slot-name">' + esc(u.name) + '</span>' +
+        '<button type="button" class="btn small ghost" data-act="slot-move" data-id="' + esc(u.id) + '" data-dir="-1"' + (i === 0 ? ' disabled' : '') + '>◀</button>' +
+        '<button type="button" class="btn small ghost" data-act="slot-move" data-id="' + esc(u.id) + '" data-dir="1"' + (i === list.length - 1 ? ' disabled' : '') + '>▶</button></div>';
+    }).join('') + '</div>';
+  }
+
   function toolsPanel(S, ctx) {
     if (ctx.me.role !== 'gm') { return ''; }
     var html = '<h3>GM操作</h3>';
@@ -267,6 +279,7 @@
         '<div class="btns"><button type="button" class="btn" data-act="load-allies">味方を追加</button><label class="btn file">ファイル<input type="file" accept=".json,application/json" data-change="file" data-to="jsonAllies"></label></div>' +
         '<label class="field">敵JSON<textarea id="jsonEnemies" rows="4" placeholder="{&quot;enemies&quot;:[...]} を貼り付け"></textarea></label>' +
         '<div class="btns"><button type="button" class="btn" data-act="load-enemies">敵を追加</button><label class="btn file">ファイル<input type="file" accept=".json,application/json" data-change="file" data-to="jsonEnemies"></label></div>' +
+        slotList(S) +
         '<p class="err" id="setupErr"></p>' +
         '<div class="btns"><button type="button" class="btn primary" data-act="begin"' + (Object.keys(S.units).length ? '' : ' disabled') + '>戦闘開始(ラウンド1)</button>' +
         '<button type="button" class="btn danger" data-act="reset">全削除</button></div>';
@@ -467,7 +480,7 @@
     var out = L.isOut(g);
     var cls = 'piece';
     if (P.acted) { cls += ' acted'; }
-    if (g && g.b.stagger) { cls += ' staggered'; }
+    if (g && L.incap(g.b)) { cls += ' staggered'; }
     if (ctx.pressed[u.id] === P.pid) { cls += ' pressed'; }
     if (ctx.selectedPid === P.pid) { cls += ' picked'; }
     var can = ctx.canSetTarget && sk && !out && (!ctx.targetAttackOnly || sk.kind === 'attack');
@@ -476,7 +489,7 @@
     if (ctx.gmPick === P.pid) { cls += ' picked'; }
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (g && g.b && !out ? L.num(g.b.spd, 0) : '&nbsp;') + '</span>' +
-      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && g.b.stagger) + '</span>' +
+      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && L.incap(g.b)) + '</span>' +
       '<span class="p-sub">' + sub + '</span></button>';
   }
 
@@ -490,7 +503,7 @@
     var blankSpd = bg && bg.b ? L.num(bg.b.spd, 0) : null;
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (blankSpd === null ? '&nbsp;' : blankSpd) + '</span>' +
-      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && bg.b.stagger) + '</span>' +
+      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && L.incap(bg.b)) + '</span>' +
       '<span class="p-sub">' + (multi ? partMark(part) : '') + '</span></button>';
   }
 
@@ -554,7 +567,7 @@
     var sub = '';
     var kind = 'blank';
     if (u.dead) { label = ''; kind = 'destroyed'; }
-    else if (u.stagger) { label = '混乱'; kind = 'stagger'; }
+    else if (L.incap(u)) { label = u.stagger ? '混乱' : 'パニック'; kind = 'stagger'; }
     else if (ch && ch.sel && S.phase !== 'enemy') {
       sk = L.chosenSkill(S, u);
       if (sk) { label = sk.name || ''; kind = 'skill'; }
@@ -570,7 +583,7 @@
     }
     var state = '';
     if (u.dead) { state = '<span class="a-state down">戦闘不能</span>'; }
-    else if (u.stagger) { state = '<span class="a-state stag">混乱' + (u.stagger.level > 1 ? ' Lv' + u.stagger.level : '') + '</span>'; }
+    else if (L.incap(u)) { state = '<span class="a-state stag">' + (u.stagger ? '混乱' + (u.stagger.level > 1 ? ' Lv' + u.stagger.level : '') : 'パニック') + '</span>'; }
     else if (S.phase === 'player') { state = ch && ch.confirmed ? '<span class="a-state ok">確定済</span>' : '<span class="a-state wait">選択中</span>'; }
     else if (S.phase === 'enemy') { state = '<span class="a-state muted">待機中</span>'; }
     else if (S.phase === 'process' || S.phase === 'roundEnd') { state = ch && ch.acted ? '<span class="a-state ok">行動済</span>' : ''; }
@@ -596,7 +609,8 @@
     if (!enemies.length && !allies.length) {
       return '<p class="empty">まだキャラクターがいません。GMが準備パネルからJSONを読み込んでください。</p>';
     }
-    enemies.sort(function (a, b) { return a.ord - b.ord; });
+    enemies.sort(function (a, b) { return L.num(a.slot, a.ord) - L.num(b.slot, b.ord) || a.ord - b.ord; });
+    if (S.phase !== 'setup') { enemies = enemies.filter(function (u) { return !u.dead; }); }
     allies.sort(function (a, b) {
       var d = (a.dead ? 1 : 0) - (b.dead ? 1 : 0);
       if (d) { return d; }
@@ -664,7 +678,7 @@
   function skillPopup(S, ctx) {
     var me = ctx.me;
     var u = S.units[me.unitId];
-    if (!u || u.dead || u.stagger || S.phase !== 'player') { return ''; }
+    if (!u || u.dead || L.incap(u) || S.phase !== 'player') { return ''; }
     var hand = L.handOf(S, u);
     var ch = u.choice || {};
     var html = '<h3><span>' + esc(u.name) + ' のスキル</span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
@@ -681,7 +695,7 @@
     var me = ctx.me;
     if (me.role !== 'player' || S.phase !== 'player') { return ''; }
     var u = S.units[me.unitId];
-    if (!u || u.dead || u.stagger) { return ''; }
+    if (!u || u.dead || L.incap(u)) { return ''; }
     var ch = u.choice || {};
     var hint = ch.confirmed ? '確定済みです' : '自分の駒を押してスキルを選び、敵の駒を押して対象を決めます';
     var btn = ch.confirmed
