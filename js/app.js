@@ -23,6 +23,7 @@
   var pressed = {};
   var retarget = false;
   var gmPick = null;
+  var scrollKey = '';
   var logOpen = false;
   var prevPhase = null;
 
@@ -99,7 +100,25 @@
     if (!me) { return; }
     var ctx = ctxOf();
     setHtml($('head'), UI.head(S, ctx));
+    var keep = {};
+    ['enemies', 'allies'].forEach(function (k) {
+      var r = $('stage').querySelector('.row.' + k);
+      if (r) { keep[k] = r.scrollLeft; }
+    });
     setHtml($('stage'), UI.stage(S, ctx));
+    var key = S.round + '|' + (me.unitId || '') + '|' + Object.keys(S.units).length;
+    var fresh = key !== scrollKey && !!$('stage').querySelector('.row');
+    if (fresh) { scrollKey = key; }
+    ['enemies', 'allies'].forEach(function (k) {
+      var r = $('stage').querySelector('.row.' + k);
+      if (!r) { return; }
+      if (fresh) {
+        var mine = k === 'allies' && me.unitId ? r.querySelector('.ally[data-tok="' + me.unitId + '"]') : null;
+        r.scrollLeft = mine ? mine.offsetLeft - (r.clientWidth - mine.offsetWidth) / 2 : (r.scrollWidth - r.clientWidth) / 2;
+      } else if (keep[k] !== undefined) {
+        r.scrollLeft = keep[k];
+      }
+    });
     setHtml($('panel'), me.role === 'player' ? UI.playerPanel(S, ctx) : UI.gmPanel(S, ctx));
     setHtml($('plan'), UI.planList(S, ctx));
     setHtml($('gmtools'), UI.toolsPanel(S, ctx));
@@ -198,19 +217,25 @@
       return s;
     }
     var used = {};
+    function clampX(el, x, base) {
+      var row = el.closest('.row');
+      if (!row) { return x; }
+      var rr = row.getBoundingClientRect();
+      return Math.max(rr.left - base.left + 12, Math.min(rr.right - base.left - 12, x));
+    }
     function tokEl(id) {
       var el = document.querySelector('#stage .ally[data-tok="' + id + '"] .a-piece .p-frame');
       if (!el) { return null; }
       var c = center(el, base);
       var n = used[id] || 0;
       used[id] = n + 1;
-      return { x: c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, y: c.y - c.h / 2 - 2 };
+      return { x: clampX(el, c.x + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 12, base), y: c.y - c.h / 2 - 2 };
     }
     function pieceEl(pid) {
       var el = document.querySelector('#stage [data-piece="' + pid + '"] .p-frame');
       if (!el) { return null; }
       var c = center(el, base);
-      return { x: c.x, y: c.y + c.h / 2 + 14 };
+      return { x: clampX(el, c.x, base), y: c.y + c.h / 2 + 14 };
     }
     var pairs = ctx.pairs || { matchOf: {} };
     var drawnMatch = {};
@@ -514,6 +539,12 @@
     if (el && changes[el.dataset.change]) { changes[el.dataset.change](el); }
   });
   window.addEventListener('resize', function () { if (me) { drawArrows(ctxOf()); } });
+  var scrollTick = false;
+  $('stage').addEventListener('scroll', function () {
+    if (scrollTick || !me) { return; }
+    scrollTick = true;
+    window.requestAnimationFrame(function () { scrollTick = false; drawArrows(ctxOf()); });
+  }, true);
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { actions.close(); } });
 
   function enter() {
