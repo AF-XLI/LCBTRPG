@@ -69,12 +69,10 @@
 
   function ctxOf() {
     var u = me.unitId ? S.units[me.unitId] : null;
-    var kpgm = me.role === 'gm';
+    var isGm = me.role === 'gm';
     var ctx = {
       me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false, gmPick: gmPick,
-      canSeeEnemySpeed: kpgm,
-      showEnemyTargets: S.phase !== 'enemy' || kpgm,
-      canSeeChoice: function (x) { return me.role === 'gm' || me.unitId === x.id || S.phase !== 'player'; },
+      canSeeEnemySpeed: isGm,
       pairs: null, targeting: false, selectedPid: null
     };
     ctx.pairs = S.phase === 'process' && S.proc && S.proc.pairs ? S.proc.pairs : L.computePairs(S);
@@ -176,7 +174,7 @@
     svg.setAttribute('height', wrap.scrollHeight);
     svg.setAttribute('viewBox', '0 0 ' + wrap.scrollWidth + ' ' + wrap.scrollHeight);
     if (arrowMode === 'off' || S.phase === 'setup' || S.phase === 'over') { svg.innerHTML = ''; return; }
-    var kpgm = me.role === 'gm';
+    var isGm = me.role === 'gm';
     var defs = '';
     var colors = { gold: 'rgb(230, 180, 50)', red: 'rgb(232, 104, 96)', blue: 'rgb(110, 200, 235)' };
     Object.keys(colors).forEach(function (k) {
@@ -256,7 +254,7 @@
     });
     A(S.pieces).forEach(function (P) {
       if (!P.target || drawnMatch[P.pid]) { return; }
-      if (S.phase === 'enemy' && !kpgm) { return; }
+      if (S.phase === 'enemy' && !isGm) { return; }
       var sk = L.pieceSkill(S, P);
       if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
       if (arrowMode === 'mine' && me.unitId !== P.target) { return; }
