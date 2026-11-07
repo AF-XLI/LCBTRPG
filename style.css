@@ -873,6 +873,23 @@ h4 {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+}
+ 
+.p-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 50%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+}
+ 
+.p-part {
+  display: block;
+  width: auto;
+  height: 1rem;
 }
  
 .p-letter {
