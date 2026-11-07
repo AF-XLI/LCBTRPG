@@ -104,6 +104,10 @@
       if (r) { keep[k] = r.scrollLeft; }
     });
     setHtml($('stage'), UI.stage(S, ctx));
+    setHtml($('sideL'), UI.leftBar(S, ctx));
+    setHtml($('sideR'), UI.rightBar(S, ctx));
+    $('sideL').hidden = !$('sideL').innerHTML;
+    $('sideR').hidden = !$('sideR').innerHTML;
     var key = S.round + '|' + (me.unitId || '') + '|' + Object.keys(S.units).length;
     var fresh = key !== scrollKey && !!$('stage').querySelector('.row');
     if (fresh) { scrollKey = key; }
@@ -290,6 +294,7 @@
     if (popupState.kind === 'allypiece') { html = UI.allyPiecePopup(S, popupState.id, ctxOf()); }
     if (popupState.kind === 'skill') { html = UI.skillPopup(S, ctxOf()); }
     if (popupState.kind === 'piece') { html = UI.piecePopup(S, popupState.id); }
+    if (popupState.kind === 'passive') { html = UI.passivePopup(S, popupState.id); }
     if (!html) { popupState = null; el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
     var next = '<div class="popup-card">' + html + '<button type="button" class="btn" data-act="close">閉じる</button></div>';
@@ -334,6 +339,13 @@
     'info-part': function (el) { showPopup('part', el.dataset.ref); },
     'info-unit': function (el) { showPopup('unit', el.dataset.id); },
     'info-piece': function (el) { showPopup('piece', el.dataset.pid); },
+    'info-passive': function (el) { showPopup('passive', el.dataset.ref); },
+    'm-res': function () {
+      var sin = $('mRes').value;
+      var v = readNum('mResV');
+      if (v === null) { return; }
+      commit(function (s) { L.setRes(s, sin, v); });
+    },
     press: function (el) {
       var pid = el.dataset.pid;
       var uid = pid.split('|')[0];
