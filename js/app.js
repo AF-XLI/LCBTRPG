@@ -26,6 +26,7 @@
   var scrollKey = '';
   var logOpen = false;
   var prevPhase = null;
+  var sideOpen = null;
 
   function loadMe() {
     var q = new URLSearchParams(location.search);
@@ -108,6 +109,8 @@
     setHtml($('sideR'), UI.rightBar(S, ctx));
     $('sideL').hidden = !$('sideL').innerHTML;
     $('sideR').hidden = !$('sideR').innerHTML;
+    $('sideL').classList.toggle('open', sideOpen === 'L');
+    $('sideR').classList.toggle('open', sideOpen === 'R');
     var key = S.round + '|' + (me.unitId || '') + '|' + Object.keys(S.units).length;
     var fresh = key !== scrollKey && !!$('stage').querySelector('.row');
     if (fresh) { scrollKey = key; }
@@ -340,6 +343,7 @@
     'info-unit': function (el) { showPopup('unit', el.dataset.id); },
     'info-piece': function (el) { showPopup('piece', el.dataset.pid); },
     'info-passive': function (el) { showPopup('passive', el.dataset.ref); },
+    'side-toggle': function (el) { sideOpen = sideOpen === el.dataset.side ? null : el.dataset.side; render(); },
     'm-res': function () {
       var sin = $('mRes').value;
       var v = readNum('mResV');
@@ -528,6 +532,7 @@
 
   document.addEventListener('click', function (ev) {
     if (ev.target.id === 'popup') { actions.close(); return; }
+    if (sideOpen && !ev.target.closest('.sidebar')) { sideOpen = null; render(); }
     var el = ev.target.closest('[data-act]');
     if (!el && ev.target.closest('#stage')) {
       var had = Object.keys(pressed).some(function (k) { return pressed[k]; });
