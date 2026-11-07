@@ -425,6 +425,40 @@
     return badges({ st: total });
   }
 
+  function physIcon(sk) {
+    if (sk.kind === 'counter') { return 'counter'; }
+    if (sk.kind === 'defense') { return sk.sub === 'evade' ? 'evade' : 'guard'; }
+    return sk.phys || '';
+  }
+
+  function frameImg(sk, kind, stag) {
+    if (stag) { return '<img class="frame" src="image/skill/stagger-action.png" alt="">'; }
+    if (!sk || kind === 'blank' || kind === 'destroyed') { return frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank'); }
+    if (!SIN_COLORS[sk.sin]) { return frameSvg(sk.sin, sk.tier); }
+    var tier = Math.max(1, Math.min(3, L.num(sk.tier, 1)));
+    var html = '<img class="frame" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
+    var icon = physIcon(sk);
+    if (icon) { html += '<img class="p-icon" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
+    return html;
+  }
+
+  function partIconName(part) {
+    if (part.icon) { return part.icon; }
+    var n = part.name || '';
+    if (/頭|首|顔/.test(n)) { return 'head'; }
+    if (/脚|足/.test(n)) { return 'leg'; }
+    if (/腕|手|爪/.test(n)) { return 'arm'; }
+    if (/尾|しっぽ/.test(n)) { return 'tail'; }
+    if (/胴|体|胸|腹/.test(n)) { return 'body'; }
+    return '';
+  }
+
+  function partMark(part) {
+    var icon = partIconName(part);
+    if (!icon) { return esc(part.name); }
+    return '<img class="p-part" src="image/icon/abnormality/' + esc(icon) + '.png" alt="' + esc(part.name) + '" title="' + esc(part.name) + '" onerror="this.outerHTML=\'' + esc(part.name) + '\'">';
+  }
+
   function pieceHtml(S, P, ctx, u, pi) {
     var part = u.parts[pi];
     var multi = u.kind === 'abnormality';
@@ -437,15 +471,13 @@
     if (ctx.pressed[u.id] === P.pid) { cls += ' pressed'; }
     if (ctx.selectedPid === P.pid) { cls += ' picked'; }
     var can = ctx.canSetTarget && sk && !out && (!ctx.targetAttackOnly || sk.kind === 'attack');
-    var sub = multi ? part.name : '';
-    if (sk && sk.kind !== 'attack') { sub += (sub ? '・' : '') + kindLabel(sk); }
-    var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
+    var sub = multi ? partMark(part) : '';
     var gmAct = ctx.me.role === 'gm' && S.phase === 'enemy' && sk && !out && (sk.kind === 'attack' || sk.kind === 'defense');
     if (ctx.gmPick === P.pid) { cls += ' picked'; }
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (g && g.b && !out ? L.num(g.b.spd, 0) : '&nbsp;') + '</span>' +
-      '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier) + '<span class="p-letter">' + esc(letter) + '</span></span>' +
-      '<span class="p-sub">' + esc(sub) + '</span></button>';
+      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && g.b.stagger) + '</span>' +
+      '<span class="p-sub">' + sub + '</span></button>';
   }
 
   function blankHtml(S, u, pi, ctx) {
@@ -456,17 +488,16 @@
     var cls = 'piece blank' + (ctx.pressed[u.id] === pid ? ' pressed' : '') + (ctx.selectedPid === pid ? ' picked' : '');
     var bg = L.getB(S, { u: u.id, p: pi });
     var blankSpd = bg && bg.b ? L.num(bg.b.spd, 0) : null;
-    var letter = multi ? part.name.charAt(0) : u.name.charAt(u.name.length - 1);
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (blankSpd === null ? '&nbsp;' : blankSpd) + '</span>' +
-      '<span class="p-frame">' + frameSvg(null, 0, 'blank') + '</span>' +
-      '<span class="p-sub">' + esc(multi ? part.name : '') + '</span></button>';
+      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && bg.b.stagger) + '</span>' +
+      '<span class="p-sub">' + (multi ? partMark(part) : '') + '</span></button>';
   }
 
   function destroyedHtml(u, pi) {
     var part = u.parts[pi];
     return '<div class="piece destroyed" data-part="' + esc(u.id + '|' + pi) + '"><span class="p-label muted">破壊済</span>' +
-      '<span class="p-frame">' + frameSvg(null, 0, 'destroyed') + '</span><span class="p-sub">' + esc(part.name) + '</span></div>';
+      '<span class="p-frame">' + frameSvg(null, 0, 'destroyed') + '</span><span class="p-sub">' + (u.kind === 'abnormality' ? partMark(part) : esc(part.name)) + '</span></div>';
   }
 
   function enemyColumn(S, u, ctx) {
@@ -523,10 +554,10 @@
     var sub = '';
     var kind = 'blank';
     if (u.dead) { label = ''; kind = 'destroyed'; }
-    else if (u.stagger) { label = '混乱'; }
+    else if (u.stagger) { label = '混乱'; kind = 'stagger'; }
     else if (ch && ch.sel && S.phase !== 'enemy') {
       sk = L.chosenSkill(S, u);
-      if (sk) { label = sk.name || ''; kind = 'skill'; sub = sk.kind !== 'attack' ? kindLabel(sk) : ''; }
+      if (sk) { label = sk.name || ''; kind = 'skill'; }
     }
     if (ctx.gmPick && !u.dead) { pieceCls += ' picked'; }
     if (ch && ch.acted) { pieceCls += ' acted'; }
@@ -534,7 +565,7 @@
     if (showPiece) {
       piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' +
         '<span class="p-label' + (kind === 'skill' ? '' : ' muted') + '">' + esc(label) + '</span>' +
-        '<span class="p-frame">' + frameSvg(sk && sk.sin, sk && sk.tier, kind) + '</span>' +
+        '<span class="p-frame">' + frameImg(sk, kind, kind === 'stagger') + '</span>' +
         '<span class="p-sub">' + esc(sub) + '</span></button>';
     }
     var state = '';
