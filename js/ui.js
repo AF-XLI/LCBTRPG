@@ -7,7 +7,6 @@
 
   var PHASE_LABEL = { setup: '準備', enemy: '敵の行動決定', player: '味方の行動選択', process: '戦闘処理', roundEnd: 'ラウンド終了', over: '決着' };
   var ROLE_LABEL = { gm: 'GM', player: 'プレイヤー', observer: '観戦' };
-  var SEL_LABEL = { c0: 'カード1', c1: 'カード2', def: '守備' };
   var SUB_LABEL = { guard: '防御', evade: '回避' };
 
   function esc(s) {
@@ -108,19 +107,6 @@
     if (!b.stagger) { return '<span class="stag">パニック</span>'; }
     return '<span class="stag">混乱' + (b.stagger.level > 1 ? ' Lv' + b.stagger.level : '') + '</span>';
   }
-
-  function portrait(name, img) {
-    if (img) { return '<img class="face" src="' + esc(img) + '" alt="">'; }
-    return '<span class="face init">' + esc(String(name || '?').charAt(0)) + '</span>';
-  }
-
-
-
-
-
-
-
-
 
   function skillDetail(sk, title) {
     if (!sk) { return '<p class="empty">スキルがありません</p>'; }
