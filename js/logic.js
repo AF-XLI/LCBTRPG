@@ -30,7 +30,8 @@
     rupture: { label: '破裂', type: 'pc', kind: 'debuff', glyph: '破', color: 'rgb(235, 130, 190)', text: 'ダメージ時に威力分の固定ダメージ' },
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', glyph: '沈', color: 'rgb(80, 130, 210)', text: 'ダメージ時に威力分の精神力ダメージ' },
     breath: { label: '呼吸', type: 'pc', kind: 'buff', glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
-    charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, text: '消耗でスキルが強化される' },
+    charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, charge: true, text: '消耗でスキルが強化される' },
+    specialCharge: { label: '特殊充電', type: 'pc', kind: 'buff', glyph: '特', color: 'rgb(240, 160, 70)', maxCount: 20, keepPotency: true, charge: true, text: '充電と同じ仕様の特殊な充電(消耗でスキルが強化される)' },
     paralysis: { label: '麻痺', type: 'val', kind: 'debuff', glyph: '麻', color: 'rgb(200, 190, 90)', text: 'コイン威力を0にする(トスごとに-1)' },
     bind: { label: '束縛', type: 'val', kind: 'debuff', glyph: '縛', color: 'rgb(160, 130, 100)', text: '速度が減少' },
     dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', glyph: '攻↓', color: 'rgb(170, 140, 140)', max: 10, text: '与えるダメージが数値×10%減少' },
@@ -100,6 +101,8 @@
   }
   function staggerPhysMult(level) { return 2 + 0.5 * (level - 1); }
 
+  function incap(b) { return !!(b && (b.stagger || b.panic)); }
+
   function headsProb(sp) { return clamp(50 + num(sp, 0), 0, 100) / 100; }
 
   function newState() {
@@ -133,6 +136,7 @@
     u.id = sanitizeId(u.id, (u.side === 'enemy' ? 'e' : 'a') + (ord + 1), usedIds);
     u.name = u.name || u.id;
     u.ord = ord;
+    u.slot = ord;
     u.img = u.img || '';
     u.dead = false;
     u.flags = O(u.flags);
@@ -212,6 +216,27 @@
       state.units[u.id] = u;
       ord += 1;
     });
+  }
+
+  function enemyOrder(state) {
+    var list = [];
+    Object.keys(state.units).forEach(function (id) {
+      if (state.units[id].side === 'enemy') { list.push(state.units[id]); }
+    });
+    list.sort(function (a, b) { return num(a.slot, a.ord) - num(b.slot, b.ord) || a.ord - b.ord; });
+    return list;
+  }
+
+  function moveSlot(state, id, dir) {
+    var list = enemyOrder(state);
+    var i = -1;
+    list.forEach(function (u, n) { if (u.id === id) { i = n; } });
+    var j = i + (dir < 0 ? -1 : 1);
+    if (i < 0 || j < 0 || j >= list.length) { return; }
+    var t = list[i];
+    list[i] = list[j];
+    list[j] = t;
+    list.forEach(function (u, n) { u.slot = n; });
   }
 
   function getB(state, ref) {
@@ -464,7 +489,7 @@
         drawSpeed(u);
         u.choice = null;
         ensureDeck(u, rng);
-        if (u.stagger) { u.choice = { sel: 'stag', target: null, confirmed: true, ts: 0 }; }
+        if (incap(u)) { u.choice = { sel: 'stag', target: null, confirmed: true, ts: 0 }; }
       } else {
         u.parts.forEach(function (p) { activate(p); drawSpeed(p); });
       }
@@ -494,7 +519,7 @@
     var list = [];
     Object.keys(state.units).forEach(function (id) {
       var u = state.units[id];
-      if (u.side !== 'ally' || u.dead || u.stagger) { return; }
+      if (u.side !== 'ally' || u.dead || incap(u)) { return; }
       var ch = u.choice;
       if (!ch || !ch.target) { return; }
       var sk = chosenSkill(state, u);
@@ -520,7 +545,7 @@
       var sk = pieceSkill(state, P);
       if (!sk || sk.kind !== 'attack') { return; }
       if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
-      else if (P.target === a.id && !matchOf[P.pid]) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
+      else if (P.target === a.id) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
     });
     Object.keys(matchOf).forEach(function (pid) { allyMatch[matchOf[pid]] = pid; });
     Object.keys(defenders).forEach(function (pid) { if (!defenders[pid]) { delete defenders[pid]; } });
@@ -557,7 +582,7 @@
     g.b.lines = lines.filter(function (l) { return info.cur >= l; });
     var lvl = crossed.length;
     var cur = g.b.stagger;
-    g.b.stagger = { level: (cur ? cur.level : 0) + lvl, until: state.round + 1 };
+    g.b.stagger = { level: Math.min(3, (cur ? cur.level : 0) + lvl), until: state.round + 1 };
     var label = '混乱' + new Array(g.b.stagger.level).join('+');
     log(state, nameOf(state, ref) + ' が' + label + '状態になった(耐性低下・行動不能)');
     fx(state, ref, label, 'stagger');
@@ -601,9 +626,14 @@
 
   function changeSp(state, ref, delta) {
     var g = getB(state, ref);
-    if (!g || g.b.noSp) { return; }
-    g.b.sp = clamp(num(g.b.sp, 0) + delta, SP_MIN, SP_MAX);
-    if (g.b.sp <= SP_MIN) { log(state, nameOf(state, ref) + ' の精神力が' + SP_MIN + 'になった(パニック)'); }
+    if (!g || g.b.noSp || g.b.panic) { return; }
+    var before = num(g.b.sp, 0);
+    g.b.sp = clamp(before + delta, SP_MIN, SP_MAX);
+    if (g.b.sp <= SP_MIN && before > SP_MIN) {
+      g.b.panic = { until: state.phase === 'process' ? state.round + 1 : state.round };
+      log(state, nameOf(state, ref) + ' の精神力が' + SP_MIN + 'になった(パニック)');
+      fx(state, ref, 'パニック', 'stagger');
+    }
   }
 
   function coinAdd(b, c) {
@@ -770,6 +800,12 @@
         }
       }
       applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1);
+      if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
+        changeSp(state, atk.ref, 10);
+        log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
+        fx(state, atk.ref, '精神+10', 'sp');
+        break;
+      }
     }
     if (hit) { applyGrants(state, atk.ref, defRef, skill, 'hit'); }
     return hit;
@@ -780,12 +816,14 @@
     if (!st) { return; }
     var n = consume.amount === 'all' ? num(st.c, 0) : Math.min(num(consume.amount, 0), num(st.c, 0));
     st.c = num(st.c, 0) - n;
-    if (consume.status === 'charge') {
-      var before = Math.floor(num(g.b.chargeUsed, 0) / 10);
-      g.b.chargeUsed = num(g.b.chargeUsed, 0) + n;
-      var after = Math.floor(g.b.chargeUsed / 10);
+    var cdef = STATUS[statusParts(consume.status).base];
+    if (cdef && cdef.charge) {
+      var ukey = consume.status === 'charge' ? 'chargeUsed' : consume.status + 'Used';
+      var before = Math.floor(num(g.b[ukey], 0) / 10);
+      g.b[ukey] = num(g.b[ukey], 0) + n;
+      var after = Math.floor(g.b[ukey] / 10);
       if (after > before) { st.p = Math.min(99, num(st.p, 0) + after - before); }
-      if (st.c <= 0 && num(st.p, 0) <= 0) { delete g.b.st.charge; }
+      if (st.c <= 0 && num(st.p, 0) <= 0) { delete g.b.st[consume.status]; }
     } else if (st.c <= 0) {
       delete g.b.st[consume.status];
     }
@@ -819,7 +857,7 @@
   function targetGone(state, P) {
     if (!P.target) { return true; }
     var au = state.units[P.target];
-    if (!au || au.dead || au.stagger) { return true; }
+    if (!au || au.dead || incap(au)) { return true; }
     var ch = au.choice;
     return !!(ch && (ch.acted || ch.sel === 'none' || ch.sel === 'stag'));
   }
@@ -828,7 +866,7 @@
     var g = getB(state, defRef);
     var uid = atk ? atk.uid : 0;
     if (!g || isOut(g)) { return null; }
-    if (g.b.stagger) { return null; }
+    if (incap(g.b)) { return null; }
     if (g.unit.side === 'ally') {
       var ch = g.unit.choice;
       if (!ch || ch.sel !== 'def') { return null; }
@@ -886,6 +924,85 @@
     };
   }
 
+  function previewSkill(state, ref, skill, targetRef) {
+    var g = getB(state, ref);
+    var tg = targetRef ? getB(state, targetRef) : null;
+    var s = clone(skill);
+    var hit = g ? skillView(state, g, skill, tg) : null;
+    if (hit) {
+      var as = hit.as || {};
+      Object.keys(as).forEach(function (k) { s[k] = clone(as[k]); });
+    }
+    s.coins = A(s.coins).slice();
+    return s;
+  }
+
+  function powerDist(g, skill, from) {
+    var p = g.b.noSp ? 0.5 : headsProb(g.b.sp);
+    var para = num(O(g.b.st).paralysis && g.b.st.paralysis.v, 0) > 0;
+    var dist = { 0: 1 };
+    A(skill.coins).slice(from).forEach(function (c) {
+      var add = para ? 0 : coinAdd(g.b, c);
+      var next = {};
+      Object.keys(dist).forEach(function (k) {
+        var q = dist[k];
+        next[k] = (next[k] || 0) + q * (1 - p);
+        var k2 = Number(k) + add;
+        next[k2] = (next[k2] || 0) + q * p;
+      });
+      dist = next;
+    });
+    var base = num(skill.base, 0) + powerAdj(g.b, skill, true);
+    var out = {};
+    Object.keys(dist).forEach(function (k) {
+      var pw = Math.max(0, base + Number(k));
+      out[pw] = (out[pw] || 0) + dist[k];
+    });
+    return out;
+  }
+
+  function winProb(state, X, Y) {
+    var gx = getB(state, X.ref);
+    var gy = getB(state, Y.ref);
+    if (!gx || !gy) { return null; }
+    var lx = A(X.skill.coins).length;
+    var ly = A(Y.skill.coins).length;
+    if (!lx || !ly) { return null; }
+    var dx = [];
+    var dy = [];
+    var i;
+    for (i = 0; i < lx; i += 1) { dx.push(powerDist(gx, X.skill, i)); }
+    for (i = 0; i < ly; i += 1) { dy.push(powerDist(gy, Y.skill, i)); }
+    var rounds = {};
+    function round(a, b) {
+      var key = a + ',' + b;
+      if (rounds[key]) { return rounds[key]; }
+      var win = 0;
+      var lose = 0;
+      Object.keys(dx[a]).forEach(function (px) {
+        Object.keys(dy[b]).forEach(function (py) {
+          var q = dx[a][px] * dy[b][py];
+          if (Number(px) > Number(py)) { win += q; } else if (Number(px) < Number(py)) { lose += q; }
+        });
+      });
+      rounds[key] = { win: win, lose: lose };
+      return rounds[key];
+    }
+    var memo = {};
+    function f(a, b) {
+      if (b >= ly) { return 1; }
+      if (a >= lx) { return 0; }
+      var key = a + ',' + b;
+      if (memo[key] !== undefined) { return memo[key]; }
+      var r = round(a, b);
+      var v = r.win + r.lose > 0 ? (r.win * f(a, b + 1) + r.lose * f(a + 1, b)) / (r.win + r.lose) : 0.5;
+      memo[key] = v;
+      return v;
+    }
+    var x = f(0, 0);
+    return { x: x, y: 1 - x };
+  }
+
   function clash(state, X, Y, rng) {
     var matches = 0;
     var guard = 0;
@@ -938,7 +1055,7 @@
 
   function activateEnemyDefense(state, allyId, partRef) {
     var g = getB(state, partRef);
-    if (!g || g.unit.side !== 'enemy' || isOut(g) || g.b.stagger) { return; }
+    if (!g || g.unit.side !== 'enemy' || isOut(g) || incap(g.b)) { return; }
     A(state.pieces).forEach(function (P) {
       if (P.unitId !== partRef.u || P.partIdx !== (partRef.p || 0) || P.target !== allyId || P.defActive) { return; }
       var sk = pieceSkill(state, P);
@@ -983,7 +1100,7 @@
     react.mark();
     var dg = getB(state, defRef);
     var ag = getB(state, atk.ref);
-    if (isOut(dg) || isOut(ag) || dg.b.stagger) {
+    if (isOut(dg) || isOut(ag) || incap(dg.b)) {
       log(state, nameOf(state, defRef) + ' は反撃できなかった');
       return;
     }
@@ -1033,7 +1150,7 @@
     var u = state.units[e.unitId];
     var ch = u.choice;
     if (u.dead) { return; }
-    if (u.stagger) { log(state, u.name + ' は混乱しており行動できない'); return; }
+    if (incap(u)) { log(state, u.name + ' は' + (u.stagger ? '混乱' : 'パニック') + 'で行動できない'); return; }
     if (ch.sel === 'def') {
       log(state, u.name + ' は守備の構え');
       return;
@@ -1064,7 +1181,7 @@
     if (pairs.matchOf[P.pid] === u.id && !P.blank && !P.acted) {
       var psk = pieceSkill(state, P);
       var pg = getB(state, pieceRef(P));
-      if (psk && !pg.b.stagger && !isOut(pg) && psk.kind === 'attack') { partnerOk = true; }
+      if (psk && !incap(pg.b) && !isOut(pg) && psk.kind === 'attack') { partnerOk = true; }
     }
     if (partnerOk) {
       P.acted = true;
@@ -1086,8 +1203,8 @@
     if (isOut(g)) { return; }
     var sk0 = pieceSkill(state, P);
     if (!sk0) { return; }
-    if (g.b.stagger) {
-      log(state, nameOf(state, ref) + ' は混乱しており「' + (sk0.name || '') + '」を使えない');
+    if (incap(g.b)) {
+      log(state, nameOf(state, ref) + ' は' + (g.b.stagger ? '混乱' : 'パニック') + 'で「' + (sk0.name || '') + '」を使えない');
       fx(state, ref, '取消', 'cancel');
       return;
     }
@@ -1105,7 +1222,7 @@
     var skill = resolveSkill(state, ref, sk0, { u: allyId, p: null });
     applyGrants(state, ref, { u: allyId, p: null }, skill, 'use');
     log(state, nameOf(state, ref) + ' が「' + (skill.name || '') + '」で ' + au.name + ' を攻撃');
-    if (O(pairs.defenders)[P.pid] && au.choice && !au.stagger) {
+    if (O(pairs.defenders)[P.pid] && au.choice && !incap(au)) {
       au.choice.defActive = true;
       au.choice.acted = true;
       var dsk = chosenSkill(state, au);
@@ -1113,7 +1230,7 @@
     }
     var X = sideOfPiece(state, P, skill);
     var partnerOk = false;
-    if (pairs.matchOf[P.pid] === allyId && au.choice && !au.choice.acted && !au.stagger) {
+    if (pairs.matchOf[P.pid] === allyId && au.choice && !au.choice.acted && !incap(au)) {
       var ask = chosenSkill(state, au);
       if (ask && ask.kind === 'attack' && au.choice.target === P.pid) { partnerOk = true; }
     }
@@ -1169,12 +1286,20 @@
       if (vi) { vi.c -= 1; if (vi.c <= 0) { delete b.st.vibration; } }
       var br = O(b.st).breath;
       if (br) { br.c -= 1; if (br.c <= 0) { delete b.st.breath; } }
-      var ch = O(b.st).charge;
-      if (ch) { ch.c -= 1; if (ch.c <= 0) { ch.c = 0; ch.p = ch.p || 0; if (!(ch.p > 0)) { delete b.st.charge; } } }
+      Object.keys(O(b.st)).forEach(function (k) {
+        var cdef = STATUS[statusParts(k).base];
+        var ch = b.st[k];
+        if (cdef && cdef.charge && ch) { ch.c -= 1; if (ch.c <= 0) { ch.c = 0; ch.p = ch.p || 0; if (!(ch.p > 0)) { delete b.st[k]; } } }
+      });
       Object.keys(O(b.st)).forEach(function (k) {
         var def = STATUS[statusParts(k).base];
         if (def && def.type === 'val') { delete b.st[k]; }
       });
+      if (b.panic && b.panic.until <= state.round) {
+        log(state, nameOf(state, ref) + ' のパニックが収まった(精神力は0に戻る)');
+        b.panic = null;
+        b.sp = 0;
+      }
       if (b.stagger && b.stagger.until <= state.round) {
         log(state, nameOf(state, ref) + ' の混乱が回復した');
         b.stagger = null;
@@ -1185,7 +1310,9 @@
       if (u.side !== 'ally' || u.dead) { return; }
       var ch = u.choice;
       ensureDeck(u, rng);
-      if (ch && (ch.acted || ch.sel === 'def')) {
+      var csk = ch && (ch.sel === 'c0' || ch.sel === 'c1') ? chosenSkill(state, u) : null;
+      var defUsedUp = !!(csk && (csk.kind === 'defense' || csk.kind === 'counter'));
+      if (ch && (ch.acted || ch.sel === 'def' || defUsedUp)) {
         var q = A(u.deck.q);
         if (ch.sel === 'def') { q.splice(0, 1); }
         else if (ch.sel === 'c0') { q.splice(0, 1); }
@@ -1219,7 +1346,7 @@
 
   function selectChoice(state, unitId, sel, ts) {
     var u = state.units[unitId];
-    if (!u || u.dead || u.stagger) { return; }
+    if (!u || u.dead || incap(u)) { return; }
     var old = u.choice || {};
     u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, confirmed: false, ts: ts };
     var sk = chosenSkill(state, u);
@@ -1290,13 +1417,13 @@
     SINS: SINS, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
     A: A, O: O, clone: clone, normalize: normalize, clamp: clamp, num: num, shuffle: shuffle, randInt: randInt,
     newState: newState, parseSetup: parseSetup, loadUnits: loadUnits, initUnit: initUnit,
-    getB: getB, nameOf: nameOf, hpInfo: hpInfo, isOut: isOut, resBonus: resBonus, resMultOf: resMultOf, staggerPhysMult: staggerPhysMult,
+    getB: getB, nameOf: nameOf, hpInfo: hpInfo, isOut: isOut, resBonus: resBonus, resMultOf: resMultOf, staggerPhysMult: staggerPhysMult, incap: incap,
     handOf: handOf, chosenSkill: chosenSkill, slotSkill: slotSkill, getPiece: getPiece, pieceSkill: pieceSkill, pieceRef: pieceRef, pieceId: pieceId, parsePid: parsePid,
     startRound: startRound, beginCombat: beginCombat, gmConfirm: gmConfirm, planEnemyPieces: planEnemyPieces, rebuildPiecesFor: rebuildPiecesFor,
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget,
     addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, checkStagger: checkStagger, checkEnd: checkEnd,
     vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
-    engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
+    winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
   };
 }));
