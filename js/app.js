@@ -78,7 +78,7 @@
       pairs: null, targeting: false, selectedPid: null
     };
     ctx.pairs = S.phase === 'process' && S.proc && S.proc.pairs ? S.proc.pairs : L.computePairs(S);
-    if (me.role === 'player' && u && !u.dead && !u.stagger && S.phase === 'player' && u.choice && u.choice.sel && u.choice.sel !== 'stag') {
+    if (me.role === 'player' && u && !u.dead && !L.incap(u) && S.phase === 'player' && u.choice && u.choice.sel && u.choice.sel !== 'stag') {
       var sk = L.chosenSkill(S, u);
       var isDefSel = !!(sk && sk.kind === 'defense');
       ctx.targeting = !!(sk && (sk.kind === 'attack' || isDefSel));
@@ -235,7 +235,7 @@
     var drawnMatch = {};
     Object.keys(S.units).forEach(function (id) {
       var u = S.units[id];
-      if (u.side !== 'ally' || u.dead || u.stagger || !u.choice || !u.choice.target) { return; }
+      if (u.side !== 'ally' || u.dead || L.incap(u) || !u.choice || !u.choice.target) { return; }
       if (S.phase === 'enemy') { return; }
       var sk = L.chosenSkill(S, u);
       if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
@@ -365,9 +365,9 @@
         commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = id; } }); });
         return;
       }
-      var shown = S.phase !== 'enemy' && !u.dead && !u.stagger && u.choice && u.choice.sel && L.chosenSkill(S, u);
+      var shown = S.phase !== 'enemy' && !u.dead && !L.incap(u) && u.choice && u.choice.sel && L.chosenSkill(S, u);
       if (shown) { showPopup('allypiece', id); return; }
-      if (me.role === 'player' && me.unitId === id && S.phase === 'player' && !u.dead && !u.stagger) {
+      if (me.role === 'player' && me.unitId === id && S.phase === 'player' && !u.dead && !L.incap(u)) {
         popupState = { kind: 'skill', id: id };
         refreshPopup();
         return;
@@ -410,6 +410,7 @@
     },
     'load-allies': function () { var t = $('jsonAllies').value.trim(); if (t) { loadText(t, '味方'); $('jsonAllies').value = ''; } },
     'load-enemies': function () { var t = $('jsonEnemies').value.trim(); if (t) { loadText(t, '敵'); $('jsonEnemies').value = ''; } },
+    'slot-move': function (el) { var id = el.dataset.id; var dir = Number(el.dataset.dir); commit(function (s) { L.moveSlot(s, id, dir); }); },
     begin: function () { commit(function (s) { L.beginCombat(s, rng); }); },
     reset: function () {
       if (!confirm('このルームの戦闘データをすべて削除します。よろしいですか?')) { return; }
