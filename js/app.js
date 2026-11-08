@@ -556,6 +556,12 @@
     window.requestAnimationFrame(function () { scrollTick = false; drawArrows(ctxOf()); });
   }, true);
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { actions.close(); } });
+  document.addEventListener('contextmenu', function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('.stage-wrap, .sidebar, #popup')) { ev.preventDefault(); }
+  });
+  document.addEventListener('dragstart', function (ev) {
+    if (ev.target && ev.target.tagName === 'IMG') { ev.preventDefault(); }
+  });
 
   function enter() {
     $('lobby').hidden = true;
