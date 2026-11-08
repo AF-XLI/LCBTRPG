@@ -434,15 +434,15 @@
 
   function frameImg(sk, kind, stag, ring) {
     ring = ring || '';
-    if (stag) { return '<img class="frame" src="image/skill/stagger-action.png" alt="">' + ring; }
-    if (!sk || kind === 'blank' || kind === 'destroyed') { return frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank') + ring; }
-    if (!SIN_COLORS[sk.sin]) { return frameSvg(sk.sin, sk.tier) + ring; }
+    if (stag) { return ring + '<img class="frame" src="image/skill/stagger-action.png" alt="">'; }
+    if (!sk || kind === 'blank' || kind === 'destroyed') { return ring + frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank'); }
+    if (!SIN_COLORS[sk.sin]) { return ring + frameSvg(sk.sin, sk.tier); }
     var tier = Math.max(1, Math.min(3, L.num(sk.tier, 1)));
     var html = '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '-bg.png" alt="" onerror="this.remove()">';
-    html += '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
     html += ring;
     var icon = physIcon(sk);
     if (icon) { html += '<img class="p-icon" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
+    html += '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
     return html;
   }
 
