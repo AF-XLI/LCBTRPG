@@ -563,10 +563,15 @@
     if (ctx.gmPick && !u.dead) { pieceCls += ' picked'; }
     if (ch && ch.acted) { pieceCls += ' acted'; }
     var piece = '';
+    var reso = '';
+    var re = showPiece && !u.dead && !L.incap(u) ? L.O(L.resoOf(S).by)[u.id] : null;
+    if (re && re.kind) {
+      reso = '<span class="p-reso' + (re.kind === 'full' ? ' full' : '') + '" style="--reso: ' + sinColor(re.sin) + ';">' + (re.kind === 'full' ? '完全共鳴' : esc(L.SINS[re.sin].label) + '共鳴') + '</span>';
+    }
     if (showPiece) {
       piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' +
         '<span class="p-label' + (kind === 'skill' ? '' : ' muted') + '">' + esc(label) + '</span>' +
-        '<span class="p-frame">' + frameImg(sk, kind, kind === 'stagger') + '</span>' +
+        '<span class="p-frame">' + frameImg(sk, kind, kind === 'stagger') + reso + '</span>' +
         '<span class="p-sub">' + esc(sub) + '</span></button>';
     }
     var state = '';
@@ -602,7 +607,11 @@
     allies.sort(function (a, b) {
       var d = (a.dead ? 1 : 0) - (b.dead ? 1 : 0);
       if (d) { return d; }
-      if (S.phase !== 'setup') { var s = L.num(b.spd, 0) - L.num(a.spd, 0); if (s) { return s; } }
+      if (S.phase !== 'setup') {
+        if (a.rank !== undefined && b.rank !== undefined) { return a.rank - b.rank; }
+        var s = L.num(b.spd, 0) - L.num(a.spd, 0);
+        if (s) { return s; }
+      }
       return a.ord - b.ord;
     });
     var legend = '<div class="legend"><span class="lg gold">マッチ(敵と味方がぶつかる)</span><span class="lg red">敵の一方攻撃</span><span class="lg blue">味方の一方攻撃</span><span class="lg dash">確定前</span></div>' +
@@ -728,10 +737,14 @@
     var kind = s[1] === 'supportPassives' ? 'サポートパッシブ' : 'パッシブ';
     var need = O(p.need);
     var conds = L.RES_ORDER.filter(function (k) { return L.num(need[k], 0) > 0; }).map(function (k) {
-      return esc(L.SINS[k].label) + '×' + L.num(need[k], 0) + '(現在 ' + L.resOf(S, k) + ')';
+      return esc(L.SINS[k].label) + '×' + L.num(need[k], 0) + '保有(現在 ' + L.resOf(S, k) + ')';
     });
+    var rc = L.RES_ORDER.filter(function (k) { return L.num(O(p.reso)[k], 0) > 0; }).map(function (k) {
+      return esc(L.SINS[k].label) + '×' + L.num(p.reso[k], 0) + '共鳴(現在 ' + L.resoCount(S, k) + ')';
+    });
+    conds = conds.concat(rc);
     var html = '<h3>' + esc(p.name || kind) + '</h3><div class="line">' + esc(u.name) + ' / ' + kind + '</div>';
-    if (conds.length) { html += '<div class="line">発動条件: ' + conds.join(' ') + ' 保有 ' + (L.passiveOk(S, p) ? '(達成)' : '(未達成)') + '</div>'; }
+    if (conds.length) { html += '<div class="line">発動条件: ' + conds.join(' ') + ' ' + (L.passiveOk(S, p) ? '(達成)' : '(未達成)') + '</div>'; }
     if (p.text) { html += '<p class="note">' + esc(p.text).replace(/\n/g, '<br>') + '</p>'; }
     return html;
   }
