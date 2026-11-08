@@ -278,10 +278,13 @@
       u.parts = A(u.parts);
       if (!u.parts.length) { u.parts = [{ name: u.name }]; }
       if (u.kind === 'normal') { u.parts = [u.parts[0]]; }
+      u.spShared = u.kind === 'abnormality' && !u.noSp && typeof u.sp === 'number';
+      if (u.spShared) { u.sp = clamp(u.sp, SP_MIN, SP_MAX); }
       u.parts.forEach(function (p, idx) {
         p.name = p.name || ('部位' + (idx + 1));
         if (p.noSp === undefined) { p.noSp = !!u.noSp; }
         p.noSp = !!p.noSp;
+        if (u.spShared) { p.noSp = false; p.sp = u.sp; }
         if (u.kind === 'abnormality') {
           p.maxDur = Math.max(1, num(p.maxDur, 50));
           p.dur = clamp(num(p.dur, p.maxDur), 0, p.maxDur);
@@ -747,14 +750,23 @@
     return amount;
   }
 
+  function syncSp(unit, value) {
+    if (!unit || !unit.spShared) { return; }
+    unit.sp = value;
+    A(unit.parts).forEach(function (p) { p.sp = value; });
+  }
+
   function changeSp(state, ref, delta) {
     var g = getB(state, ref);
     if (!g || g.b.noSp || g.b.panic) { return; }
     var before = num(g.b.sp, 0);
     g.b.sp = clamp(before + delta, SP_MIN, SP_MAX);
+    syncSp(g.unit, g.b.sp);
     if (g.b.sp <= SP_MIN && before > SP_MIN) {
-      g.b.panic = { until: state.phase === 'process' ? state.round + 1 : state.round };
-      log(state, nameOf(state, ref) + ' の精神力が' + SP_MIN + 'になった(パニック)');
+      var until = state.phase === 'process' ? state.round + 1 : state.round;
+      if (g.unit.spShared) { g.unit.parts.forEach(function (p) { p.panic = { until: until }; }); }
+      else { g.b.panic = { until: until }; }
+      log(state, (g.unit.spShared ? g.unit.name : nameOf(state, ref)) + ' の精神力が' + SP_MIN + 'になった(パニック)');
       fx(state, ref, 'パニック', 'stagger');
     }
   }
@@ -1428,6 +1440,7 @@
         log(state, nameOf(state, ref) + ' のパニックが収まった(精神力は0に戻る)');
         b.panic = null;
         b.sp = 0;
+        syncSp(state.units[ref.u], 0);
       }
       if (b.stagger && b.stagger.until <= state.round) {
         log(state, nameOf(state, ref) + ' の混乱が回復した');
@@ -1551,7 +1564,7 @@
     startRound: startRound, beginCombat: beginCombat, gmConfirm: gmConfirm, planEnemyPieces: planEnemyPieces, rebuildPiecesFor: rebuildPiecesFor,
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget,
-    addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, checkStagger: checkStagger, checkEnd: checkEnd,
+    addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
     vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
     winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
   };
