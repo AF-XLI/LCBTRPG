@@ -432,13 +432,15 @@
     return sk.phys || '';
   }
 
-  function frameImg(sk, kind, stag) {
-    if (stag) { return '<img class="frame" src="image/skill/stagger-action.png" alt="">'; }
-    if (!sk || kind === 'blank' || kind === 'destroyed') { return frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank'); }
-    if (!SIN_COLORS[sk.sin]) { return frameSvg(sk.sin, sk.tier); }
+  function frameImg(sk, kind, stag, ring) {
+    ring = ring || '';
+    if (stag) { return '<img class="frame" src="image/skill/stagger-action.png" alt="">' + ring; }
+    if (!sk || kind === 'blank' || kind === 'destroyed') { return frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank') + ring; }
+    if (!SIN_COLORS[sk.sin]) { return frameSvg(sk.sin, sk.tier) + ring; }
     var tier = Math.max(1, Math.min(3, L.num(sk.tier, 1)));
     var html = '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '-bg.png" alt="" onerror="this.remove()">';
     html += '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
+    html += ring;
     var icon = physIcon(sk);
     if (icon) { html += '<img class="p-icon" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
     return html;
@@ -478,7 +480,7 @@
     if (ctx.gmPick === P.pid) { cls += ' picked'; }
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (g && g.b && !out ? L.num(g.b.spd, 0) : '&nbsp;') + '</span>' +
-      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && L.incap(g.b)) + enemyRing(L.hpInfo(u, part), part.lines) + '</span>' +
+      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && L.incap(g.b), enemyRing(L.hpInfo(u, part), part.lines)) + '</span>' +
       '<span class="p-sub">' + sub + '</span></button>';
   }
 
@@ -492,7 +494,7 @@
     var blankSpd = bg && bg.b ? L.num(bg.b.spd, 0) : null;
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (blankSpd === null ? '&nbsp;' : blankSpd) + '</span>' +
-      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && L.incap(bg.b)) + enemyRing(L.hpInfo(u, part), part.lines) + '</span>' +
+      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && L.incap(bg.b), enemyRing(L.hpInfo(u, part), part.lines)) + '</span>' +
       '<span class="p-sub">' + (multi ? partMark(part) : '') + '</span></button>';
   }
 
@@ -619,7 +621,7 @@
   }
 
   var EHEP = (function () {
-    var r = 44;
+    var r = 45;
     var cy = 47.8;
     function v(k) {
       var a = (180 + k * 360 / 7) * Math.PI / 180;
@@ -653,11 +655,11 @@
     var ticks = A(lines).map(function (l) {
       var m = info.max > 0 ? Math.min(100, l / info.max * 100) : 0;
       var q = EHEP.at(m / 100);
-      return '<line x1="' + (q.x - q.nx * 4.4).toFixed(2) + '" y1="' + (q.y - q.ny * 4.4).toFixed(2) + '" x2="' + (q.x + q.nx * 4.4).toFixed(2) + '" y2="' + (q.y + q.ny * 4.4).toFixed(2) + '" stroke="rgb(230, 180, 50)" stroke-width="1.4"/>';
+      return '<line x1="' + (q.x - q.nx * 5.2).toFixed(2) + '" y1="' + (q.y - q.ny * 5.2).toFixed(2) + '" x2="' + (q.x + q.nx * 5.2).toFixed(2) + '" y2="' + (q.y + q.ny * 5.2).toFixed(2) + '" stroke="rgb(230, 180, 50)" stroke-width="1.4"/>';
     }).join('');
     return '<svg class="e-ring" viewBox="0 0 100 100" aria-hidden="true">' +
-      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="4.6" stroke-linejoin="miter"/>' +
-      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="4.6" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
+      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="9.5" stroke-linejoin="miter"/>' +
+      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="9.5" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
       ticks + '</svg>';
   }
 
