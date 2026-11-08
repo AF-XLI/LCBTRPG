@@ -1,96 +1,130 @@
 {
   "enemies": [
     {
-      "id": "abno",
-      "name": "巨腕の幻想体",
+      "id": "test_twisted",
+      "name": "試験用ねじれ",
       "kind": "abnormality",
-      "maxHp": 600,
+      "maxHp": 120,
+      "sp": 10,
+      "parts": [
+        {
+          "name": "頭",
+          "maxDur": 60,
+          "destroyable": false,
+          "speed": [3, 6],
+          "thr": [50],
+          "resist": { "slash": "normal", "pierce": "resist", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "weak", "pride": "normal", "envy": "normal" },
+          "skills": {
+            "bite": { "name": "噛みつき", "kind": "attack", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }], "sin": "gloom", "phys": "pierce", "tier": 2, "base": 5, "coins": [3, 3], "text": "対象に出血2/2を付与" },
+            "stare": { "name": "凝視", "kind": "attack", "sin": "pride", "phys": "blunt", "tier": 1, "base": 4, "coins": [3, 3], "text": "" }
+          },
+          "skillSets": [
+            { "name": "通常", "loop": [["bite"], ["stare"]] }
+          ]
+        },
+        {
+          "name": "胴体",
+          "maxDur": 100,
+          "destroyable": false,
+          "speed": [2, 4],
+          "thr": [50],
+          "resist": { "slash": "weak", "pierce": "normal", "blunt": "resist", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
+          "skills": {
+            "slam": { "name": "体当たり", "kind": "attack", "sin": "wrath", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "" },
+            "brace": { "name": "踏ん張る", "kind": "defense", "sub": "guard", "sin": "sloth", "phys": "blunt", "tier": 1, "base": 3, "coins": [3, 3], "text": "防御" }
+          },
+          "skillSets": [
+            { "name": "通常", "loop": [["slam"], ["brace"]] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "test_abno",
+      "name": "試験用幻想体",
+      "kind": "abnormality",
+      "maxHp": 250,
       "parts": [
         {
           "name": "右腕",
           "maxDur": 80,
           "destroyable": true,
-          "sp": 0,
           "speed": [3, 6],
           "thr": [50],
-          "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "envy": "weak", "wrath": "normal", "lust": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal" },
+          "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "weak" },
           "skills": {
-            "slam": { "name": "叩きつけ", "kind": "attack", "sin": "envy", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "対象に出血2/2を付与", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }] },
-            "crush": { "name": "握り潰し", "kind": "attack", "sin": "wrath", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" }
+            "slam": { "name": "叩きつけ", "kind": "attack", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }], "sin": "envy", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "対象に出血2/2を付与" },
+            "crush": { "name": "握り潰し", "kind": "attack", "sin": "wrath", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" },
+            "jab": { "name": "突き", "kind": "attack", "sin": "pride", "phys": "pierce", "tier": 1, "base": 4, "coins": [3, 3], "text": "" },
+            "swipe": { "name": "薙ぎ払い", "kind": "attack", "sin": "pride", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["slam"], ["crush"], ["slam", "crush"]] }
+            { "name": "通常", "loop": [["slam", "jab"], ["crush", "swipe"], ["slam", "crush"]] }
+          ]
+        },
+        {
+          "name": "頭",
+          "maxDur": 60,
+          "destroyable": true,
+          "speed": [1, 4],
+          "thr": [50],
+          "resist": { "slash": "normal", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "resist", "pride": "normal", "envy": "normal" },
+          "skills": {
+            "roar": { "name": "咆哮", "kind": "attack", "sin": "gloom", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" }
+          },
+          "skillSets": [
+            { "name": "通常", "loop": [["roar"]] }
+          ]
+        },
+        {
+          "name": "胴体",
+          "maxDur": 150,
+          "destroyable": false,
+          "speed": [1, 3],
+          "thr": [50],
+          "resist": { "slash": "resist", "pierce": "weak", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
+          "skills": {
+            "stomp": { "name": "踏みつけ", "kind": "attack", "sin": "sloth", "phys": "blunt", "tier": 3, "base": 6, "coins": [4, 4, 4], "text": "" }
+          },
+          "skillSets": [
+            { "name": "通常", "loop": [["stomp"]] }
           ]
         },
         {
           "name": "左腕",
           "maxDur": 80,
           "destroyable": true,
-          "sp": 5,
           "speed": [2, 5],
           "thr": [50],
-          "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "pride": "weak", "wrath": "normal", "lust": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "envy": "normal" },
+          "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "weak" },
           "skills": {
-            "sweep": { "name": "薙ぎ払い", "kind": "attack", "sin": "pride", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" }
+            "sweep": { "name": "薙ぎ払い", "kind": "attack", "sin": "gluttony", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" },
+            "guard": { "name": "腕で受ける", "kind": "counter", "sin": "gluttony", "phys": "slash", "tier": 1, "base": 3, "coins": [3, 3], "text": "反撃" }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["sweep"]] }
+            { "name": "通常", "loop": [["sweep"], ["guard"]] }
           ]
-        },
-        {
-          "name": "頭部",
-          "maxDur": 120,
-          "destroyable": false,
-          "sp": 0,
-          "speed": [1, 3],
-          "thr": [],
-          "resist": { "slash": "normal", "pierce": "weak", "blunt": "normal", "wrath": "normal", "lust": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
-          "skills": {},
-          "skillSets": []
         }
       ]
     },
     {
-      "id": "minion_a",
-      "name": "取り巻きA",
+      "id": "test_envy",
+      "name": "試験用嫉妬大罪",
       "kind": "normal",
       "maxHp": 90,
       "parts": [
         {
           "name": "本体",
-          "sp": 10,
-          "speed": [2, 4],
-          "thr": [50],
-          "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "lust": "resist", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
-          "skills": {
-            "bite": { "name": "噛みつき", "kind": "attack", "sin": "lust", "phys": "pierce", "tier": 1, "base": 4, "coins": [3, 3], "text": "" },
-            "guard": { "name": "身構える", "kind": "counter", "sin": "lust", "phys": "pierce", "tier": 1, "base": 3, "coins": [3, 3], "text": "反撃" }
-          },
-          "skillSets": [
-            { "name": "通常", "loop": [["bite"], ["guard"]] }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "minion_b",
-      "name": "取り巻きB",
-      "kind": "normal",
-      "maxHp": 70,
-      "parts": [
-        {
-          "name": "本体",
           "sp": 0,
-          "speed": [1, 3],
-          "thr": [],
-          "noSp": false,
-          "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "gluttony": "weak", "wrath": "normal", "lust": "normal", "sloth": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
+          "speed": [2, 5],
+          "thr": [50],
+          "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "resist" },
           "skills": {
-            "dodge": { "name": "身をかわす", "kind": "defense", "sub": "evade", "sin": "gluttony", "phys": "slash", "tier": 1, "base": 2, "coins": [3, 3], "text": "回避" },
-            "claw": { "name": "切り裂き", "kind": "attack", "sin": "gluttony", "phys": "slash", "tier": 2, "base": 5, "coins": [3, 3, 3], "text": "対象に火傷2/2を付与", "grants": [{ "status": "burn", "p": 2, "c": 2, "to": "target", "when": "hit" }] }
+            "strike": { "name": "嫉妬の一撃", "kind": "attack", "sin": "envy", "phys": "slash", "tier": 2, "base": 5, "coins": [3, 3, 3], "text": "" },
+            "mirror": { "name": "模倣", "kind": "counter", "sin": "envy", "phys": "slash", "tier": 1, "base": 3, "coins": [3, 3], "text": "反撃" }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["claw"], ["dodge"]] }
+            { "name": "通常", "loop": [["strike"], ["mirror"]] }
           ]
         }
       ]
