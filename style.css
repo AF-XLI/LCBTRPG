@@ -13,6 +13,8 @@
   --sub: rgb(160, 154, 170);
   --ok: rgb(110, 190, 110);
   --bar-bg: rgb(21, 13, 13);
+  --font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --font-serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
  
 * {
@@ -48,7 +50,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.875rem;
   line-height: 1.5;
 }
