@@ -541,11 +541,86 @@
       '<div class="pieces">' + pieces + '</div></div>';
   }
 
+  function makeHep(radius) {
+    var cx = 50;
+    var cy = 47.7;
+    var from = 190;
+    var to = 470;
+    function vertex(deg) {
+      var r = deg * Math.PI / 180;
+      return [cx + radius * Math.sin(r), cy - radius * Math.cos(r)];
+    }
+    function cross(a, b) { return a[0] * b[1] - a[1] * b[0]; }
+    function ray(deg) {
+      var r = deg * Math.PI / 180;
+      var d = [Math.sin(r), -Math.cos(r)];
+      var c = [cx, cy];
+      for (var k = 0; k < 7; k += 1) {
+        var p0 = vertex(180 + k * 360 / 7);
+        var p1 = vertex(180 + (k + 1) * 360 / 7);
+        var e = [p1[0] - p0[0], p1[1] - p0[1]];
+        var w = [p0[0] - c[0], p0[1] - c[1]];
+        var den = cross(d, e);
+        if (Math.abs(den) < 1e-9) { continue; }
+        var t = cross(w, e) / den;
+        var u = cross(w, d) / den;
+        if (t > 0 && u >= -1e-9 && u <= 1 + 1e-9) { return [c[0] + d[0] * t, c[1] + d[1] * t]; }
+      }
+      return vertex(deg);
+    }
+    var angles = [];
+    for (var m = 0; m < 2; m += 1) {
+      for (var k = 0; k < 7; k += 1) {
+        var a = 180 + k * 360 / 7 + 360 * m;
+        if (a > from + 0.001 && a < to - 0.001) { angles.push(a); }
+      }
+    }
+    angles.sort(function (x, y) { return x - y; });
+    var pts = [ray(from)].concat(angles.map(vertex)).concat([ray(to)]);
+    var lens = [0];
+    for (var i = 1; i < pts.length; i += 1) {
+      lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    var total = lens[lens.length - 1];
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2); }).join(' ');
+    function at(frac) {
+      var s = Math.max(0, Math.min(1, frac)) * total;
+      var i = 1;
+      while (i < lens.length - 1 && lens[i] < s) { i += 1; }
+      var a = pts[i - 1];
+      var b = pts[i];
+      var seg = lens[i] - lens[i - 1];
+      var r = seg > 0 ? (s - lens[i - 1]) / seg : 0;
+      var tx = (b[0] - a[0]) / seg;
+      var ty = (b[1] - a[1]) / seg;
+      return { x: a[0] + (b[0] - a[0]) * r, y: a[1] + (b[1] - a[1]) * r, nx: -ty, ny: tx };
+    }
+    var outer = [0, 1, 2, 3, 4, 5, 6].map(function (k) {
+      var p = vertex(180 + k * 360 / 7);
+      return (k ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+    }).join(' ') + ' Z';
+    return { d: d, at: at, outer: outer };
+  }
+
+  var HEP = makeHep(38.7);
+  var HEP_OUT = makeHep(46).outer;
+
+  function hepRing(pct, marks) {
+    var ticks = A(marks).map(function (m) {
+      var q = HEP.at(m / 100);
+      return '<line x1="' + (q.x - q.nx * 5.2).toFixed(2) + '" y1="' + (q.y - q.ny * 5.2).toFixed(2) + '" x2="' + (q.x + q.nx * 5.2).toFixed(2) + '" y2="' + (q.y + q.ny * 5.2).toFixed(2) + '" stroke="rgb(230, 180, 50)" stroke-width="1.4"/>';
+    }).join('');
+    return '<svg class="a-hep" viewBox="0 0 100 100" aria-hidden="true">' +
+      '<path d="' + HEP_OUT + '" fill="rgb(26, 16, 16)" stroke="rgb(140, 140, 140)" stroke-width="3.6" stroke-linejoin="miter"/>' +
+      '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="9.5" stroke-linejoin="miter"/>' +
+      '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="9.5" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
+      ticks + '</svg>';
+  }
+
   function allyColumn(S, u, ctx) {
     var info = L.hpInfo(u);
     var pct = pctOf(info.cur, info.max);
-    var deg = (2.8 * pct).toFixed(1);
-    var ring = 'conic-gradient(from 190deg, rgb(232, 104, 96) 0deg ' + deg + 'deg, rgb(70, 46, 44) ' + deg + 'deg 280deg, transparent 280deg 360deg)';
+    var marks = A(u.lines).map(function (l) { return info.max > 0 ? Math.min(100, l / info.max * 100) : 0; });
     var circle = spCircle(u.sp);
     var ch = u.choice;
     var showPiece = S.phase !== 'setup' && S.phase !== 'over';
@@ -585,7 +660,7 @@
     return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '">' +
       piece +
       '<span class="a-spd" title="速度">' + spd + '</span>' +
-      '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '" style="background: ' + ring + ';"><span class="a-face">' + face + '</span>' +
+      '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '">' + hepRing(pct, marks) + '<span class="a-face">' + face + '</span>' +
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
       '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
       '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' + state +
