@@ -94,7 +94,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 味方: `name, maxHp, sp(精神力), speed:[最小,最大], thr:[混乱閾値(%)…], resist(耐性), skills{0〜3}`。`skills.0` が守備(`kind:"defense"` の `sub` は `guard`=防御 / `evade`=回避、または `kind:"counter"`)、1〜3 が攻撃スキル。
 - スキル: `name, kind, sin(罪悪), phys(物理), tier, base, coins:[各コインの加算], text, grants[]`。`grants` は `{status, p(威力), c(回数) または v(値), to:"target"|"self", when:"hit"|"use", coin:N, next:true}`。
 - 状態の ID: `burn bleed vibration rupture sinking breath charge trance paralysis bind dmgUp dmgDown fragile protect powerDown quick powerUp ...`(`js/logic.js` の `STATUS` 参照)。
-- 敵: `kind:"normal"`(1部位・体力と精神力あり)/ `"abnormality"`(体力共有・部位ごとに耐久。精神力は部位ごと。敵本体に `sp` を書くと、精神力を全部位で共有する形になります(複数部位のねじれ用)。この場合、体力バーの横に丸で表示し、精神力の増減とパニックは全部位に同時に起こります。混乱と状態異常は部位ごとのままです。`destroyable` で破壊可能)。`skillSets:[{name, when, loop:[[スキルキー…],…]}]` で行動パターンを定義し、後ろにある条件一致が優先されます。
+- 敵: `kind:"normal"`(1部位・体力と精神力あり)/ `"abnormality"`(体力共有・部位ごとに耐久。精神力は持たない(幻想体)。敵本体に `sp` を書くと、精神力を全部位で共有する形になります(複数部位のねじれ用。部位ごとの精神力は持てません)。この場合、体力バーの横に丸で表示し、精神力の増減とパニックは全部位に同時に起こります。混乱と状態異常は部位ごとのままです。`destroyable` で破壊可能)。`skillSets:[{name, when, loop:[[スキルキー…],…]}]` で行動パターンを定義し、後ろにある条件一致が優先されます。
 - 精神力を持たない敵は `"noSp": true` を指定します(敵全体、または部位ごとに指定可。部位の指定が優先)。精神力の表示が消え、精神力の増減は無視され、コインの表確率は常に50%になります。
 - 条件付きダメージ補正は `dmgBonusIf`、スキル差し替えは `replace`、条件分岐は `branches` を使います。
 - パッシブ・サポートパッシブ: 味方に `passives:[{name, text, need, icon}]` と `supportPassives:[…]`(同じ形式)を書くと、画面左の金枠に並びます(パッシブが上、サポートパッシブが下)。`need` は「資源×n保有」の条件で `{"pride": 3}` のように書き、足りない間はアイコンが暗くなります(省略すると常に明るい)。共鳴で発動する場合は `reso` に `{"wrath": 3}` のように「罪悪名×n共鳴」を書きます(同ラウンドに味方が使う同罪悪のスキルがn個以上で発動。位置は問わず、戦闘開始時に判定。`need` と併記すると両方が必要)。`icon` は画像のパスで、省略するとキャラ名の頭文字を表示します。アイコンを押すと説明が出ます。
@@ -136,4 +136,4 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 ## 開発メモ
 
 - ルール計算は `js/logic.js` に分離しており、DOM・通信に依存しません。`node test/sim.js` で乱数対戦を400回流して例外が出ないことを確認できます(`node test/sim.js one 7` でシード7の戦闘ログを表示)。
-- 共有データは `rooms/<ルームID>/state` に1つのJSONとして保存されます。GMの操作は差分だけを書き込み、プレイヤーは自分の `units/<id>/choice` だけを書き込みます。
+- 共有データは `rooms/<ルームID>/state` に1つのJSONとして保存されます。GMの操作は差分だけを書き込み、プレイヤーは自分の `units/<id>/choice` だけを書き込みます。s
