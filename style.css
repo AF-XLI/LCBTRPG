@@ -1081,10 +1081,6 @@ h4 {
   opacity: 0.45;
 }
  
-.a-state.muted {
-  color: var(--muted);
-}
- 
 .a-spd {
   position: relative;
   z-index: 1;
@@ -1173,23 +1169,6 @@ h4 {
 .a-name {
   font-size: 0.813rem;
   font-weight: bold;
-}
- 
-.a-state {
-  font-size: 0.688rem;
-}
- 
-.a-state.ok {
-  color: rgb(110, 190, 110);
-}
- 
-.a-state.wait {
-  color: var(--gold);
-}
- 
-.a-state.stag,
-.a-state.down {
-  color: var(--red);
 }
  
 .a-badges {
