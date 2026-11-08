@@ -626,14 +626,13 @@
     var showPiece = S.phase !== 'setup' && S.phase !== 'over';
     var sk = null;
     var pieceCls = 'piece a-piece';
-    var label = '未選択';
     var sub = '';
     var kind = 'blank';
-    if (u.dead) { label = ''; kind = 'destroyed'; }
-    else if (L.incap(u)) { label = u.stagger ? '混乱' : 'パニック'; kind = 'stagger'; }
+    if (u.dead) { kind = 'destroyed'; }
+    else if (L.incap(u)) { kind = 'stagger'; }
     else if (ch && ch.sel && S.phase !== 'enemy') {
       sk = L.chosenSkill(S, u);
-      if (sk) { label = sk.name || ''; kind = 'skill'; }
+      if (sk) { kind = 'skill'; }
     }
     if (ctx.gmPick && !u.dead) { pieceCls += ' picked'; }
     if (ch && ch.acted) { pieceCls += ' acted'; }
@@ -645,16 +644,9 @@
     }
     if (showPiece) {
       piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' +
-        '<span class="p-label' + (kind === 'skill' ? '' : ' muted') + '">' + esc(label) + '</span>' +
         '<span class="p-frame">' + frameImg(sk, kind, kind === 'stagger') + reso + '</span>' +
         '<span class="p-sub">' + esc(sub) + '</span></button>';
     }
-    var state = '';
-    if (u.dead) { state = '<span class="a-state down">戦闘不能</span>'; }
-    else if (L.incap(u)) { state = '<span class="a-state stag">' + (u.stagger ? '混乱' + (u.stagger.level > 1 ? ' Lv' + u.stagger.level : '') : 'パニック') + '</span>'; }
-    else if (S.phase === 'player') { state = ch && ch.confirmed ? '<span class="a-state ok">確定済</span>' : '<span class="a-state wait">選択中</span>'; }
-    else if (S.phase === 'enemy') { state = '<span class="a-state muted">待機中</span>'; }
-    else if (S.phase === 'process' || S.phase === 'roundEnd') { state = ch && ch.acted ? '<span class="a-state ok">行動済</span>' : ''; }
     var spd = S.phase === 'setup' || u.dead ? '&nbsp;' : String(L.num(u.spd, 0));
     var face = u.img ? '<img class="a-img" src="' + esc(u.img) + '" alt="">' : esc(String(u.name || '?').charAt(0));
     return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '">' +
@@ -663,7 +655,7 @@
       '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '">' + hepRing(pct, marks) + '<span class="a-face">' + face + '</span>' +
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
       '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
-      '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' + state +
+      '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' +
       '<div class="a-badges">' + badges(u) + '</div></div>';
   }
 
