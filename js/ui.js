@@ -478,7 +478,7 @@
     if (ctx.gmPick === P.pid) { cls += ' picked'; }
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : (gmAct ? 'gm-pick' : 'press')) + '" data-pid="' + esc(P.pid) + '" data-piece="' + esc(P.pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (g && g.b && !out ? L.num(g.b.spd, 0) : '&nbsp;') + '</span>' +
-      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && L.incap(g.b)) + '</span>' +
+      '<span class="p-frame">' + frameImg(sk, 'skill', g && g.b && L.incap(g.b)) + enemyRing(L.hpInfo(u, part), part.lines) + '</span>' +
       '<span class="p-sub">' + sub + '</span></button>';
   }
 
@@ -492,14 +492,14 @@
     var blankSpd = bg && bg.b ? L.num(bg.b.spd, 0) : null;
     return '<button type="button" class="' + cls + '" data-act="' + (can ? 'target' : 'press') + '" data-pid="' + esc(pid) + '" data-piece="' + esc(pid) + '" data-part="' + esc(u.id + '|' + pi) + '">' +
       '<span class="p-spd" title="速度">' + (blankSpd === null ? '&nbsp;' : blankSpd) + '</span>' +
-      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && L.incap(bg.b)) + '</span>' +
+      '<span class="p-frame">' + frameImg(null, 'blank', bg && bg.b && L.incap(bg.b)) + enemyRing(L.hpInfo(u, part), part.lines) + '</span>' +
       '<span class="p-sub">' + (multi ? partMark(part) : '') + '</span></button>';
   }
 
   function destroyedHtml(u, pi) {
     var part = u.parts[pi];
     return '<div class="piece destroyed" data-part="' + esc(u.id + '|' + pi) + '"><span class="p-label muted">破壊済</span>' +
-      '<span class="p-frame">' + frameSvg(null, 0, 'destroyed') + '</span><span class="p-sub">' + (u.kind === 'abnormality' ? partMark(part) : esc(part.name)) + '</span></div>';
+      '<span class="p-frame">' + frameSvg(null, 0, 'destroyed') + enemyRing({ cur: 0, max: 1 }, []) + '</span><span class="p-sub">' + (u.kind === 'abnormality' ? partMark(part) : esc(part.name)) + '</span></div>';
   }
 
   function enemyColumn(S, u, ctx) {
@@ -615,6 +615,49 @@
       '<path d="' + HEP_OUT + '" fill="rgb(26, 16, 16)" stroke="rgb(140, 140, 140)" stroke-width="3.6" stroke-linejoin="miter"/>' +
       '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="9.5" stroke-linejoin="miter"/>' +
       '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="9.5" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
+      ticks + '</svg>';
+  }
+
+  var EHEP = (function () {
+    var r = 44;
+    var cy = 47.8;
+    function v(k) {
+      var a = (180 + k * 360 / 7) * Math.PI / 180;
+      return [50 + r * Math.sin(a), cy - r * Math.cos(a)];
+    }
+    var top = [50, cy - r * Math.cos(Math.PI / 7)];
+    var pts = [top, v(3), v(2), v(1), v(0), v(6), v(5), v(4), top];
+    var lens = [0];
+    for (var i = 1; i < pts.length; i += 1) {
+      lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    var total = lens[lens.length - 1];
+    var d = pts.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(2) + ' ' + q[1].toFixed(2); }).join(' ');
+    function at(frac) {
+      var t = Math.max(0, Math.min(1, frac)) * total;
+      var i = 1;
+      while (i < lens.length - 1 && lens[i] < t) { i += 1; }
+      var a = pts[i - 1];
+      var b = pts[i];
+      var seg = lens[i] - lens[i - 1];
+      var rr = seg > 0 ? (t - lens[i - 1]) / seg : 0;
+      var tx = (b[0] - a[0]) / seg;
+      var ty = (b[1] - a[1]) / seg;
+      return { x: a[0] + (b[0] - a[0]) * rr, y: a[1] + (b[1] - a[1]) * rr, nx: -ty, ny: tx };
+    }
+    return { d: d, at: at };
+  }());
+
+  function enemyRing(info, lines) {
+    var pct = pctOf(info.cur, info.max);
+    var ticks = A(lines).map(function (l) {
+      var m = info.max > 0 ? Math.min(100, l / info.max * 100) : 0;
+      var q = EHEP.at(m / 100);
+      return '<line x1="' + (q.x - q.nx * 4.4).toFixed(2) + '" y1="' + (q.y - q.ny * 4.4).toFixed(2) + '" x2="' + (q.x + q.nx * 4.4).toFixed(2) + '" y2="' + (q.y + q.ny * 4.4).toFixed(2) + '" stroke="rgb(230, 180, 50)" stroke-width="1.4"/>';
+    }).join('');
+    return '<svg class="e-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="4.6" stroke-linejoin="miter"/>' +
+      '<path d="' + EHEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="4.6" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
       ticks + '</svg>';
   }
 
