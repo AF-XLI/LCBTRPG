@@ -465,7 +465,7 @@
     'm-sp': function () {
       var ref = targetRef(); var v = readNum('mSp');
       if (!ref || v === null) { return; }
-      commit(function (s) { var g = L.getB(s, ref); if (g) { g.b.sp = L.clamp(Math.floor(v), L.SP_MIN, L.SP_MAX); L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の精神力を ' + g.b.sp + ' にした'); } });
+      commit(function (s) { var g = L.getB(s, ref); if (g) { g.b.sp = L.clamp(Math.floor(v), L.SP_MIN, L.SP_MAX); L.syncSp(g.unit, g.b.sp); L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の精神力を ' + g.b.sp + ' にした'); } });
     },
     'm-st-add': function () {
       var ref = targetRef(); var key = $('mSt').value;
