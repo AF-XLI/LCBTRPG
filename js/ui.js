@@ -512,12 +512,12 @@
     var stag = '';
     if (multi && pi !== null) {
       var part = u.parts[pi];
-      bars = hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + (part.noSp ? '' : spRow('精神力', part.sp, C.gold));
+      bars = u.spShared ? '<div class="e-hp">' + hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + spDot(u.sp) + '</div>' : hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + (part.noSp ? '' : spRow('精神力', part.sp, C.gold));
       bad = badges(part);
       act = ' data-act="info-part" data-ref="' + esc(u.id + '|' + pi) + '"';
       stag = staggerChip(part);
     } else if (multi) {
-      bars = hpRow('体力', L.hpInfo(u), []);
+      bars = u.spShared ? '<div class="e-hp">' + hpRow('体力', L.hpInfo(u), []) + spDot(u.sp) + '</div>' : hpRow('体力', L.hpInfo(u), []);
       bad = mergedBadges(u.parts);
     } else {
       var p0 = u.parts[0];
