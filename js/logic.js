@@ -1389,7 +1389,27 @@
     }
   }
 
-  function checkEnd(state) {
+  function eventEnd(state, atRoundEnd) {
+    var hit = null;
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      var e = u.side === 'enemy' ? u.endIf : null;
+      if (hit || !e || typeof e !== 'object') { return; }
+      var ok = false;
+      if (atRoundEnd && typeof e.round === 'number' && state.round >= e.round) { ok = true; }
+      if (typeof e.hpPct === 'number' && u.hp <= u.maxHp * e.hpPct / 100) { ok = true; }
+      if (typeof e.hp === 'number' && u.hp <= e.hp) { ok = true; }
+      if (ok) { hit = e; }
+    });
+    if (!hit) { return false; }
+    state.result = 'event';
+    state.eventText = typeof hit.text === 'string' ? hit.text : '';
+    log(state, '戦闘終了(イベント)' + (state.eventText ? ': ' + state.eventText : ''));
+    return true;
+  }
+
+  function checkEnd(state, atRoundEnd) {
+    if (!state.result && eventEnd(state, atRoundEnd)) { return state.result; }
     var allyAlive = false;
     var enemyAlive = false;
     Object.keys(state.units).forEach(function (id) {
@@ -1468,13 +1488,14 @@
   }
 
   function stepProcess(state, rng) {
+    if (state.result) { return false; }
     var plan = A(state.plan);
     var proc = state.proc;
     while (proc.i < plan.length && plan[proc.i].done) { proc.i += 1; }
     state.fx = { seq: (state.fx ? state.fx.seq : 0) + 1, items: [] };
     if (proc.i >= plan.length) {
       endOfRound(state, rng);
-      checkEnd(state);
+      checkEnd(state, true);
       state.phase = state.result ? 'over' : 'roundEnd';
       return false;
     }
