@@ -43,6 +43,7 @@
       "id": "test_abno",
       "name": "試験用幻想体",
       "kind": "abnormality",
+      "noSp": true,
       "maxHp": 250,
       "parts": [
         {
