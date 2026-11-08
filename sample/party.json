@@ -480,6 +480,394 @@
           "text": ""
         }
       }
+    },
+    {
+      "id": "dummy_e",
+      "name": "テストE",
+      "maxHp": 120,
+      "sp": 5,
+      "speed": [
+        3,
+        6
+      ],
+      "thr": [
+        50
+      ],
+      "resist": {
+        "slash": "resist",
+        "pierce": "normal",
+        "blunt": "normal",
+        "wrath": "normal",
+        "lust": "normal",
+        "sloth": "normal",
+        "gluttony": "normal",
+        "gloom": "normal",
+        "pride": "normal",
+        "envy": "normal"
+      },
+      "skills": {
+        "0": {
+          "name": "受け流し",
+          "kind": "defense",
+          "sin": "pride",
+          "phys": "slash",
+          "tier": 1,
+          "base": 3,
+          "coins": [
+            3,
+            3
+          ],
+          "text": "防御。相手が攻撃したとき、威力分のバリアを得る",
+          "sub": "guard"
+        },
+        "1": {
+          "name": "ひと突き",
+          "kind": "attack",
+          "sin": "pride",
+          "phys": "pierce",
+          "tier": 1,
+          "base": 4,
+          "coins": [
+            4,
+            4
+          ],
+          "text": ""
+        },
+        "2": {
+          "name": "振り抜き",
+          "kind": "attack",
+          "sin": "gluttony",
+          "phys": "slash",
+          "tier": 2,
+          "base": 5,
+          "coins": [
+            3,
+            3,
+            3
+          ],
+          "text": "使用時に自分へ呼吸3/3を付与",
+          "grants": [
+            {
+              "status": "breath",
+              "p": 3,
+              "c": 3,
+              "to": "self",
+              "when": "use"
+            }
+          ]
+        },
+        "3": {
+          "name": "乱舞",
+          "kind": "attack",
+          "sin": "pride",
+          "phys": "pierce",
+          "tier": 3,
+          "base": 6,
+          "coins": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "text": ""
+        }
+      },
+      "st": {
+        "breath": {
+          "p": 6,
+          "c": 5
+        }
+      }
+    },
+    {
+      "id": "dummy_f",
+      "name": "テストF",
+      "maxHp": 100,
+      "sp": -10,
+      "speed": [
+        1,
+        4
+      ],
+      "thr": [
+        40
+      ],
+      "resist": {
+        "slash": "normal",
+        "pierce": "normal",
+        "blunt": "normal",
+        "wrath": "normal",
+        "lust": "normal",
+        "sloth": "weak",
+        "gluttony": "normal",
+        "gloom": "normal",
+        "pride": "normal",
+        "envy": "normal"
+      },
+      "skills": {
+        "0": {
+          "name": "回避",
+          "kind": "defense",
+          "sin": "sloth",
+          "phys": "slash",
+          "tier": 1,
+          "base": 4,
+          "coins": [
+            2,
+            2
+          ],
+          "text": "回避。相手のコインごとに威力を判定。攻撃威力≦回避威力なら無効化",
+          "sub": "evade"
+        },
+        "1": {
+          "name": "探求",
+          "kind": "attack",
+          "sin": "sloth",
+          "phys": "slash",
+          "tier": 1,
+          "base": 4,
+          "coins": [
+            4,
+            4
+          ],
+          "text": "的中時、次ラウンドにクイック1を自分に付与",
+          "grants": [
+            {
+              "status": "quick",
+              "v": 1,
+              "to": "self",
+              "when": "hit",
+              "next": true
+            }
+          ]
+        },
+        "2": {
+          "name": "空間を切り裂く",
+          "kind": "attack",
+          "sin": "sloth",
+          "phys": "slash",
+          "tier": 2,
+          "base": 5,
+          "coins": [
+            3,
+            3,
+            3
+          ],
+          "text": ""
+        },
+        "3": {
+          "name": "大断裂",
+          "kind": "attack",
+          "sin": "envy",
+          "phys": "slash",
+          "tier": 3,
+          "base": 7,
+          "coins": [
+            4,
+            4,
+            4
+          ],
+          "text": "的中時、対象に破裂3/3を付与",
+          "grants": [
+            {
+              "status": "rupture",
+              "p": 3,
+              "c": 3,
+              "to": "target",
+              "when": "hit"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dummy_g",
+      "name": "テストG",
+      "maxHp": 140,
+      "sp": 15,
+      "speed": [
+        2,
+        5
+      ],
+      "thr": [
+        50,
+        25
+      ],
+      "resist": {
+        "slash": "normal",
+        "pierce": "normal",
+        "blunt": "normal",
+        "wrath": "normal",
+        "lust": "normal",
+        "sloth": "normal",
+        "gluttony": "normal",
+        "gloom": "normal",
+        "pride": "normal",
+        "envy": "normal"
+      },
+      "skills": {
+        "0": {
+          "name": "防御",
+          "kind": "defense",
+          "sin": "gluttony",
+          "phys": "blunt",
+          "tier": 1,
+          "base": 3,
+          "coins": [
+            3,
+            3
+          ],
+          "text": "防御。バリアを得る",
+          "sub": "guard"
+        },
+        "1": {
+          "name": "打ち据える",
+          "kind": "attack",
+          "sin": "gluttony",
+          "phys": "blunt",
+          "tier": 1,
+          "base": 4,
+          "coins": [
+            3,
+            3,
+            3
+          ],
+          "text": ""
+        },
+        "2": {
+          "name": "押し潰す",
+          "kind": "attack",
+          "sin": "gluttony",
+          "phys": "blunt",
+          "tier": 2,
+          "base": 5,
+          "coins": [
+            4,
+            4
+          ],
+          "text": "的中時、対象に沈潜2/3を付与",
+          "grants": [
+            {
+              "status": "sinking",
+              "p": 2,
+              "c": 3,
+              "to": "target",
+              "when": "hit"
+            }
+          ]
+        },
+        "3": {
+          "name": "怒りの一撃",
+          "kind": "attack",
+          "sin": "wrath",
+          "phys": "blunt",
+          "tier": 3,
+          "base": 7,
+          "coins": [
+            5,
+            5,
+            5
+          ],
+          "text": ""
+        }
+      }
+    },
+    {
+      "id": "dummy_h",
+      "name": "テストH",
+      "maxHp": 120,
+      "sp": 5,
+      "speed": [
+        3,
+        6
+      ],
+      "thr": [
+        50
+      ],
+      "resist": {
+        "slash": "resist",
+        "pierce": "normal",
+        "blunt": "normal",
+        "wrath": "normal",
+        "lust": "normal",
+        "sloth": "normal",
+        "gluttony": "normal",
+        "gloom": "normal",
+        "pride": "normal",
+        "envy": "normal"
+      },
+      "skills": {
+        "0": {
+          "name": "受け流し",
+          "kind": "defense",
+          "sin": "pride",
+          "phys": "slash",
+          "tier": 1,
+          "base": 3,
+          "coins": [
+            3,
+            3
+          ],
+          "text": "防御。相手が攻撃したとき、威力分のバリアを得る",
+          "sub": "guard"
+        },
+        "1": {
+          "name": "ひと突き",
+          "kind": "attack",
+          "sin": "pride",
+          "phys": "pierce",
+          "tier": 1,
+          "base": 4,
+          "coins": [
+            4,
+            4
+          ],
+          "text": ""
+        },
+        "2": {
+          "name": "振り抜き",
+          "kind": "attack",
+          "sin": "gluttony",
+          "phys": "slash",
+          "tier": 2,
+          "base": 5,
+          "coins": [
+            3,
+            3,
+            3
+          ],
+          "text": "使用時に自分へ呼吸3/3を付与",
+          "grants": [
+            {
+              "status": "breath",
+              "p": 3,
+              "c": 3,
+              "to": "self",
+              "when": "use"
+            }
+          ]
+        },
+        "3": {
+          "name": "乱舞",
+          "kind": "attack",
+          "sin": "pride",
+          "phys": "pierce",
+          "tier": 3,
+          "base": 6,
+          "coins": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "text": ""
+        }
+      },
+      "st": {
+        "breath": {
+          "p": 6,
+          "c": 5
+        }
+      }
     }
   ]
 }
