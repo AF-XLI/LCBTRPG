@@ -285,6 +285,7 @@
         if (p.noSp === undefined) { p.noSp = !!u.noSp; }
         p.noSp = !!p.noSp;
         if (u.spShared) { p.noSp = false; p.sp = u.sp; }
+        else if (u.kind === 'abnormality') { p.noSp = true; }
         if (u.kind === 'abnormality') {
           p.maxDur = Math.max(1, num(p.maxDur, 50));
           p.dur = clamp(num(p.dur, p.maxDur), 0, p.maxDur);
