@@ -23,6 +23,22 @@
   display: none !important;
 }
  
+img {
+  pointer-events: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+ 
+.stage-wrap,
+.sidebar,
+.popup {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+ 
 html,
 body {
   margin: 0;
