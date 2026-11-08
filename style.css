@@ -1030,6 +1030,15 @@ h4 {
   object-fit: contain;
 }
  
+.frame.skf {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 123.2%;
+  height: 123.2%;
+  transform: translate(-49.75%, -57.3%);
+}
+ 
 .p-icon {
   position: absolute;
   top: 50%;
