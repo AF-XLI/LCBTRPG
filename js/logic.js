@@ -139,9 +139,94 @@
     log(state, '【手動】資源: ' + SINS[sin].label + ' を ' + state.res[sin] + ' に設定');
   }
 
+  function resoCount(state, sin) {
+    return num(O(O(resoOf(state)).count)[sin], 0);
+  }
+
   function passiveOk(state, passive) {
     var need = O(passive && passive.need);
-    return Object.keys(need).every(function (k) { return resOf(state, k) >= num(need[k], 0); });
+    var reso = O(passive && passive.reso);
+    var a = Object.keys(need).every(function (k) { return resOf(state, k) >= num(need[k], 0); });
+    var b = Object.keys(reso).every(function (k) { return resoCount(state, k) >= num(reso[k], 0); });
+    return a && b;
+  }
+
+  function allyRank(state, u) {
+    return u.rank === undefined || u.rank === null ? u.ord : u.rank;
+  }
+
+  function assignRanks(state) {
+    var list = [];
+    Object.keys(state.units).forEach(function (id) {
+      if (state.units[id].side === 'ally') { list.push(state.units[id]); }
+    });
+    list.sort(function (a, b) {
+      var d = (a.dead ? 1 : 0) - (b.dead ? 1 : 0);
+      if (d) { return d; }
+      d = (incap(a) ? 1 : 0) - (incap(b) ? 1 : 0);
+      if (d) { return d; }
+      d = num(b.spd, 0) - num(a.spd, 0);
+      return d || a.ord - b.ord;
+    });
+    list.forEach(function (u, i) { u.rank = i; });
+  }
+
+  function resoPartial(n) { return n >= 7 ? 2 : (n >= 3 ? 1 : 0); }
+  function resoFull(n) { return n >= 8 ? 3 : (n >= 6 ? 2 : (n >= 3 ? 1 : 0)); }
+
+  function calcReso(state) {
+    var list = [];
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      if (u.side !== 'ally' || u.dead || incap(u)) { return; }
+      var ch = u.choice;
+      if (!ch || ch.sel === 'stag' || ch.sel === 'none') { return; }
+      var sk = chosenSkill(state, u);
+      if (!sk) { return; }
+      list.push({ id: id, sin: SINS[sk.sin] ? sk.sin : '', rank: allyRank(state, u), ord: u.ord });
+    });
+    list.sort(function (a, b) { return a.rank - b.rank || a.ord - b.ord; });
+    var count = {};
+    var nth = {};
+    list.forEach(function (e) {
+      if (!e.sin) { return; }
+      count[e.sin] = (count[e.sin] || 0) + 1;
+      nth[e.id] = count[e.sin];
+    });
+    var by = {};
+    list.forEach(function (e) {
+      if (!e.sin) { return; }
+      var amt = resoPartial(nth[e.id]);
+      var kind = count[e.sin] >= 2 ? 'sin' : '';
+      by[e.id] = { sin: e.sin, amt: amt, kind: kind };
+    });
+    var i = 0;
+    while (i < list.length) {
+      var j = i;
+      while (j + 1 < list.length && list[j + 1].sin && list[j + 1].sin === list[i].sin) { j += 1; }
+      var len = j - i + 1;
+      if (list[i].sin && len >= 3) {
+        var fa = resoFull(len);
+        for (var k = i; k <= j; k += 1) {
+          var cur = by[list[k].id];
+          if (fa >= cur.amt) { cur.amt = fa; cur.kind = 'full'; }
+        }
+      }
+      i = j + 1;
+    }
+    return { count: count, by: by };
+  }
+
+  function resoOf(state) {
+    if (state && state.reso && (state.phase === 'process' || state.phase === 'roundEnd' || state.phase === 'over')) { return state.reso; }
+    if (state && state.phase === 'player') { return calcReso(state); }
+    return { count: {}, by: {} };
+  }
+
+  function resoAmt(state, g) {
+    if (!g || !g.unit || g.unit.side !== 'ally' || g.part) { return 0; }
+    var e = O(O(resoOf(state)).by)[g.unit.id];
+    return e ? num(e.amt, 0) : 0;
   }
 
   function sanitizeId(id, fallback, used) {
@@ -529,6 +614,8 @@
         u.parts.forEach(function (p) { activate(p); drawSpeed(p); });
       }
     });
+    state.reso = null;
+    assignRanks(state);
     planEnemyPieces(state);
   }
 
@@ -675,8 +762,8 @@
   function coinAdd(b, c) {
     return Math.max(0, num(c, 0) + vOf(b, 'coinStrong') - vOf(b, 'coinWeak'));
   }
-  function powerAdj(b, skill, clash) {
-    var a = vOf(b, 'powerUp') - vOf(b, 'powerDown');
+  function powerAdj(b, skill, clash, extra) {
+    var a = vOf(b, 'powerUp') - vOf(b, 'powerDown') + num(extra, 0);
     if (skill.kind === 'attack') { a += vOf(b, 'atkPowerUp') - vOf(b, 'atkPowerDown'); }
     else { a += vOf(b, 'defPowerUp') - vOf(b, 'defPowerDown'); }
     if (clash) { a += vOf(b, 'matchPowerUp') - vOf(b, 'matchPowerDown'); }
@@ -722,7 +809,7 @@
       heads.push(r.heads);
       sum += r.add;
     });
-    var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(g.b, skill, isClash !== false));
+    var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(g.b, skill, isClash !== false, resoAmt(state, g)));
     return { heads: heads, power: power };
   }
 
@@ -779,7 +866,7 @@
       var r = tossOne(state, atk.ref, skill, coins[i], rng);
       if (isOut(getB(state, atk.ref))) { break; }
       sum += r.add;
-      var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(ag.b, skill, false));
+      var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(ag.b, skill, false, resoAmt(state, ag)));
       if (evade && evade.active) {
         var ev = tossSet(state, evade.ref, evade.skill, evade.skill.coins, rng, false);
         applyGrants(state, evade.ref, atk.ref, evade.skill, 'use');
@@ -973,7 +1060,7 @@
     return s;
   }
 
-  function powerDist(g, skill, from) {
+  function powerDist(state, g, skill, from) {
     var p = g.b.noSp ? 0.5 : headsProb(g.b.sp);
     var para = num(O(g.b.st).paralysis && g.b.st.paralysis.v, 0) > 0;
     var dist = { 0: 1 };
@@ -988,7 +1075,7 @@
       });
       dist = next;
     });
-    var base = num(skill.base, 0) + powerAdj(g.b, skill, true);
+    var base = num(skill.base, 0) + powerAdj(g.b, skill, true, resoAmt(state, g));
     var out = {};
     Object.keys(dist).forEach(function (k) {
       var pw = Math.max(0, base + Number(k));
@@ -1007,8 +1094,8 @@
     var dx = [];
     var dy = [];
     var i;
-    for (i = 0; i < lx; i += 1) { dx.push(powerDist(gx, X.skill, i)); }
-    for (i = 0; i < ly; i += 1) { dy.push(powerDist(gy, Y.skill, i)); }
+    for (i = 0; i < lx; i += 1) { dx.push(powerDist(state, gx, X.skill, i)); }
+    for (i = 0; i < ly; i += 1) { dy.push(powerDist(state, gy, Y.skill, i)); }
     var rounds = {};
     function round(a, b) {
       var key = a + ',' + b;
@@ -1174,6 +1261,7 @@
     });
     var sorted = shuffle(entries, rng);
     sorted.sort(function (a, b) { return b.spd - a.spd; });
+    state.reso = calcReso(state);
     state.plan = sorted;
     state.proc = { i: 0, pairs: computePairs(state) };
     state.phase = 'process';
@@ -1455,7 +1543,7 @@
   }
 
   return {
-    SINS: SINS, RES_ORDER: RES_ORDER, resOf: resOf, gainRes: gainRes, setRes: setRes, passiveOk: passiveOk, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
+    SINS: SINS, RES_ORDER: RES_ORDER, resOf: resOf, gainRes: gainRes, setRes: setRes, passiveOk: passiveOk, calcReso: calcReso, resoOf: resoOf, resoCount: resoCount, allyRank: allyRank, assignRanks: assignRanks, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
     A: A, O: O, clone: clone, normalize: normalize, clamp: clamp, num: num, shuffle: shuffle, randInt: randInt,
     newState: newState, parseSetup: parseSetup, loadUnits: loadUnits, initUnit: initUnit,
     getB: getB, nameOf: nameOf, hpInfo: hpInfo, isOut: isOut, resBonus: resBonus, resMultOf: resMultOf, staggerPhysMult: staggerPhysMult, incap: incap,
