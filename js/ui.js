@@ -114,7 +114,7 @@
     var phys = L.PHYS[sk.phys] || '';
     return '<div class="sk" style="--c: ' + sinColor(sk.sin) + ';"><div class="sk-head"><b>' + esc(sk.name) + '</b><span class="chip">' + esc(kindLabel(sk)) + '</span>' +
       (sin ? '<span class="chip">' + sin + '</span>' : '') + (phys ? '<span class="chip">' + phys + '</span>' : '') + '</div>' +
-      '<div class="sk-nums">基礎威力 ' + L.num(sk.base, 0) + ' / コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + '</div>' +
+      '<div class="sk-nums">基礎威力 ' + L.num(sk.base, 0) + ' / コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + (L.num(sk.weight, 1) >= 2 ? ' / 広域(攻撃加重値 ' + L.num(sk.weight, 1) + ')' : '') + '</div>' +
       (sk.text ? '<div class="sk-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</div>' : '') + '</div>';
   }
 
@@ -730,7 +730,7 @@
       return a.ord - b.ord;
     });
     var legend = '<div class="legend"><span class="lg gold">マッチ(敵と味方がぶつかる)</span><span class="lg red">敵の一方攻撃</span><span class="lg blue">味方の一方攻撃</span></div>' +
-      '<p class="legend-note">黄色の数字=速度 / 枠の色=罪悪、装飾=スキルの強さ / 敵のスキル駒を押すと、全体の体力が部位の耐久と精神力に切り替わります</p>';
+      '<p class="legend-note">点線の矢印=広域攻撃のサブターゲット / 黄色の数字=速度 / 枠の色=罪悪、装飾=スキルの強さ / 敵のスキル駒を押すと、全体の体力が部位の耐久と精神力に切り替わります</p>';
     return '<div class="row enemies">' + (enemies.map(function (u) { return enemyColumn(S, u, ctx); }).join('') || '<p class="empty">敵がいません</p>') + '</div>' +
       '<div class="row allies">' + (allies.map(function (u) { return allyColumn(S, u, ctx); }).join('') || '<p class="empty">味方がいません</p>') + '</div>' + legend;
   }
@@ -780,7 +780,7 @@
     var phys = sk ? L.PHYS[sk.phys] || '' : '';
     var kind = sk && sk.kind !== 'attack' ? kindLabel(sk) : '';
     var sub = [kind, phys, sin].filter(function (x) { return x; }).join('・');
-    var nums = sk ? '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') : '';
+    var nums = sk ? '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + (L.num(sk.weight, 1) >= 2 ? ' ／ 広域(加重値' + L.num(sk.weight, 1) + ')' : '') : '';
     var no = key === 'def' ? 'スキル0' : 'スキル' + (card && card.num ? card.num : '');
     return '<button type="button" class="srow' + (active ? ' picked' : '') + '" data-act="sel" data-sel="' + key + '"' + (editable && sk ? '' : ' disabled') + ' style="--c: ' + sinColor(sk && sk.sin) + ';">' +
       '<span class="s-top"><b>' + esc(sk ? sk.name : '-') + '</b><span class="s-no">' + esc(no) + '</span>' + (active ? '<span class="s-pick">選択中</span>' : '') + '</span>' +
