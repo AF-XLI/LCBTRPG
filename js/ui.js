@@ -440,9 +440,9 @@
     var tier = Math.max(1, Math.min(3, L.num(sk.tier, 1)));
     var html = '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '-bg.png" alt="" onerror="this.remove()">';
     html += ring;
-    html += '<img class="frame skb" src="image/skill/skill-base.png" alt="" onerror="this.remove()">';
+    html += '<img class="frame skb t' + tier + '" src="image/skill/skill-base.png" alt="" onerror="this.remove()">';
     var icon = physIcon(sk);
-    if (icon) { html += '<img class="p-icon" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
+    if (icon) { html += '<img class="p-icon i-' + esc(icon) + '" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
     html += '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
     return html;
   }
