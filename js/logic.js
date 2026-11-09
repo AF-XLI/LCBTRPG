@@ -284,6 +284,7 @@
         p.name = p.name || ('部位' + (idx + 1));
         if (p.noSp === undefined) { p.noSp = !!u.noSp; }
         p.noSp = !!p.noSp;
+        p.slotWeight = Math.max(1, Math.floor(num(p.slotWeight, 1)));
         if (u.spShared) { p.noSp = false; p.sp = u.sp; }
         else if (u.kind === 'abnormality') { p.noSp = true; }
         if (u.kind === 'abnormality') {
@@ -637,7 +638,7 @@
   function gmConfirm(state) {
     A(state.pieces).forEach(function (p) {
       var sk = pieceSkill(state, p);
-      if (sk && sk.kind === 'counter') { p.target = null; }
+      if (sk && sk.kind === 'counter') { p.target = null; p.subs = []; }
     });
     state.phase = 'player';
   }
@@ -866,84 +867,98 @@
     });
   }
 
-  function attackSeq(state, atk, defRef, matches, rng, evade) {
+  function attackMulti(state, atk, tgts, rng) {
     var skill = atk.skill;
     var sum = 0;
-    var hit = false;
+    var hits = tgts.map(function () { return false; });
     var coins = atk.coins;
     for (var i = 0; i < coins.length; i += 1) {
       var ag = getB(state, atk.ref);
-      var dg = getB(state, defRef);
-      if (isOut(ag) || isOut(dg)) { break; }
+      if (isOut(ag)) { break; }
+      var anyAlive = tgts.some(function (t) { return !isOut(getB(state, t.ref)); });
+      if (!anyAlive) { break; }
       var r = tossOne(state, atk.ref, skill, coins[i], rng);
       if (isOut(getB(state, atk.ref))) { break; }
       sum += r.add;
       var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(ag.b, skill, false, resoAmt(state, ag)));
-      if (evade && evade.active) {
-        var ev = tossSet(state, evade.ref, evade.skill, evade.skill.coins, rng, false);
-        applyGrants(state, evade.ref, atk.ref, evade.skill, 'use');
-        if (power <= ev.power) {
-          log(state, nameOf(state, atk.ref) + ' コイン' + (i + 1) + ' 威力' + power + ' → ' + nameOf(state, defRef) + ' が回避成功(回避威力' + ev.power + ')');
-          fx(state, defRef, '回避', 'guard');
-          continue;
-        }
-        evade.active = false;
-        evade.fail();
-        log(state, nameOf(state, defRef) + ' の回避は失敗(回避威力' + ev.power + ' < 攻撃威力' + power + ')');
-      }
+      var critRolled = false;
       var crit = false;
-      var br = O(ag.b.st).breath;
-      if (br && br.c > 0 && (skill.kind === 'attack' || skill.kind === 'counter')) {
-        if (rng() < Math.min(1, num(br.p, 0) * 0.05)) {
-          crit = true;
-          br.c -= 1;
-          if (br.c <= 0) { delete ag.b.st.breath; }
+      tgts.forEach(function (t, ti) {
+        var defRef = t.ref;
+        var dg = getB(state, defRef);
+        if (isOut(getB(state, atk.ref)) || isOut(dg)) { return; }
+        var evade = t.evade;
+        if (evade && evade.active) {
+          var ev = tossSet(state, evade.ref, evade.skill, evade.skill.coins, rng, false);
+          applyGrants(state, evade.ref, atk.ref, evade.skill, 'use');
+          if (power <= ev.power) {
+            log(state, nameOf(state, atk.ref) + ' コイン' + (i + 1) + ' 威力' + power + ' → ' + nameOf(state, defRef) + ' が回避成功(回避威力' + ev.power + ')');
+            fx(state, defRef, '回避', 'guard');
+            return;
+          }
+          evade.active = false;
+          evade.fail();
+          log(state, nameOf(state, defRef) + ' の回避は失敗(回避威力' + ev.power + ' < 攻撃威力' + power + ')');
         }
-      }
-      var bf = buffFrame(ag.b, ag.unit, dg.b, skill);
-      var rf = resFrame(dg, skill, matches, crit);
-      var dmg = calcDamage(power, bf, rf);
-      dealHp(state, defRef, dmg, 'attack');
-      hit = true;
-      log(state, nameOf(state, atk.ref) + ' コイン' + (i + 1) + ' ' + (r.heads ? '表' : '裏') + ' 威力' + power + ' → ' + nameOf(state, defRef) + ' に ' + dmg + (crit ? ' (クリティカル)' : ''));
-      fx(state, defRef, String(dmg), crit ? 'crit' : 'dmg');
-      var dg2 = getB(state, defRef);
-      var ru = O(dg2.b.st).rupture;
-      if (ru && num(ru.p, 0) > 0 && !isOut(dg2)) {
-        var fixed = num(ru.p, 0);
-        ru.c -= 1;
-        if (ru.c <= 0) { delete dg2.b.st.rupture; }
-        dealHp(state, defRef, fixed, 'rupture');
-        log(state, '  破裂: ' + nameOf(state, defRef) + ' に固定 ' + fixed);
-        fx(state, defRef, String(fixed), 'rupture');
-      }
-      var dg3 = getB(state, defRef);
-      var sk = O(dg3.b.st).sinking;
-      if (sk && num(sk.p, 0) > 0 && !isOut(dg3)) {
-        var pot = num(sk.p, 0);
-        sk.c -= 1;
-        if (sk.c <= 0) { delete dg3.b.st.sinking; }
-        if (dg3.b.noSp) {
-          var conv = Math.max(1, Math.floor(pot * (1 + resBonus(resMultOf(dg3.b.resist, 'gloom')))));
-          dealHp(state, defRef, conv, 'sinking');
-          log(state, '  沈潜: ' + nameOf(state, defRef) + ' に憂鬱ダメージ ' + conv);
-          fx(state, defRef, String(conv), 'sinking');
-        } else {
-          changeSp(state, defRef, -pot);
-          log(state, '  沈潜: ' + nameOf(state, defRef) + ' の精神力 -' + pot);
-          fx(state, defRef, '精神-' + pot, 'sinking');
+        if (!critRolled) {
+          critRolled = true;
+          var br = O(ag.b.st).breath;
+          if (br && br.c > 0 && (skill.kind === 'attack' || skill.kind === 'counter')) {
+            if (rng() < Math.min(1, num(br.p, 0) * 0.05)) {
+              crit = true;
+              br.c -= 1;
+              if (br.c <= 0) { delete ag.b.st.breath; }
+            }
+          }
         }
-      }
-      applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1);
-      if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
-        changeSp(state, atk.ref, 10);
-        log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
-        fx(state, atk.ref, '精神+10', 'sp');
-        break;
-      }
+        var bf = buffFrame(ag.b, ag.unit, dg.b, skill);
+        var rf = resFrame(dg, skill, t.matches, crit);
+        var dmg = calcDamage(power, bf, rf);
+        dealHp(state, defRef, dmg, 'attack');
+        hits[ti] = true;
+        log(state, nameOf(state, atk.ref) + ' コイン' + (i + 1) + ' ' + (r.heads ? '表' : '裏') + ' 威力' + power + ' → ' + nameOf(state, defRef) + ' に ' + dmg + (crit ? ' (クリティカル)' : ''));
+        fx(state, defRef, String(dmg), crit ? 'crit' : 'dmg');
+        var dg2 = getB(state, defRef);
+        var ru = O(dg2.b.st).rupture;
+        if (ru && num(ru.p, 0) > 0 && !isOut(dg2)) {
+          var fixed = num(ru.p, 0);
+          ru.c -= 1;
+          if (ru.c <= 0) { delete dg2.b.st.rupture; }
+          dealHp(state, defRef, fixed, 'rupture');
+          log(state, '  破裂: ' + nameOf(state, defRef) + ' に固定 ' + fixed);
+          fx(state, defRef, String(fixed), 'rupture');
+        }
+        var dg3 = getB(state, defRef);
+        var sk = O(dg3.b.st).sinking;
+        if (sk && num(sk.p, 0) > 0 && !isOut(dg3)) {
+          var pot = num(sk.p, 0);
+          sk.c -= 1;
+          if (sk.c <= 0) { delete dg3.b.st.sinking; }
+          if (dg3.b.noSp) {
+            var conv = Math.max(1, Math.floor(pot * (1 + resBonus(resMultOf(dg3.b.resist, 'gloom')))));
+            dealHp(state, defRef, conv, 'sinking');
+            log(state, '  沈潜: ' + nameOf(state, defRef) + ' に憂鬱ダメージ ' + conv);
+            fx(state, defRef, String(conv), 'sinking');
+          } else {
+            changeSp(state, defRef, -pot);
+            log(state, '  沈潜: ' + nameOf(state, defRef) + ' の精神力 -' + pot);
+            fx(state, defRef, '精神-' + pot, 'sinking');
+          }
+        }
+        applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1);
+        if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
+          changeSp(state, atk.ref, 10);
+          log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
+          fx(state, atk.ref, '精神+10', 'sp');
+        }
+      });
     }
-    if (hit) { applyGrants(state, atk.ref, defRef, skill, 'hit'); }
-    return hit;
+    tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit'); } });
+    return hits;
+  }
+
+  function attackSeq(state, atk, defRef, matches, rng, evade) {
+    return attackMulti(state, atk, [{ ref: defRef, matches: matches, evade: evade }], rng)[0];
   }
 
   function consumeBranch(state, g, consume) {
@@ -1179,13 +1194,135 @@
     return { winner: winner, matches: matches };
   }
 
+  function skillWeight(skill) {
+    return Math.max(1, Math.floor(num(skill && skill.weight, 1)));
+  }
+  function slotWeightOf(state, P) {
+    var u = state.units[P.unitId];
+    var part = u && u.parts[P.partIdx];
+    return Math.max(1, Math.floor(num(part && part.slotWeight, 1)));
+  }
+  function priorityOf(state, P) {
+    var u = state.units[P.unitId];
+    var part = u && u.parts[P.partIdx];
+    if (part && typeof part.priority === 'number') { return part.priority; }
+    return u && typeof u.priority === 'number' ? u.priority : 0;
+  }
+
+  // 広域攻撃のサブターゲットを選ぶ。side='ally' は味方が敵のスキル駒を、'enemy' は敵が味方を狙う。
+  // keep: すでに決めてあるサブ(有効なものはそのまま残し、足りない分だけ補う)
+  function pickSubs(state, side, selfId, skill, mainId, keep) {
+    var total = skillWeight(skill);
+    if (total < 2 || !mainId) { return []; }
+    var budget;
+    var out = [];
+    var cands;
+    if (side === 'ally') {
+      budget = total - slotWeightOf(state, getPiece(state, mainId));
+      var counts = {};
+      Object.keys(state.units).forEach(function (id) {
+        var u = state.units[id];
+        if (u.side !== 'ally' || id === selfId || !u.choice) { return; }
+        var seen = {};
+        [u.choice.target].concat(A(u.choice.subs)).forEach(function (pid) {
+          if (pid && !seen[pid]) { seen[pid] = true; counts[pid] = (counts[pid] || 0) + 1; }
+        });
+      });
+      var slots = A(state.pieces).slice();
+      if (state.phase !== 'setup' && state.phase !== 'over') {
+        Object.keys(state.units).forEach(function (id) {
+          var eu = state.units[id];
+          if (eu.side !== 'enemy') { return; }
+          A(eu.parts).forEach(function (part, i) {
+            if (part.destroyed) { return; }
+            var has = slots.some(function (P) { return P.unitId === id && P.partIdx === i; });
+            if (!has) { slots.push(getPiece(state, pieceId(id, i, 'b'))); }
+          });
+        });
+      }
+      cands = slots.filter(function (P) {
+        if (!P || P.pid === mainId) { return false; }
+        var g = getB(state, pieceRef(P));
+        return !!g && !isOut(g) && (P.blank || !!pieceSkill(state, P));
+      }).map(function (P) {
+        var u = state.units[P.unitId];
+        var n = P.blank ? 99 : Number(String(P.pid).split('|')[2]);
+        return { id: P.pid, count: counts[P.pid] || 0, pri: priorityOf(state, P), pos: [u.ord || 0, P.partIdx, n], w: slotWeightOf(state, P) };
+      });
+    } else {
+      budget = total - 1;
+      var ecounts = {};
+      A(state.pieces).forEach(function (P) {
+        if (P.pid === selfId) { return; }
+        var seen = {};
+        [P.target].concat(A(P.subs)).forEach(function (aid) {
+          if (aid && !seen[aid]) { seen[aid] = true; ecounts[aid] = (ecounts[aid] || 0) + 1; }
+        });
+      });
+      cands = Object.keys(state.units).filter(function (id) {
+        var u = state.units[id];
+        return u.side === 'ally' && !u.dead && id !== mainId;
+      }).map(function (id) {
+        return { id: id, count: ecounts[id] || 0, pri: 0, pos: [allyRank(state, state.units[id]), 0, 0], w: 1 };
+      });
+    }
+    var byId = {};
+    cands.forEach(function (c) { byId[c.id] = c; });
+    A(keep).forEach(function (id) {
+      if (budget <= 0 || !byId[id] || out.indexOf(id) >= 0) { return; }
+      out.push(id);
+      budget -= byId[id].w;
+    });
+    cands.sort(function (a, b) {
+      return a.count - b.count || b.pri - a.pri || a.pos[0] - b.pos[0] || a.pos[1] - b.pos[1] || a.pos[2] - b.pos[2];
+    });
+    cands.forEach(function (c) {
+      if (budget <= 0 || out.indexOf(c.id) >= 0) { return; }
+      out.push(c.id);
+      budget -= c.w;
+    });
+    return out;
+  }
+
+  function subRefs(state, side, ids, mainRef) {
+    var seen = {};
+    seen[mainRef.u + '|' + (mainRef.p || 0)] = true;
+    var refs = [];
+    A(ids).forEach(function (id) {
+      var ref = side === 'ally' ? (getPiece(state, id) ? pieceRef(getPiece(state, id)) : null) : { u: id, p: null };
+      if (!ref) { return; }
+      var key = ref.u + '|' + (ref.p || 0);
+      if (seen[key]) { return; }
+      seen[key] = true;
+      var g = getB(state, ref);
+      if (g && !isOut(g)) { refs.push(ref); }
+    });
+    return refs;
+  }
+
   function sideOfAlly(state, unit, skill) {
     state.atkSeq = num(state.atkSeq, 0) + 1;
-    return { ref: { u: unit.id, p: null }, skill: skill, coins: skill.coins.slice(), uid: 'k' + state.atkSeq };
+    var side = { ref: { u: unit.id, p: null }, skill: skill, coins: skill.coins.slice(), uid: 'k' + state.atkSeq, subs: [] };
+    var ch = unit.choice;
+    var mainP = ch && ch.target ? getPiece(state, ch.target) : null;
+    if (mainP && skill.kind === 'attack' && skillWeight(skill) >= 2) {
+      var ids = pickSubs(state, 'ally', unit.id, skill, mainP.pid, ch.subs);
+      if (JSON.stringify(ids) !== JSON.stringify(A(ch.subs))) { log(state, unit.name + ' の広域攻撃のサブターゲットを選び直した'); }
+      ch.subs = ids;
+      side.subs = subRefs(state, 'ally', ids, pieceRef(mainP));
+    }
+    return side;
   }
-  function sideOfPiece(state, P, skill) {
+  function sideOfPiece(state, P, skill, mainAllyId) {
     state.atkSeq = num(state.atkSeq, 0) + 1;
-    return { ref: pieceRef(P), skill: skill, coins: skill.coins.slice(), uid: 'k' + state.atkSeq };
+    var side = { ref: pieceRef(P), skill: skill, coins: skill.coins.slice(), uid: 'k' + state.atkSeq, subs: [] };
+    var mainId = mainAllyId || P.target;
+    if (mainId && skill.kind === 'attack' && skillWeight(skill) >= 2) {
+      var ids = pickSubs(state, 'enemy', P.pid, skill, mainId, A(P.subs).filter(function (x) { return x !== mainId; }));
+      P.subs = ids;
+      side.subs = subRefs(state, 'enemy', ids, { u: mainId, p: null });
+    }
+    return side;
   }
 
   function activateEnemyDefense(state, allyId, partRef) {
@@ -1206,10 +1343,12 @@
     attackWithReactive(state, atk, defRef, 0, rng);
   }
 
-  function attackWithReactive(state, atk, defRef, matches, rng) {
+  function prepReact(state, atk, defRef, matches, rng) {
+    var t = { ref: defRef, matches: matches, react: null, skill: null, evade: null };
     var react = findReactive(state, defRef, atk);
-    if (!react) { attackSeq(state, atk, defRef, matches, rng); return; }
+    if (!react) { return t; }
     var skill = resolveSkill(state, defRef, react.raw, null);
+    t.skill = skill;
     if (react.type === 'guard') {
       if (!react.used) {
         react.mark();
@@ -1221,30 +1360,45 @@
         applyGrants(state, defRef, atk.ref, skill, 'use');
         gainRes(state, defRef, skill, true);
       }
-      attackSeq(state, atk, defRef, matches, rng);
-      return;
+      return t;
     }
     if (react.type === 'evade') {
       gainRes(state, defRef, skill, true);
-      var ev = { ref: defRef, skill: skill, active: !react.evadeOff, fail: react.fail };
-      attackSeq(state, atk, defRef, matches, rng, ev);
-      return;
+      t.evade = { ref: defRef, skill: skill, active: !react.evadeOff, fail: react.fail };
+      return t;
     }
-    var gb = getB(state, defRef);
-    var landed = attackSeq(state, atk, defRef, matches, rng);
-    var doCounter = !react.used && (gb.unit.side === 'ally' || landed);
-    if (!doCounter) { return; }
-    react.mark();
-    var dg = getB(state, defRef);
-    var ag = getB(state, atk.ref);
-    if (isOut(dg) || isOut(ag) || incap(dg.b)) {
-      log(state, nameOf(state, defRef) + ' は反撃できなかった');
-      return;
-    }
-    log(state, nameOf(state, defRef) + ' が反撃「' + (skill.name || '') + '」');
-    applyGrants(state, defRef, atk.ref, skill, 'use');
-    gainRes(state, defRef, skill, true);
-    attackSeq(state, { ref: defRef, skill: skill, coins: skill.coins.slice() }, atk.ref, 0, rng);
+    t.react = react;
+    return t;
+  }
+
+  function attackWithReactive(state, atk, defRef, matches, rng) {
+    var tgts = [prepReact(state, atk, defRef, matches, rng)];
+    A(atk.subs).forEach(function (r) {
+      var g = getB(state, r);
+      if (!g || isOut(g)) { return; }
+      tgts.push(prepReact(state, atk, r, matches, rng));
+    });
+    var hits = attackMulti(state, atk, tgts, rng);
+    tgts.forEach(function (t, ti) {
+      var react = t.react;
+      if (!react) { return; }
+      var skill = t.skill;
+      var dRef = t.ref;
+      var gb = getB(state, dRef);
+      var doCounter = !react.used && (gb.unit.side === 'ally' || hits[ti]);
+      if (!doCounter) { return; }
+      react.mark();
+      var dg = getB(state, dRef);
+      var ag = getB(state, atk.ref);
+      if (isOut(dg) || isOut(ag) || incap(dg.b)) {
+        log(state, nameOf(state, dRef) + ' は反撃できなかった');
+        return;
+      }
+      log(state, nameOf(state, dRef) + ' が反撃「' + (skill.name || '') + '」');
+      applyGrants(state, dRef, atk.ref, skill, 'use');
+      gainRes(state, dRef, skill, true);
+      attackSeq(state, { ref: dRef, skill: skill, coins: skill.coins.slice() }, atk.ref, 0, rng);
+    });
   }
 
   function planEntryFor(state, kind, id) {
@@ -1317,6 +1471,7 @@
     var pairs = state.proc.pairs || { matchOf: {} };
     activateEnemyDefense(state, u.id, pieceRef(P));
     var X = sideOfAlly(state, u, skill);
+    X.subs.forEach(function (r) { activateEnemyDefense(state, u.id, r); });
     var partnerOk = false;
     if (pairs.matchOf[P.pid] === u.id && !P.blank && !P.acted) {
       var psk = pieceSkill(state, P);
@@ -1329,7 +1484,7 @@
       if (pe) { pe.done = true; }
       var pskill = resolveSkill(state, pieceRef(P), pieceSkill(state, P), { u: u.id, p: null });
       applyGrants(state, pieceRef(P), { u: u.id, p: null }, pskill, 'use');
-      clash(state, X, sideOfPiece(state, P, pskill), rng);
+      clash(state, X, sideOfPiece(state, P, pskill, u.id), rng);
     } else {
       engage(state, X, pieceRef(P), rng);
     }
@@ -1368,7 +1523,7 @@
       var dsk = chosenSkill(state, au);
       log(state, au.name + ' の' + (dsk && dsk.sub === 'evade' ? '回避' : '防御') + '「' + (dsk ? dsk.name || '' : '') + '」が発動可能になった');
     }
-    var X = sideOfPiece(state, P, skill);
+    var X = sideOfPiece(state, P, skill, allyId);
     var partnerOk = false;
     if (pairs.matchOf[P.pid] === allyId && au.choice && !au.choice.acted && !incap(au)) {
       var ask = chosenSkill(state, au);
@@ -1511,7 +1666,7 @@
     var u = state.units[unitId];
     if (!u || u.dead || incap(u)) { return; }
     var old = u.choice || {};
-    u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, confirmed: false, ts: ts };
+    u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, subs: old.sel === sel ? A(old.subs) : [], confirmed: false, ts: ts };
     var sk = chosenSkill(state, u);
     if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense' && sk.kind !== 'counter')) { u.choice.target = null; }
     u.choice.confirmed = canConfirm(state, u);
@@ -1521,7 +1676,17 @@
     if (!u || !u.choice) { return; }
     u.choice.target = pid;
     u.choice.ts = ts;
+    var wsk = chosenSkill(state, u);
+    u.choice.subs = pid && wsk && wsk.kind === 'attack' ? pickSubs(state, 'ally', unitId, wsk, pid, []) : [];
     u.choice.confirmed = canConfirm(state, u);
+  }
+  function setPieceTarget(state, pid, allyId) {
+    A(state.pieces).forEach(function (P) {
+      if (P.pid !== pid) { return; }
+      P.target = allyId || null;
+      var sk = pieceSkill(state, P);
+      P.subs = allyId && sk && sk.kind === 'attack' ? pickSubs(state, 'enemy', pid, sk, allyId, []) : [];
+    });
   }
 
   function vibrationBurst(state, ref, rng) {
@@ -1585,7 +1750,7 @@
     handOf: handOf, chosenSkill: chosenSkill, slotSkill: slotSkill, getPiece: getPiece, pieceSkill: pieceSkill, pieceRef: pieceRef, pieceId: pieceId, parsePid: parsePid,
     startRound: startRound, beginCombat: beginCombat, gmConfirm: gmConfirm, planEnemyPieces: planEnemyPieces, rebuildPiecesFor: rebuildPiecesFor,
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
-    buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget,
+    buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
     addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
     vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
     winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
