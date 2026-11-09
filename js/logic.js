@@ -611,13 +611,19 @@
       if (u.dead) { return; }
       if (u.side === 'ally') {
         activate(u);
-        drawSpeed(u);
         u.choice = null;
         ensureDeck(u, rng);
         if (incap(u)) { u.choice = { sel: 'stag', target: null, confirmed: true, ts: 0 }; }
       } else {
-        u.parts.forEach(function (p) { activate(p); drawSpeed(p); });
+        u.parts.forEach(function (p) { activate(p); });
       }
+    });
+    if (state.round === 1) { fireUnitTiming(state, 'firstRound'); }
+    fireUnitTiming(state, 'roundStart');
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      if (u.dead) { return; }
+      if (u.side === 'ally') { drawSpeed(u); } else { u.parts.forEach(function (p) { drawSpeed(p); }); }
     });
     state.reso = null;
     assignRanks(state);
@@ -672,6 +678,7 @@
       if (!P) { return; }
       var sk = pieceSkill(state, P);
       if (!sk || sk.kind !== 'attack') { return; }
+      if (sk.noMatch && !a.def) { return; }
       if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
       else if (P.target === a.id) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
     });
@@ -844,11 +851,61 @@
     return Math.max(1, Math.floor(power * bf * rf));
   }
 
-  function applyGrants(state, atkRef, defRef, skill, when, coin) {
-    A(skill.grants).forEach(function (gr) {
-      if ((gr.when || 'hit') !== when) { return; }
-      if (coin === undefined) { if (gr.coin) { return; } }
+  var TIMING_ALIAS = {
+    '戦闘開始時': ['combatStart'], '戦闘突入時': ['firstRound'], 'ターン開始時': ['roundStart'],
+    '使用時': ['use'], '攻撃前': ['beforeAttack'], 'マッチ勝利時': ['matchWin'], 'マッチ敗北時': ['matchLose'],
+    '的中時': ['hit'], '表面的中時': ['hit', 'heads'], '裏面的中時': ['hit', 'tails'],
+    hitHeads: ['hit', 'heads'], hitTails: ['hit', 'tails']
+  };
+  function grantTiming(gr) {
+    var raw = String(gr.when || 'hit').replace(/[\[\]]/g, '');
+    var t = TIMING_ALIAS[raw];
+    return { when: t ? t[0] : raw, side: gr.side || (t && t[1]) || '' };
+  }
+  function cmpOk(cur, max, c) {
+    var v = c.pct ? (max > 0 ? cur / max * 100 : 0) : cur;
+    var n = num(c.v, 0);
+    if (c.op === '<') { return v < n; }
+    if (c.op === '<=') { return v <= n; }
+    if (c.op === '>') { return v > n; }
+    if (c.op === '>=') { return v >= n; }
+    return v === n;
+  }
+  function grantCondOk(state, gr, atkRef, defRef) {
+    var cnd = gr.if;
+    if (!cnd) { return true; }
+    var ok = true;
+    ['hp', 'sp'].forEach(function (key) {
+      var c = cnd[key];
+      if (!c) { return; }
+      var g = getB(state, c.of === 'self' ? atkRef : defRef);
+      if (!g) { ok = false; return; }
+      var cur;
+      var max;
+      if (key === 'hp') { var h = hpInfo(g.unit, g.part); cur = h.cur; max = h.max; }
+      else { cur = g.unit.kind === 'abnormality' || g.b.noSp ? 0 : num(g.b.sp, 0); max = SP_MAX; }
+      if (!cmpOk(cur, max, c)) { ok = false; }
+    });
+    return ok;
+  }
+  function grantCheckBefore(gr) {
+    var cnd = gr.if;
+    return !!cnd && (cnd.check !== 'after' || !!cnd.sp);
+  }
+  function precheckGrants(state, atkRef, defRef, skill) {
+    return A(skill.grants).map(function (gr) { return grantCheckBefore(gr) ? grantCondOk(state, gr, atkRef, defRef) : undefined; });
+  }
+
+  function applyGrants(state, atkRef, defRef, skill, when, coin, ctx) {
+    ctx = ctx || {};
+    A(skill.grants).forEach(function (gr, gi) {
+      var tm = grantTiming(gr);
+      if (tm.when !== when) { return; }
+      if (coin === undefined) { if (gr.coin || tm.side) { return; } }
       else if (gr.coin !== coin) { return; }
+      if (tm.side && (tm.side === 'heads') !== !!ctx.heads) { return; }
+      var okc = ctx.pre && ctx.pre[gi] !== undefined ? ctx.pre[gi] : grantCondOk(state, gr, atkRef, defRef);
+      if (!okc) { return; }
       var tref = gr.to === 'self' ? atkRef : defRef;
       var tg = getB(state, tref);
       if (!tg || isOut(tg)) { return; }
@@ -867,11 +924,32 @@
     });
   }
 
+  function fireUnitTiming(state, when) {
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      if (u.dead) { return; }
+      if (u.side === 'ally') {
+        var ref = { u: id, p: null };
+        applyGrants(state, ref, ref, { grants: u.grants }, when);
+      } else {
+        u.parts.forEach(function (p, i) {
+          var r = { u: id, p: i };
+          applyGrants(state, r, r, { grants: p.grants }, when);
+        });
+      }
+    });
+  }
+
+
   function attackMulti(state, atk, tgts, rng) {
     var skill = atk.skill;
     var sum = 0;
     var hits = tgts.map(function () { return false; });
+    var pre0 = tgts.map(function () { return null; });
     var coins = atk.coins;
+    tgts.forEach(function (t) {
+      if (!isOut(getB(state, atk.ref)) && !isOut(getB(state, t.ref))) { applyGrants(state, atk.ref, t.ref, skill, 'beforeAttack'); }
+    });
     for (var i = 0; i < coins.length; i += 1) {
       var ag = getB(state, atk.ref);
       if (isOut(ag)) { break; }
@@ -911,6 +989,8 @@
             }
           }
         }
+        var pre = precheckGrants(state, atk.ref, defRef, skill);
+        if (!pre0[ti]) { pre0[ti] = pre; }
         var bf = buffFrame(ag.b, ag.unit, dg.b, skill);
         var rf = resFrame(dg, skill, t.matches, crit);
         var dmg = calcDamage(power, bf, rf);
@@ -945,7 +1025,7 @@
             fx(state, defRef, '精神-' + pot, 'sinking');
           }
         }
-        applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1);
+        applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1, { heads: r.heads, pre: pre });
         if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
           changeSp(state, atk.ref, 10);
           log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
@@ -953,7 +1033,7 @@
         }
       });
     }
-    tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit'); } });
+    tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit', undefined, { pre: pre0[ti] }); } });
     return hits;
   }
 
@@ -1183,6 +1263,8 @@
       }
       var lg = getB(state, loser.ref);
       if (!isOut(wg) && !isOut(lg)) {
+        applyGrants(state, winner.ref, loser.ref, winner.skill, 'matchWin');
+        applyGrants(state, loser.ref, winner.ref, loser.skill, 'matchLose');
         if (winner.skill.kind === 'attack' || winner.skill.kind === 'counter') {
           attackWithReactive(state, winner, loser.ref, matches, rng);
         } else {
@@ -1429,6 +1511,7 @@
     sorted.sort(function (a, b) { return b.spd - a.spd; });
     state.reso = calcReso(state);
     state.plan = sorted;
+    fireUnitTiming(state, 'combatStart');
     state.proc = { i: 0, pairs: computePairs(state) };
     state.phase = 'process';
     A(state.pieces).forEach(function (P) { P.acted = false; P.defUsed = false; P.defActive = false; P.evadeOff = false; P.cUsed = {}; });
