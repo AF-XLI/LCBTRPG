@@ -257,6 +257,12 @@
       } else {
         out += line(te, pe, 'blue', false, u.choice.acted);
       }
+      if (sk.kind === 'attack') {
+        A(u.choice.subs).forEach(function (spid) {
+          var se = pieceEl(spid);
+          if (se) { out += line(te, se, 'blue', true, u.choice.acted); }
+        });
+      }
     });
     A(S.pieces).forEach(function (P) {
       if (!P.target || drawnMatch[P.pid]) { return; }
@@ -268,6 +274,12 @@
       var pe = pieceEl(P.pid);
       if (!te || !pe) { return; }
       out += line(pe, te, 'red', false, P.acted);
+      if (sk.kind === 'attack') {
+        A(P.subs).forEach(function (aid) {
+          var se = tokEl(aid);
+          if (se && (arrowMode !== 'mine' || me.unitId === aid)) { out += line(pe, se, 'red', true, P.acted); }
+        });
+      }
     });
     svg.innerHTML = out;
   }
@@ -375,7 +387,7 @@
       if (me.role === 'gm' && S.phase === 'enemy' && gmPick && !u.dead) {
         var pid = gmPick;
         gmPick = null;
-        commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = id; } }); });
+        commit(function (s) { L.setPieceTarget(s, pid, id); });
         return;
       }
       var shown = S.phase !== 'enemy' && !u.dead && !L.incap(u) && u.choice && u.choice.sel && L.chosenSkill(S, u);
@@ -503,7 +515,7 @@
     mtarget: function (el) { manualTarget = el.value; },
     ptarget: function (el) {
       var pid = el.dataset.pid;
-      commit(function (s) { A(s.pieces).forEach(function (P) { if (P.pid === pid) { P.target = el.value || null; } }); });
+      commit(function (s) { L.setPieceTarget(s, pid, el.value || null); });
     },
     pskill: function (el) {
       if (!el.value) { return; }
