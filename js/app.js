@@ -80,8 +80,8 @@
     if (me.role === 'player' && u && !u.dead && !L.incap(u) && S.phase === 'player' && u.choice && u.choice.sel && u.choice.sel !== 'stag') {
       var sk = L.chosenSkill(S, u);
       var isDefSel = !!(sk && sk.kind === 'defense');
-      ctx.targeting = !!(sk && (sk.kind === 'attack' || isDefSel));
-      ctx.targetAttackOnly = isDefSel;
+      ctx.targeting = !!(sk && (sk.kind === 'attack' || isDefSel || sk.kind === 'counter'));
+      ctx.targetAttackOnly = isDefSel || !!(sk && sk.kind === 'counter');
       ctx.selectedPid = u.choice.target || null;
       ctx.canSetTarget = ctx.targeting && (retarget || !ctx.selectedPid);
     }
@@ -243,20 +243,19 @@
       if (u.side !== 'ally' || u.dead || L.incap(u) || !u.choice || !u.choice.target) { return; }
       if (S.phase === 'enemy') { return; }
       var sk = L.chosenSkill(S, u);
-      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
+      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense' && sk.kind !== 'counter')) { return; }
       if (arrowMode === 'mine' && me.unitId !== id) { return; }
       var te = tokEl(id);
       var pe = pieceEl(u.choice.target);
       if (!te || !pe) { return; }
       var matched = pairs.matchOf[u.choice.target] === id;
-      var dashed = S.phase === 'player' && !u.choice.confirmed;
       if (matched) { drawnMatch[u.choice.target] = true; }
       if (matched && sk.kind === 'defense') {
-        out += meet(te, pe, 'blue', 'red', dashed, false, u.choice.defActive);
+        out += meet(te, pe, 'blue', 'red', false, false, u.choice.defActive);
       } else if (matched) {
-        out += meet(te, pe, 'gold', 'gold', dashed, true, u.choice.acted);
+        out += meet(te, pe, 'gold', 'gold', false, true, u.choice.acted);
       } else {
-        out += line(te, pe, 'blue', dashed, u.choice.acted);
+        out += line(te, pe, 'blue', false, u.choice.acted);
       }
     });
     A(S.pieces).forEach(function (P) {
@@ -268,7 +267,7 @@
       var te = tokEl(P.target);
       var pe = pieceEl(P.pid);
       if (!te || !pe) { return; }
-      out += line(pe, te, 'red', S.phase === 'enemy', P.acted);
+      out += line(pe, te, 'red', false, P.acted);
     });
     svg.innerHTML = out;
   }
@@ -404,14 +403,6 @@
       popupState = null;
       commit(function (s) { L.selectChoice(s, id, el.dataset.sel, Date.now()); });
     },
-    confirm: function () {
-      var id = me.unitId;
-      commit(function (s) { var u = s.units[id]; if (u && L.canConfirm(s, u)) { u.choice.confirmed = true; } });
-    },
-    unconfirm: function () {
-      var id = me.unitId;
-      commit(function (s) { var u = s.units[id]; if (u && u.choice) { u.choice.confirmed = false; } });
-    },
     'gm-confirm': function () {
       var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && (sk.kind === 'attack' || sk.kind === 'defense') && !P.target; });
       if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃・守備は行われません)')) { return; }
@@ -435,7 +426,7 @@
       render();
     },
     'start-process': function () {
-      if (!L.allConfirmed(S) && !confirm('確定していない味方がいます。このまま戦闘を開始しますか?(未確定の味方は行動しません)')) { return; }
+      if (!L.allConfirmed(S)) { return; }
       commit(function (s) { L.buildPlan(s, rng); });
     },
     step: function () { commit(function (s) { L.stepProcess(s, rng); }); },
