@@ -1301,10 +1301,6 @@ h4 {
   --c: var(--blue);
 }
  
-.lg.dash {
-  --c: var(--muted);
-}
- 
 .legend-note {
   margin: 0.25rem 0 0;
   color: var(--muted);
