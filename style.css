@@ -1083,21 +1083,26 @@ h4 {
   transform: translate(-50%, calc(-50% - 0.1rem));
 }
  
+.p-icon.i-pierce {
+  width: 56%;
+  height: 56%;
+}
+ 
 .p-icon.i-guard {
-  width: 80%;
-  height: 80%;
+  width: 70%;
+  height: 70%;
   transform: translate(-53.06%, calc(-49.44% - 0.045rem));
 }
  
 .p-icon.i-evade {
-  width: 71%;
-  height: 71%;
+  width: 62%;
+  height: 62%;
   transform: translate(-51.11%, calc(-50.56% - 0.045rem));
 }
  
 .p-icon.i-counter {
-  width: 65%;
-  height: 65%;
+  width: 57%;
+  height: 57%;
   transform: translate(-50.26%, calc(-48.96% - 0.045rem));
 }
  
