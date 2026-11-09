@@ -592,6 +592,7 @@
 
   function startRound(state, rng) {
     state.round += 1;
+    state.once = {};
     state.phase = 'enemy';
     state.plan = [];
     state.proc = { i: 0 };
@@ -786,7 +787,10 @@
     var a = vOf(b, 'powerUp') - vOf(b, 'powerDown') + num(extra, 0);
     if (skill.kind === 'attack') { a += vOf(b, 'atkPowerUp') - vOf(b, 'atkPowerDown'); }
     else { a += vOf(b, 'defPowerUp') - vOf(b, 'defPowerDown'); }
-    if (clash) { a += vOf(b, 'matchPowerUp') - vOf(b, 'matchPowerDown'); }
+    if (clash) {
+      a += vOf(b, 'matchPowerUp') - vOf(b, 'matchPowerDown');
+      A(b.mods).forEach(function (m) { if (m.k === 'matchPower' && (m.winProbMax === undefined || m.on)) { a += num(m.n, 0); } });
+    }
     return a;
   }
 
@@ -833,12 +837,24 @@
     return { heads: heads, power: power };
   }
 
-  function buffFrame(atkB, atkUnit, defB, skill) {
+  function buffFrame(atkB, atkUnit, defB, skill, opt) {
+    opt = opt || {};
     var f = 1 + 0.1 * (sumVal(atkB, 'dmgUp', skill) - sumVal(atkB, 'dmgDown', skill) + sumVal(defB, 'fragile', skill) - sumVal(defB, 'protect', skill));
     f += num(skill.dmgBonus, 0) + num(atkUnit.dmgBonus, 0);
-    A(atkUnit.dmgBonusIf).forEach(function (r) {
-      if (r.when === 'targetSpLower' && !defB.noSp && num(defB.sp, 0) < num(atkB.sp, 0)) { f += num(r.value, 0); }
+    A(atkB.mods).forEach(function (m) {
+      if (m.k === 'dmg' && (m.scope !== 'finalCoin' || opt.final)) {
+        if (m.dmgIf && !condOkG(m.dmgIf, opt.ag, opt.dg)) { return; }
+        var pc = m.perMatch !== undefined ? Math.min(m.max === undefined ? Infinity : num(m.max, 0), num(m.perMatch, 0) * num(opt.matches, 0)) : num(m.pct, 0);
+        f += pc / 100;
+      }
+      if (m.k === 'crit' && opt.crit) { f += num(m.pct, 0) / 100; }
     });
+    A(defB.mods).forEach(function (m) {
+      if (m.k !== 'taken') { return; }
+      if (m.dmgIf && !condOkG(m.dmgIf, opt.dg, opt.ag)) { return; }
+      f += num(m.pct, 0) / 100;
+    });
+    if (opt.crit) { f += num(skill.critBonus, 0) / 100; }
     return Math.max(0, f);
   }
   function resFrame(defG, skill, matches, crit) {
@@ -854,7 +870,7 @@
   var TIMING_ALIAS = {
     '戦闘開始時': ['combatStart'], '戦闘突入時': ['firstRound'], 'ターン開始時': ['roundStart'],
     '使用時': ['use'], '攻撃前': ['beforeAttack'], 'マッチ勝利時': ['matchWin'], 'マッチ敗北時': ['matchLose'],
-    '的中時': ['hit'], '表面的中時': ['hit', 'heads'], '裏面的中時': ['hit', 'tails'],
+    '対象討伐時': ['kill'], '的中時': ['hit'], '表面的中時': ['hit', 'heads'], '裏面的中時': ['hit', 'tails'],
     hitHeads: ['hit', 'heads'], hitTails: ['hit', 'tails']
   };
   function grantTiming(gr) {
@@ -862,31 +878,38 @@
     var t = TIMING_ALIAS[raw];
     return { when: t ? t[0] : raw, side: gr.side || (t && t[1]) || '' };
   }
-  function cmpOk(cur, max, c) {
-    var v = c.pct ? (max > 0 ? cur / max * 100 : 0) : cur;
-    var n = num(c.v, 0);
-    if (c.op === '<') { return v < n; }
-    if (c.op === '<=') { return v <= n; }
-    if (c.op === '>') { return v > n; }
-    if (c.op === '>=') { return v >= n; }
+  function cmpOp(v, op, n) {
+    if (op === '<') { return v < n; }
+    if (op === '<=') { return v <= n; }
+    if (op === '>') { return v > n; }
+    if (op === '>=') { return v >= n; }
     return v === n;
   }
-  function grantCondOk(state, gr, atkRef, defRef) {
-    var cnd = gr.if;
+  function condValue(key, g) {
+    if (!g) { return { cur: 0, max: 0 }; }
+    if (key === 'hp') { var h = hpInfo(g.unit, g.part); return { cur: h.cur, max: h.max }; }
+    return { cur: g.unit.kind === 'abnormality' || g.b.noSp ? 0 : num(g.b.sp, 0), max: SP_MAX };
+  }
+  // self=効果の持ち主、other=相手。of:'self'|'target' で見る側を選び、vs を書くと相手側の値と比べる
+  function condOkG(cnd, selfG, otherG) {
     if (!cnd) { return true; }
     var ok = true;
     ['hp', 'sp'].forEach(function (key) {
       var c = cnd[key];
       if (!c) { return; }
-      var g = getB(state, c.of === 'self' ? atkRef : defRef);
+      var g = c.of === 'self' ? selfG : otherG;
       if (!g) { ok = false; return; }
-      var cur;
-      var max;
-      if (key === 'hp') { var h = hpInfo(g.unit, g.part); cur = h.cur; max = h.max; }
-      else { cur = g.unit.kind === 'abnormality' || g.b.noSp ? 0 : num(g.b.sp, 0); max = SP_MAX; }
-      if (!cmpOk(cur, max, c)) { ok = false; }
+      var cv = condValue(key, g);
+      var n;
+      if (c.vs) { n = condValue(key, c.vs === 'self' ? selfG : otherG).cur; }
+      else { n = num(c.v, 0); }
+      var v = c.pct && !c.vs ? (cv.max > 0 ? cv.cur / cv.max * 100 : 0) : cv.cur;
+      if (!cmpOp(v, c.op, n)) { ok = false; }
     });
     return ok;
+  }
+  function grantCondOk(state, gr, atkRef, defRef) {
+    return condOkG(gr.if, getB(state, atkRef), getB(state, defRef));
   }
   function grantCheckBefore(gr) {
     var cnd = gr.if;
@@ -906,22 +929,123 @@
       if (tm.side && (tm.side === 'heads') !== !!ctx.heads) { return; }
       var okc = ctx.pre && ctx.pre[gi] !== undefined ? ctx.pre[gi] : grantCondOk(state, gr, atkRef, defRef);
       if (!okc) { return; }
-      var tref = gr.to === 'self' ? atkRef : defRef;
-      var tg = getB(state, tref);
-      if (!tg || isOut(tg)) { return; }
-      if (gr.next) {
-        tg.b.next = O(tg.b.next);
-        var cur = tg.b.next[gr.status] || { p: 0, c: 0, v: 0 };
-        cur.p += num(gr.p, 0);
-        cur.c += num(gr.c, 0);
-        cur.v += num(gr.v, 0);
-        tg.b.next[gr.status] = cur;
-        log(state, nameOf(state, tref) + ' に次ラウンド付与: ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label);
-      } else {
-        addStatus(tg.b, gr.status, { p: gr.p, c: gr.c, v: gr.v, k: gr.k });
-        log(state, nameOf(state, tref) + ' に ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label + ' を付与');
+      var onceKey = null;
+      if (gr.once) {
+        onceKey = (ctx.onceKey || atkRef.u + '|' + (skill.name || '')) + '|' + gi;
+        state.once = O(state.once);
+        if (state.once[onceKey]) { return; }
       }
+      var trefs = [];
+      if (gr.to === 'allies') {
+        Object.keys(state.units).forEach(function (id) {
+          var au = state.units[id];
+          if (au.side === 'ally' && !au.dead) { trefs.push({ u: id, p: null }); }
+        });
+      } else { trefs.push(gr.to === 'self' || ((gr.dmgPct !== undefined || gr.perCoin !== undefined) && !ctx.passive) ? atkRef : defRef); }
+      if (gr.pick && gr.to === 'allies') {
+        var pool = trefs.map(function (r) { return getB(state, r); }).filter(function (g) {
+          if (!g || isOut(g)) { return false; }
+          if (gr.pick === 'lowestHp') { return g.unit.hp < g.unit.maxHp; }
+          return !g.b.noSp;
+        });
+        pool.sort(function (a, b) {
+          var d = gr.pick === 'lowestHp' ? a.unit.hp - b.unit.hp : num(a.b.sp, 0) - num(b.b.sp, 0);
+          return d || allyRank(state, a.unit) - allyRank(state, b.unit);
+        });
+        trefs = pool.length ? [pool[0].ref] : [];
+      }
+      if (onceKey && trefs.length) { state.once[onceKey] = true; }
+      var coinCount = ctx.coinCount !== undefined ? ctx.coinCount : A(skill.coins).length;
+      trefs.forEach(function (tref) {
+        var tg = getB(state, tref);
+        if (!tg || isOut(tg)) { return; }
+        if (gr.dmgPct !== undefined || gr.perCoin !== undefined || gr.perMatch !== undefined) {
+          var pct = gr.dmgPct !== undefined ? num(gr.dmgPct, 0) : num(gr.perCoin, 0) * coinCount;
+          tg.b.mods = A(tg.b.mods);
+          var dm = { k: 'dmg', pct: pct, scope: ctx.passive ? gr.scope || 'round' : gr.scope === 'finalCoin' ? 'finalCoin' : 'skill' };
+          if (gr.dmgIf) { dm.dmgIf = gr.dmgIf; }
+          if (gr.perMatch !== undefined) { dm.perMatch = num(gr.perMatch, 0); dm.max = gr.max; }
+          tg.b.mods.push(dm);
+          if (trefs.length === 1) { log(state, nameOf(state, tref) + ' の与えるダメージ +' + (gr.perMatch !== undefined ? 'マッチ毎' + gr.perMatch : pct) + '%' + (gr.scope === 'finalCoin' ? ' (最終コイン)' : '')); }
+        }
+        if (gr.critPct !== undefined) {
+          tg.b.mods = A(tg.b.mods);
+          tg.b.mods.push({ k: 'crit', pct: num(gr.critPct, 0), scope: ctx.passive ? gr.scope || 'round' : 'skill' });
+        }
+        if (gr.breathKeep !== undefined) {
+          tg.b.mods = A(tg.b.mods);
+          tg.b.mods.push({ k: 'breathKeep', pct: num(gr.breathKeep, 0), scope: 'round' });
+        }
+        if (gr.matchPower !== undefined) {
+          tg.b.mods = A(tg.b.mods);
+          var mp = { k: 'matchPower', n: num(gr.matchPower, 0), scope: 'round' };
+          if (gr.winProbMax !== undefined) { mp.winProbMax = gr.winProbMax; }
+          tg.b.mods.push(mp);
+        }
+        if (gr.heal !== undefined && tg.unit.side === 'ally') {
+          var hv = Math.max(0, Math.min(num(gr.heal, 0), tg.unit.maxHp - tg.unit.hp));
+          tg.unit.hp += hv;
+          log(state, nameOf(state, tref) + ' の体力が ' + hv + ' 回復');
+          fx(state, tref, '+' + hv, 'heal');
+        }
+        if (gr.sp !== undefined) {
+          changeSp(state, tref, num(gr.sp, 0));
+          log(state, nameOf(state, tref) + ' の精神力 ' + (num(gr.sp, 0) >= 0 ? '+' : '') + num(gr.sp, 0));
+        }
+        if (gr.takenPct !== undefined) {
+          tg.b.mods = A(tg.b.mods);
+          tg.b.mods.push({ k: 'taken', pct: num(gr.takenPct, 0), scope: 'round', dmgIf: gr.dmgIf });
+          log(state, nameOf(state, tref) + ' の受けるダメージ ' + (num(gr.takenPct, 0) >= 0 ? '+' : '') + num(gr.takenPct, 0) + '%');
+        }
+        if (!gr.status) { return; }
+        if (gr.next) {
+          tg.b.next = O(tg.b.next);
+          var cur = tg.b.next[gr.status] || { p: 0, c: 0, v: 0 };
+          cur.p += num(gr.p, 0);
+          cur.c += num(gr.c, 0);
+          cur.v += num(gr.v, 0);
+          tg.b.next[gr.status] = cur;
+          log(state, nameOf(state, tref) + ' に次ラウンド付与: ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label);
+        } else {
+          addStatus(tg.b, gr.status, { p: gr.p, c: gr.c, v: gr.v, k: gr.k });
+          log(state, nameOf(state, tref) + ' に ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label + ' を付与');
+        }
+      });
     });
+  }
+
+  // パッシブ(バトル・サポート)の効果。条件(資源・共鳴)は戦闘開始時に判定し、そのラウンド中は固定
+  function passiveKey(uid, kind, idx) { return uid + '|' + kind + '|' + idx; }
+  function eachPassive(state, fn) {
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      if (u.side !== 'ally' || u.dead) { return; }
+      ['passives', 'supportPassives'].forEach(function (kind) {
+        A(u[kind]).forEach(function (p, idx) { fn(u, p, passiveKey(id, kind, idx)); });
+      });
+    });
+  }
+  function snapshotPassives(state) {
+    state.pasv = {};
+    eachPassive(state, function (u, p, key) { state.pasv[key] = passiveOk(state, p); });
+  }
+  function firePassives(state, when, onlyUnitId, ctxExtra) {
+    eachPassive(state, function (u, p, key) {
+      if (onlyUnitId && u.id !== onlyUnitId) { return; }
+      if (!A(p.grants).length || !O(state.pasv)[key]) { return; }
+      var has = A(p.grants).some(function (gr) { return grantTiming(gr).when === when; });
+      if (!has) { return; }
+      var ref = { u: u.id, p: null };
+      var sk = chosenSkill(state, u);
+      var ctx = { passive: true, onceKey: key, coinCount: sk ? A(sk.coins).length : 0 };
+      if (ctxExtra) { Object.keys(ctxExtra).forEach(function (k) { ctx[k] = ctxExtra[k]; }); }
+      log(state, u.name + ' のパッシブ「' + (p.name || '') + '」が発動');
+      applyGrants(state, ref, ctxExtra && ctxExtra.defRef ? ctxExtra.defRef : ref, { grants: p.grants }, when, undefined, ctx);
+    });
+  }
+  function clearSkillMods(state, ref) {
+    var g = getB(state, ref);
+    if (g && g.b.mods) { g.b.mods = g.b.mods.filter(function (m) { return m.scope === 'round'; }); }
   }
 
   function fireUnitTiming(state, when) {
@@ -984,14 +1108,16 @@
           if (br && br.c > 0 && (skill.kind === 'attack' || skill.kind === 'counter')) {
             if (rng() < Math.min(1, num(br.p, 0) * 0.05)) {
               crit = true;
-              br.c -= 1;
+              var keepP = 0;
+              A(ag.b.mods).forEach(function (m) { if (m.k === 'breathKeep') { keepP += num(m.pct, 0); } });
+              if (!(keepP > 0 && rng() < keepP / 100)) { br.c -= 1; }
               if (br.c <= 0) { delete ag.b.st.breath; }
             }
           }
         }
         var pre = precheckGrants(state, atk.ref, defRef, skill);
         if (!pre0[ti]) { pre0[ti] = pre; }
-        var bf = buffFrame(ag.b, ag.unit, dg.b, skill);
+        var bf = buffFrame(ag.b, ag.unit, dg.b, skill, { crit: crit, final: i === coins.length - 1, matches: t.matches, ag: ag, dg: dg });
         var rf = resFrame(dg, skill, t.matches, crit);
         var dmg = calcDamage(power, bf, rf);
         dealHp(state, defRef, dmg, 'attack');
@@ -1025,14 +1151,17 @@
             fx(state, defRef, '精神-' + pot, 'sinking');
           }
         }
-        applyGrants(state, atk.ref, defRef, skill, 'hit', i + 1, { heads: r.heads, pre: pre });
+        applyGrants(state, atk.ref, defRef, skill, 'hit', num(atk.lost, 0) + i + 1, { heads: r.heads, pre: pre });
         if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
           changeSp(state, atk.ref, 10);
           log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
           fx(state, atk.ref, '精神+10', 'sp');
+          applyGrants(state, atk.ref, defRef, skill, 'kill');
+          if (ag.unit.side === 'ally') { firePassives(state, 'kill', ag.unit.id, { defRef: defRef }); }
         }
       });
     }
+    clearSkillMods(state, atk.ref);
     tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit', undefined, { pre: pre0[ti] }); } });
     return hits;
   }
@@ -1233,8 +1362,22 @@
     return { x: x, y: 1 - x };
   }
 
+  function setMatchPowerMods(state, X, Y) {
+    var gx = getB(state, X.ref);
+    var gy = getB(state, Y.ref);
+    [gx, gy].forEach(function (g) { A(g && g.b.mods).forEach(function (m) { if (m.k === 'matchPower') { m.on = false; } }); });
+    var need = [gx, gy].some(function (g) { return A(g && g.b.mods).some(function (m) { return m.k === 'matchPower' && m.winProbMax !== undefined; }); });
+    if (!need) { return; }
+    var wp = winProb(state, X, Y);
+    if (!wp) { return; }
+    [[gx, wp.x], [gy, wp.y]].forEach(function (pr) {
+      A(pr[0] && pr[0].b.mods).forEach(function (m) { if (m.k === 'matchPower' && m.winProbMax !== undefined) { m.on = pr[1] * 100 <= num(m.winProbMax, 0); } });
+    });
+  }
+
   function clash(state, X, Y, rng) {
     var matches = 0;
+    setMatchPowerMods(state, X, Y);
     var guard = 0;
     while (X.coins.length && Y.coins.length && guard < 80) {
       guard += 1;
@@ -1245,8 +1388,8 @@
       var oy = isOut(getB(state, Y.ref));
       if (ox || oy) { break; }
       log(state, 'マッチ: ' + nameOf(state, X.ref) + ' 威力' + rx.power + ' VS ' + nameOf(state, Y.ref) + ' 威力' + ry.power);
-      if (rx.power > ry.power) { Y.coins.shift(); }
-      else if (rx.power < ry.power) { X.coins.shift(); }
+      if (rx.power > ry.power) { Y.coins.shift(); Y.lost = num(Y.lost, 0) + 1; }
+      else if (rx.power < ry.power) { X.coins.shift(); X.lost = num(X.lost, 0) + 1; }
       else { log(state, '  同値のため振り直し'); }
     }
     var winner = null;
@@ -1265,6 +1408,8 @@
       if (!isOut(wg) && !isOut(lg)) {
         applyGrants(state, winner.ref, loser.ref, winner.skill, 'matchWin');
         applyGrants(state, loser.ref, winner.ref, loser.skill, 'matchLose');
+        if (getB(state, winner.ref).unit.side === 'ally') { firePassives(state, 'matchWin', winner.ref.u, { defRef: loser.ref }); }
+        if (getB(state, loser.ref).unit.side === 'ally') { firePassives(state, 'matchLose', loser.ref.u, { defRef: winner.ref }); }
         if (winner.skill.kind === 'attack' || winner.skill.kind === 'counter') {
           attackWithReactive(state, winner, loser.ref, matches, rng);
         } else {
@@ -1273,6 +1418,8 @@
         }
       }
     }
+    clearSkillMods(state, X.ref);
+    clearSkillMods(state, Y.ref);
     return { winner: winner, matches: matches };
   }
 
@@ -1511,7 +1658,9 @@
     sorted.sort(function (a, b) { return b.spd - a.spd; });
     state.reso = calcReso(state);
     state.plan = sorted;
+    snapshotPassives(state);
     fireUnitTiming(state, 'combatStart');
+    firePassives(state, 'combatStart');
     state.proc = { i: 0, pairs: computePairs(state) };
     state.phase = 'process';
     A(state.pieces).forEach(function (P) { P.acted = false; P.defUsed = false; P.defActive = false; P.evadeOff = false; P.cUsed = {}; });
@@ -1660,6 +1809,11 @@
   }
 
   function endOfRound(state, rng) {
+    Object.keys(state.units).forEach(function (id) {
+      var cu = state.units[id];
+      cu.mods = [];
+      A(cu.parts).forEach(function (cp) { cp.mods = []; });
+    });
     function each(fn) {
       Object.keys(state.units).forEach(function (id) {
         var u = state.units[id];
