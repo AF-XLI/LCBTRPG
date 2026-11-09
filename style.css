@@ -1191,8 +1191,8 @@ h4 {
   overflow: hidden;
 }
  
-.ally.mine .a-hep path:first-child {
-  stroke: var(--gold);
+.ally.mine .a-hep {
+  filter: drop-shadow(0 0 0.25rem rgba(230, 180, 50, 0.75)) drop-shadow(0 0 0.625rem rgba(230, 180, 50, 0.4));
 }
  
 .a-img {
