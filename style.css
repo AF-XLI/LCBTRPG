@@ -1048,6 +1048,11 @@ h4 {
   transform: translate(-49.4%, -49.4%);
 }
  
+.frame.skb.t1 {
+  width: 121%;
+  height: 121%;
+}
+ 
 .e-ring {
   position: absolute;
   top: 50%;
@@ -1071,6 +1076,29 @@ h4 {
   height: 50%;
   object-fit: contain;
   transform: translate(-50%, -50%);
+}
+ 
+.p-icon.i-pierce,
+.p-icon.i-blunt {
+  transform: translate(-50%, calc(-50% - 0.1rem));
+}
+ 
+.p-icon.i-guard {
+  width: 80%;
+  height: 80%;
+  transform: translate(-53.06%, calc(-49.44% - 0.045rem));
+}
+ 
+.p-icon.i-evade {
+  width: 71%;
+  height: 71%;
+  transform: translate(-51.11%, calc(-50.56% - 0.045rem));
+}
+ 
+.p-icon.i-counter {
+  width: 65%;
+  height: 65%;
+  transform: translate(-50.26%, calc(-48.96% - 0.045rem));
 }
  
 .p-part {
