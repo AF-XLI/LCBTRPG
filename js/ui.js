@@ -277,14 +277,15 @@
     if (S.phase === 'player') {
       var done = 0;
       var total = 0;
+      var waiting = [];
       Object.keys(S.units).forEach(function (id) {
         var u = S.units[id];
         if (u.side !== 'ally' || u.dead) { return; }
         total += 1;
-        if (u.choice && u.choice.confirmed) { done += 1; }
+        if (u.choice && u.choice.confirmed) { done += 1; } else { waiting.push(u.name); }
       });
-      html += '<p class="note">確定済み ' + done + '/' + total + '</p>' +
-        '<button type="button" class="btn primary" data-act="start-process">戦闘開始(処理に進む)</button>';
+      html += '<p class="note">確定済み ' + done + '/' + total + (waiting.length ? '(未確定: ' + waiting.map(esc).join('、') + ')' : '') + '</p>' +
+        '<button type="button" class="btn primary" data-act="start-process"' + (waiting.length ? ' disabled' : '') + '>戦闘開始(処理に進む)</button>';
     }
     if (S.phase === 'process') {
       html += '<div class="btns"><button type="button" class="btn primary" data-act="step">1手進める</button>' +
@@ -728,7 +729,7 @@
       }
       return a.ord - b.ord;
     });
-    var legend = '<div class="legend"><span class="lg gold">マッチ(敵と味方がぶつかる)</span><span class="lg red">敵の一方攻撃</span><span class="lg blue">味方の一方攻撃</span><span class="lg dash">確定前</span></div>' +
+    var legend = '<div class="legend"><span class="lg gold">マッチ(敵と味方がぶつかる)</span><span class="lg red">敵の一方攻撃</span><span class="lg blue">味方の一方攻撃</span></div>' +
       '<p class="legend-note">黄色の数字=速度 / 枠の色=罪悪、装飾=スキルの強さ / 敵のスキル駒を押すと、全体の体力が部位の耐久と精神力に切り替わります</p>';
     return '<div class="row enemies">' + (enemies.map(function (u) { return enemyColumn(S, u, ctx); }).join('') || '<p class="empty">敵がいません</p>') + '</div>' +
       '<div class="row allies">' + (allies.map(function (u) { return allyColumn(S, u, ctx); }).join('') || '<p class="empty">味方がいません</p>') + '</div>' + legend;
@@ -748,7 +749,8 @@
     var btn = '';
     if (me.role === 'gm') {
       var map = { enemy: ['gm-confirm', '敵の行動を確定'], player: ['start-process', '戦闘開始'], process: ['step', '1手進める'], roundEnd: ['next-round', '次のラウンドへ'] };
-      if (map[S.phase]) { btn = '<button type="button" class="btn head-btn" data-act="' + map[S.phase][0] + '">' + map[S.phase][1] + '</button>'; }
+      var blocked = S.phase === 'player' && !L.allConfirmed(S);
+      if (map[S.phase]) { btn = '<button type="button" class="btn head-btn" data-act="' + map[S.phase][0] + '"' + (blocked ? ' disabled' : '') + '>' + map[S.phase][1] + '</button>'; }
     }
     var tools = '';
     if (me.role === 'player') {
@@ -869,11 +871,8 @@
     var u = S.units[me.unitId];
     if (!u || u.dead || L.incap(u)) { return ''; }
     var ch = u.choice || {};
-    var hint = ch.confirmed ? '確定済みです' : '自分の駒を押してスキルを選び、敵の駒を押して対象を決めます';
-    var btn = ch.confirmed
-      ? '<button type="button" class="btn confirm" data-act="unconfirm">確定を取り消す</button>'
-      : '<button type="button" class="btn confirm primary" data-act="confirm"' + (L.canConfirm(S, u) ? '' : ' disabled') + '>確定する</button>';
-    return '<span class="dock-hint">' + esc(u.name) + ' ／ ' + hint + '</span>' + btn;
+    var hint = ch.confirmed ? '確定済みです(選び直せます)' : '自分の駒を押してスキルを選び、敵の駒を押して対象を決めると確定します';
+    return '<span class="dock-hint">' + esc(u.name) + ' ／ ' + hint + '</span>';
   }
 
   root.LCUI = {
