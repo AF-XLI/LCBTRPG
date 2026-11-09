@@ -48,6 +48,7 @@
       "parts": [
         {
           "name": "右腕",
+          "slotWeight": 2,
           "maxDur": 80,
           "destroyable": true,
           "speed": [3, 6],
@@ -55,7 +56,7 @@
           "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "weak" },
           "skills": {
             "slam": { "name": "叩きつけ", "kind": "attack", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }], "sin": "envy", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "対象に出血2/2を付与" },
-            "crush": { "name": "握り潰し", "kind": "attack", "sin": "wrath", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" },
+            "crush": { "name": "握り潰し", "kind": "attack", "weight": 3, "sin": "wrath", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" },
             "jab": { "name": "突き", "kind": "attack", "sin": "pride", "phys": "pierce", "tier": 1, "base": 4, "coins": [3, 3], "text": "" },
             "swipe": { "name": "薙ぎ払い", "kind": "attack", "sin": "pride", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" }
           },
@@ -65,6 +66,7 @@
         },
         {
           "name": "頭",
+          "priority": 2,
           "maxDur": 60,
           "destroyable": true,
           "speed": [1, 4],
