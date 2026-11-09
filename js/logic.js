@@ -695,7 +695,6 @@
     if (ch.sel === 'stag' || ch.sel === 'none') { return true; }
     var sk = chosenSkill(state, unit);
     if (!sk) { return false; }
-    if (sk.kind === 'counter') { return true; }
     return !!ch.target;
   }
 
@@ -1514,14 +1513,15 @@
     var old = u.choice || {};
     u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, confirmed: false, ts: ts };
     var sk = chosenSkill(state, u);
-    if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { u.choice.target = null; }
+    if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense' && sk.kind !== 'counter')) { u.choice.target = null; }
+    u.choice.confirmed = canConfirm(state, u);
   }
   function setTarget(state, unitId, pid, ts) {
     var u = state.units[unitId];
     if (!u || !u.choice) { return; }
     u.choice.target = pid;
     u.choice.ts = ts;
-    u.choice.confirmed = false;
+    u.choice.confirmed = canConfirm(state, u);
   }
 
   function vibrationBurst(state, ref, rng) {
