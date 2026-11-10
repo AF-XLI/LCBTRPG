@@ -148,6 +148,11 @@
     return { res: res, sp: Math.floor(ego.cost.sp * sm) };
   }
   function egoSkillOf(ego, mode) { return mode === 'awaken' ? ego.skill : ego.erode; }
+  // 侵食スキル(敵味方識別不可)は、1.5倍分の資源があれば味方を除外する扱いに自動で切り替える
+  function egoErodeMode(state, ego, mode, back) {
+    if (mode !== 'erode' || !ego || !ego.erode || !ego.erode.blind) { return mode; }
+    return canPayRes(state, egoCost(ego, 'erodeEnemy').res, back) ? 'erodeEnemy' : 'erode';
+  }
   function egoModeOk(ego, mode) {
     if (!ego || !egoSkillOf(ego, mode)) { return false; }
     if (mode === 'erodeEnemy') { return !!ego.erode.blind; }
@@ -881,7 +886,7 @@
     u.choice.confirmed = canConfirm(state, u);
   }
 
-  function changeSp(state, ref, delta) {
+  function changeSp(state, ref, delta, instant) {
     var g = getB(state, ref);
     if (!g || g.b.noSp || g.b.panic || g.b.panicNext || g.b.erosion || g.b.erosionNext) { return; }
     var before = num(g.b.sp, 0);
@@ -890,6 +895,13 @@
     if (g.b.sp <= SP_MIN && before > SP_MIN) {
       var late = state.phase === 'process';
       var pool = g.unit.side === 'ally' ? erodePool(g.unit) : [];
+      if (instant && instant.ego && instant.ego.erode && !instant.ego.prisoner) {
+        g.unit.erosion = { until: state.round };
+        instant.hit = true;
+        log(state, nameOf(state, ref) + ' の精神力が' + SP_MIN + 'になった(E.G.O侵食: 即座に発動)');
+        fx(state, ref, 'E.G.O侵食', 'stagger');
+        return;
+      }
       if (pool.length) {
         if (late) { g.unit.erosionNext = true; }
         else { g.unit.erosion = { until: state.round }; forceErosion(state, g.unit, state.rngRef || null); }
@@ -1204,11 +1216,40 @@
   }
 
 
+  // E.G.Oのコストで精神力が下限になったとき、同じE.G.Oの侵食スキルに切り替えて攻撃する
+  function instantErosion(state, atk, tgts, u, ch, rng) {
+    var ego = A(u.egos)[ch.ego.i];
+    var ref = { u: u.id, p: null };
+    var raw = ego.erode;
+    u.egoPas = O(u.egoPas);
+    if (u.egoPas[ch.ego.i] === undefined || u.egoPas[ch.ego.i] > state.round) { u.egoPas[ch.ego.i] = state.round; }
+    log(state, u.name + ' のE.G.Oパッシブはこのラウンドから発動する');
+    if (ch.ego.mode !== 'awaken') { return atk.skill; }
+    var main = ch.blindMain || (ch.target ? { pid: ch.target } : null);
+    var nsk = resolveSkill(state, ref, raw, tgts[0] ? tgts[0].ref : null);
+    log(state, u.name + ' は「' + (nsk.name || '') + '」に切り替えて攻撃する');
+    ch.instantErosion = true;
+    ch.forced = true;
+    ch.ego.mode = 'forced';
+    atk.skill = nsk;
+    atk.coins = nsk.coins.slice();
+    applyGrants(state, ref, tgts[0] ? tgts[0].ref : null, nsk, 'use');
+    if (nsk.blind && main) {
+      var refs = blindSubs(state, u, nsk, main, 'forced', rng);
+      tgts.length = 1;
+      atk.subs = refs;
+      refs.forEach(function (r) {
+        var g = getB(state, r);
+        if (!g || isOut(g)) { return; }
+        activateEnemyDefense(state, u.id, r);
+        tgts.push(prepReact(state, atk, r, 0, rng));
+      });
+    }
+    return nsk;
+  }
   function attackMulti(state, atk, tgts, rng) {
     var skill = atk.skill;
     var sum = 0;
-    var hits = tgts.map(function () { return false; });
-    var pre0 = tgts.map(function () { return null; });
     if (atk.ref.p === null) {
       var eu = state.units[atk.ref.u];
       var ech = eu && eu.choice;
@@ -1216,10 +1257,14 @@
         ech.ego.spPaid = true;
         if (num(ech.ego.spCost, 0) > 0) {
           log(state, eu.name + ' がE.G.Oのコストとして精神力 -' + ech.ego.spCost + ' を支払う');
-          changeSp(state, atk.ref, -ech.ego.spCost);
+          var inst = ech.ego.mode === 'forced' ? null : { ego: A(eu.egos)[ech.ego.i] };
+          changeSp(state, atk.ref, -ech.ego.spCost, inst);
+          if (inst && inst.hit) { skill = instantErosion(state, atk, tgts, eu, ech, rng); }
         }
       }
     }
+    var hits = tgts.map(function () { return false; });
+    var pre0 = tgts.map(function () { return null; });
     var coins = atk.coins;
     tgts.forEach(function (t) {
       if (!isOut(getB(state, atk.ref)) && !isOut(getB(state, t.ref))) { applyGrants(state, atk.ref, t.ref, skill, 'beforeAttack'); }
@@ -2144,9 +2189,11 @@
       var oi = Math.floor(num(O(egoOpt).i, -1));
       var mode = O(egoOpt).mode || 'awaken';
       var eg = A(u.egos)[oi];
+      if (mode === 'erodeEnemy') { mode = 'erode'; }
       if (!eg || !egoModeOk(eg, mode) || mode === 'forced') { return; }
-      var cost = egoCost(eg, mode);
       var back = old.sel === 'ego' && old.ego && old.ego.paid && !old.egoUsed ? old.ego.paid : {};
+      mode = egoErodeMode(state, eg, mode, back);
+      var cost = egoCost(eg, mode);
       if (!canPayRes(state, cost.res, back)) { return; }
       refundEgoPay(state, u);
       payRes(state, cost.res);
@@ -2245,7 +2292,7 @@
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
     addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
-    egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
+    egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoErodeMode: egoErodeMode, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
     winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
   };
 }));
