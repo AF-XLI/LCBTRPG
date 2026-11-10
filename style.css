@@ -1,0 +1,51 @@
+.hub {
+  max-width: 32rem;
+}
+ 
+.hub-box {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: var(--line) solid var(--edge);
+  border-radius: 0.25rem;
+}
+ 
+.hub-box h3 {
+  margin: 0;
+}
+ 
+.hub-info {
+  display: grid;
+  gap: 0.25rem 0.75rem;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+}
+ 
+.hub-info dt {
+  color: var(--sub);
+}
+ 
+.hub-info dd {
+  margin: 0;
+  word-break: break-all;
+}
+ 
+.hub-uid {
+  font-family: monospace;
+}
+ 
+.hub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+ 
+.hub-actions .btn {
+  text-decoration: none;
+}
+ 
+.hub-actions .btn[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.5;
+}
