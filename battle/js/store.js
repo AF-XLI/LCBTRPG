@@ -98,7 +98,7 @@
     });
   }
 
-  // GMとプレイヤーはハブ(トップページ)でGoogleログインしておく(観戦は匿名)。GMは admins/(UID) が true、プレイヤーは players/(UID) にキャラのIDが登録されている必要がある
+  // GMとプレイヤーはハブ(トップページ)でGoogleログインしておく(観戦は匿名)。GM権限は admin(管理者)または gm(GM)の (UID) が true、プレイヤーは player/(UID) にキャラのIDが登録されている必要がある
   function signIn(fb, auth, wantGoogle) {
     return authReady(auth).then(function (user) {
       if (wantGoogle) {
@@ -124,17 +124,20 @@
       })
       .then(function (ctx) {
         var db = ctx.fb.database(ctx.app);
-        var gate = role === 'gm' && ctx.user ? db.ref('admins/' + ctx.user.uid).once('value').then(function (snap) {
-          if (snap.val() !== true) {
+        var gate = role === 'gm' && ctx.user ? Promise.all([
+          db.ref('admin/' + ctx.user.uid).once('value'),
+          db.ref('gm/' + ctx.user.uid).once('value')
+        ]).then(function (snaps) {
+          if (snaps[0].val() !== true && snaps[1].val() !== true) {
             ctx.fb.auth(ctx.app).signOut();
-            throw new Error('このアカウントにはGM権限がありません。\nGMとして登録するには、次のUIDを管理者(データベースの admins)に登録してください。\nUID: ' + ctx.user.uid);
+            throw new Error('このアカウントにはGM権限がありません。\nGMとして登録するには、次のUIDを管理者(データベースの gm)に登録してください。\nUID: ' + ctx.user.uid);
           }
         }, function () {
           ctx.fb.auth(ctx.app).signOut();
-          throw new Error('GM権限を確認できませんでした(データベースのルールに admins が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
+          throw new Error('GM権限を確認できませんでした(データベースのルールに admin / gm が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
         }) : Promise.resolve();
         var unitId = '';
-        var mine = role === 'player' && ctx.user ? db.ref('players/' + ctx.user.uid).once('value').then(function (snap) {
+        var mine = role === 'player' && ctx.user ? db.ref('player/' + ctx.user.uid).once('value').then(function (snap) {
           var v = snap.val();
           if (typeof v !== 'string' || !v) {
             ctx.fb.auth(ctx.app).signOut();
@@ -143,7 +146,7 @@
           unitId = v;
         }, function () {
           ctx.fb.auth(ctx.app).signOut();
-          throw new Error('キャラクターの登録を確認できませんでした(データベースのルールに players が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
+          throw new Error('キャラクターの登録を確認できませんでした(データベースのルールに player が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
         }) : Promise.resolve();
         return gate.then(function () { return mine; }).then(function () { ctx.unitId = unitId; return ctx; });
       })
