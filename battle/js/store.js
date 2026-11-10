@@ -98,14 +98,12 @@
     });
   }
 
-  // GMとプレイヤーはGoogleアカウントでログインする(観戦は匿名)。GMは admins/(UID) が true、プレイヤーは players/(UID) にキャラのIDが登録されている必要がある
+  // GMとプレイヤーはハブ(トップページ)でGoogleログインしておく(観戦は匿名)。GMは admins/(UID) が true、プレイヤーは players/(UID) にキャラのIDが登録されている必要がある
   function signIn(fb, auth, wantGoogle) {
     return authReady(auth).then(function (user) {
       if (wantGoogle) {
         if (user && !user.isAnonymous) { return user; }
-        return auth.signInWithPopup(new fb.auth.GoogleAuthProvider()).then(function (r) { return r.user; }).catch(function (e) {
-          throw new Error('Googleログインできませんでした(ポップアップが閉じられた、またはブロックされた可能性があります)。もう一度入室してください。\n' + (e && e.message ? e.message : ''));
-        });
+        throw new Error('ログインしていません。トップページ(ハブ)でGoogleログインしてから、もう一度入室してください。');
       }
       if (user) { return user; }
       return auth.signInAnonymously().then(function (r) { return r.user; });
