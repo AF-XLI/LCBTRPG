@@ -798,7 +798,7 @@
       (active && sk && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
   }
 
-  var EGO_MODE_LABEL = { awaken: '覚醒', erode: '侵食', erodeEnemy: '侵食(味方を除外)' };
+  var EGO_MODE_LABEL = { awaken: '覚醒', erode: '侵食', erodeEnemy: '侵食' };
   function costText(c) {
     var parts = [];
     L.RES_ORDER.forEach(function (k) { if (c.res[k]) { parts.push(L.SINS[k].label + '×' + c.res[k]); } });
@@ -807,9 +807,10 @@
   }
   function egoRow(S, u, ego, i, mode, ch) {
     var sk = L.egoSkillOf(ego, mode);
-    var cost = L.egoCost(ego, mode);
-    var active = ch.sel === 'ego' && ch.ego && ch.ego.i === i && ch.ego.mode === mode;
     var back = ch.sel === 'ego' && ch.ego && ch.ego.paid && !ch.egoUsed ? ch.ego.paid : {};
+    var shown = L.egoErodeMode(S, ego, mode, back);
+    var cost = L.egoCost(ego, shown);
+    var active = ch.sel === 'ego' && ch.ego && ch.ego.i === i && (ch.ego.mode === mode || ch.ego.mode === shown);
     var ok = !u.erosion && L.canPayRes(S, cost.res, back);
     var tags = (sk.blind ? '敵味方識別不可' : '');
     var sub = [L.PHYS[sk.phys] || '', L.SINS[sk.sin] ? L.SINS[sk.sin].label : '', tags].filter(function (x) { return x; }).join('・');
@@ -830,7 +831,7 @@
     var html = '<h3><span>' + esc(u.name) + ' のスキル</span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
     html += skillRow(S, u, 'c0', hand.sel[0], ch, true) + skillRow(S, u, 'c1', hand.sel[1], ch, true) + skillRow(S, u, 'def', hand.def, ch, true);
     A(u.egos).forEach(function (ego, i) {
-      ['awaken', 'erode', 'erodeEnemy'].forEach(function (mode) {
+      ['awaken', 'erode'].forEach(function (mode) {
         if (L.egoModeOk(ego, mode) && mode !== 'forced') { html += egoRow(S, u, ego, i, mode, ch); }
       });
     });
