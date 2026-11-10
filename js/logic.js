@@ -110,6 +110,50 @@
     return { round: 0, phase: 'setup', units: {}, res: resEmpty(), pieces: [], plan: [], proc: { i: 0 }, log: [], fx: { seq: 0, items: [] }, settings: { autoNext: false }, result: '' };
   }
 
+  var EGO_RANKS = ['zayin', 'teth', 'he', 'waw', 'aleph'];
+  function parseEgoCost(c) {
+    var out = { res: {}, sp: 0 };
+    if (c && typeof c === 'object') {
+      RES_ORDER.forEach(function (k) { if (num(O(c.res)[k], 0) > 0) { out.res[k] = Math.floor(num(c.res[k], 0)); } });
+      out.sp = Math.max(0, Math.floor(num(c.sp, 0)));
+      return out;
+    }
+    var str = String(c || '');
+    RES_ORDER.forEach(function (k) {
+      var m = new RegExp(SINS[k].label + '\\s*[×xX*]\\s*(\\d+)').exec(str);
+      if (m) { out.res[k] = Number(m[1]); }
+    });
+    var sm = /精神\s*-?\s*(\d+)/.exec(str);
+    if (sm) { out.sp = Number(sm[1]); }
+    return out;
+  }
+  function normEgo(e) {
+    e = e && typeof e === 'object' ? e : {};
+    var rank = String(e.rank || '').toLowerCase();
+    e.rank = EGO_RANKS.indexOf(rank) >= 0 ? rank : '';
+    e.prisoner = !!e.prisoner;
+    e.cost = parseEgoCost(e.cost);
+    if (e.skill && typeof e.skill === 'object') { e.skill.tier = 3; e.skill.ego = true; }
+    if (e.erode && typeof e.erode === 'object' && !e.prisoner) { e.erode.tier = 3; e.erode.ego = true; }
+    else { e.erode = null; }
+    return e;
+  }
+  // mode: awaken(覚醒) / erode(侵食) / erodeEnemy(侵食・味方除外) / forced(E.G.O侵食)
+  function egoCost(ego, mode) {
+    var res = {};
+    if (mode === 'forced') { return { res: res, sp: 0 }; }
+    var rm = mode === 'erodeEnemy' ? 1.5 : 1;
+    var sm = mode === 'awaken' ? 1 : 1.5;
+    Object.keys(ego.cost.res).forEach(function (k) { res[k] = Math.floor(ego.cost.res[k] * rm); });
+    return { res: res, sp: Math.floor(ego.cost.sp * sm) };
+  }
+  function egoSkillOf(ego, mode) { return mode === 'awaken' ? ego.skill : ego.erode; }
+  function egoModeOk(ego, mode) {
+    if (!ego || !egoSkillOf(ego, mode)) { return false; }
+    if (mode === 'erodeEnemy') { return !!ego.erode.blind; }
+    return mode === 'awaken' || mode === 'erode' || mode === 'forced';
+  }
+
   function resEmpty() {
     var r = {};
     RES_ORDER.forEach(function (k) { r[k] = 0; });
@@ -267,6 +311,9 @@
       initBearerCommon(u, u.maxHp, rng);
       u.skills = u.skills || {};
       u.replace = A(u.replace);
+      u.egos = A(u.egos).map(normEgo);
+      var zayin = u.egos.filter(function (e) { return e.rank === 'zayin'; })[0];
+      if (zayin && zayin.resist) { u.resist = egoResistOf(zayin); }
       u.deck = { q: [] };
       u.choice = null;
       u.owner = null;
@@ -483,6 +530,10 @@
     var ch = unit.choice;
     if (!ch) { return null; }
     if (ch.sel === 'def') { return O(unit.skills)[0] || null; }
+    if (ch.sel === 'ego') {
+      var ec = egoChosen(unit);
+      return ec ? egoSkillOf(ec.ego, ec.mode === 'forced' ? 'erode' : ec.mode) : null;
+    }
     var q = A(unit.deck && unit.deck.q);
     var pos = ch.sel === 'c1' ? 1 : 0;
     if (q[pos] === undefined) { return null; }
@@ -614,9 +665,18 @@
         activate(u);
         u.choice = null;
         ensureDeck(u, rng);
+        if (u.panicNext) { u.panic = u.panicNext; u.panicNext = null; }
         if (incap(u)) { u.choice = { sel: 'stag', target: null, confirmed: true, ts: 0 }; }
+        else if (u.erosionNext) {
+          u.erosionNext = false;
+          u.erosion = { until: state.round };
+          forceErosion(state, u, rng);
+        }
       } else {
-        u.parts.forEach(function (p) { activate(p); });
+        u.parts.forEach(function (p) {
+          activate(p);
+          if (p.panicNext) { p.panic = p.panicNext; p.panicNext = null; }
+        });
       }
     });
     if (state.round === 1) { fireUnitTiming(state, 'firstRound'); }
@@ -704,6 +764,7 @@
     if (ch.sel === 'stag' || ch.sel === 'none') { return true; }
     var sk = chosenSkill(state, unit);
     if (!sk) { return false; }
+    if (ch.sel === 'ego' && sk.blind) { return true; }
     return !!ch.target;
   }
 
@@ -765,17 +826,83 @@
     A(unit.parts).forEach(function (p) { p.sp = value; });
   }
 
+  function erodePool(u) {
+    var out = [];
+    A(u.egos).forEach(function (e, i) { if (!e.prisoner && e.erode) { out.push(i); } });
+    return out;
+  }
+  function payRes(state, res) {
+    state.res = O(state.res);
+    Object.keys(res).forEach(function (k) { state.res[k] = Math.max(0, num(state.res[k], 0) - res[k]); });
+  }
+  function canPayRes(state, res, extra) {
+    return Object.keys(res).every(function (k) { return num(O(state.res)[k], 0) + num(O(extra)[k], 0) >= res[k]; });
+  }
+  function refundEgoPay(state, u) {
+    var ch = u.choice;
+    if (!ch || ch.sel !== 'ego' || !ch.ego || !ch.ego.paid || ch.egoUsed) { return; }
+    state.res = O(state.res);
+    Object.keys(ch.ego.paid).forEach(function (k) { state.res[k] = num(state.res[k], 0) + ch.ego.paid[k]; });
+    ch.ego.paid = null;
+  }
+  function egoChosen(u) {
+    var ch = u.choice;
+    if (!ch || ch.sel !== 'ego' || !ch.ego) { return null; }
+    var ego = A(u.egos)[ch.ego.i];
+    return ego ? { ego: ego, mode: ch.ego.mode } : null;
+  }
+  function activateEgoPassive(state, u, idx, fromRound) {
+    u.egoPas = O(u.egoPas);
+    if (u.egoPas[idx] === undefined) {
+      u.egoPas[idx] = fromRound;
+      var e = A(u.egos)[idx];
+      if (e && e.passive) { log(state, u.name + ' のE.G.Oパッシブ「' + (e.passive.name || e.name || '') + '」が' + (fromRound > state.round ? '次のラウンドから' : '') + '発動する'); }
+    }
+  }
+  function egoUsed(state, u) {
+    var ch = u.choice;
+    var ec = egoChosen(u);
+    if (!ch || !ec) { return; }
+    ch.egoUsed = true;
+    u.lastEgo = ch.ego.i;
+    applyEgo(state, u.id, ch.ego.i);
+    activateEgoPassive(state, u, ch.ego.i, ch.forced ? state.round : state.round + 1);
+    if (ec.ego.passive === undefined) { return; }
+  }
+  function forceErosion(state, u, rng) {
+    var pool = erodePool(u);
+    if (!pool.length) { return; }
+    var pick = pool.indexOf(u.lastEgo) >= 0 ? u.lastEgo : pool[randInt(0, pool.length - 1, rng || Math.random)];
+    var ego = u.egos[pick];
+    u.choice = { sel: 'ego', ego: { i: pick, mode: 'forced', paid: null, spCost: 0 }, target: null, subs: [], confirmed: false, forced: true, ts: 0 };
+    u.lastEgo = pick;
+    activateEgoPassive(state, u, pick, state.round);
+    log(state, u.name + ' はE.G.O侵食で「' + (ego.erode.name || ego.name || '') + '」を使用する');
+    u.choice.confirmed = canConfirm(state, u);
+  }
+
   function changeSp(state, ref, delta) {
     var g = getB(state, ref);
-    if (!g || g.b.noSp || g.b.panic) { return; }
+    if (!g || g.b.noSp || g.b.panic || g.b.panicNext || g.b.erosion || g.b.erosionNext) { return; }
     var before = num(g.b.sp, 0);
     g.b.sp = clamp(before + delta, SP_MIN, SP_MAX);
     syncSp(g.unit, g.b.sp);
     if (g.b.sp <= SP_MIN && before > SP_MIN) {
-      var until = state.phase === 'process' ? state.round + 1 : state.round;
-      if (g.unit.spShared) { g.unit.parts.forEach(function (p) { p.panic = { until: until }; }); }
-      else { g.b.panic = { until: until }; }
-      log(state, (g.unit.spShared ? g.unit.name : nameOf(state, ref)) + ' の精神力が' + SP_MIN + 'になった(パニック)');
+      var late = state.phase === 'process';
+      var pool = g.unit.side === 'ally' ? erodePool(g.unit) : [];
+      if (pool.length) {
+        if (late) { g.unit.erosionNext = true; }
+        else { g.unit.erosion = { until: state.round }; forceErosion(state, g.unit, state.rngRef || null); }
+        log(state, nameOf(state, ref) + ' の精神力が' + SP_MIN + 'になった(E.G.O侵食' + (late ? ': 次のラウンドから' : '') + ')');
+        fx(state, ref, 'E.G.O侵食', 'stagger');
+        return;
+      }
+      var targets = g.unit.spShared ? g.unit.parts : [g.b];
+      targets.forEach(function (p) {
+        if (late) { p.panicNext = { until: state.round + 1 }; }
+        else { p.panic = { until: state.round }; }
+      });
+      log(state, (g.unit.spShared ? g.unit.name : nameOf(state, ref)) + ' の精神力が' + SP_MIN + 'になった(パニック' + (late ? ': 次のラウンドから' : '') + ')');
       fx(state, ref, 'パニック', 'stagger');
     }
   }
@@ -1021,13 +1148,25 @@
       var u = state.units[id];
       if (u.side !== 'ally' || u.dead) { return; }
       ['passives', 'supportPassives'].forEach(function (kind) {
-        A(u[kind]).forEach(function (p, idx) { fn(u, p, passiveKey(id, kind, idx)); });
+        A(u[kind]).forEach(function (p, idx) { fn(u, p, passiveKey(id, kind, idx), { kind: kind, idx: idx }); });
+      });
+      A(u.egos).forEach(function (e, idx) {
+        if (e.always && A(e.always.grants).length) { fn(u, e.always, passiveKey(id, 'egoAlways', idx), { kind: 'egoAlways', idx: idx }); }
+        if (e.passive && A(e.passive.grants).length) { fn(u, e.passive, passiveKey(id, 'egoPas', idx), { kind: 'egoPas', idx: idx }); }
       });
     });
   }
+  function egoPassiveOn(state, u, idx) {
+    var from = O(u.egoPas)[idx];
+    return from !== undefined && state.round >= from;
+  }
   function snapshotPassives(state) {
     state.pasv = {};
-    eachPassive(state, function (u, p, key) { state.pasv[key] = passiveOk(state, p); });
+    eachPassive(state, function (u, p, key, meta) {
+      if (meta.kind === 'egoAlways') { state.pasv[key] = true; }
+      else if (meta.kind === 'egoPas') { state.pasv[key] = egoPassiveOn(state, u, meta.idx); }
+      else { state.pasv[key] = passiveOk(state, p); }
+    });
   }
   function firePassives(state, when, onlyUnitId, ctxExtra) {
     eachPassive(state, function (u, p, key) {
@@ -1070,6 +1209,17 @@
     var sum = 0;
     var hits = tgts.map(function () { return false; });
     var pre0 = tgts.map(function () { return null; });
+    if (atk.ref.p === null) {
+      var eu = state.units[atk.ref.u];
+      var ech = eu && eu.choice;
+      if (ech && ech.sel === 'ego' && ech.ego && !ech.ego.spPaid) {
+        ech.ego.spPaid = true;
+        if (num(ech.ego.spCost, 0) > 0) {
+          log(state, eu.name + ' がE.G.Oのコストとして精神力 -' + ech.ego.spCost + ' を支払う');
+          changeSp(state, atk.ref, -ech.ego.spCost);
+        }
+      }
+    }
     var coins = atk.coins;
     tgts.forEach(function (t) {
       if (!isOut(getB(state, atk.ref)) && !isOut(getB(state, t.ref))) { applyGrants(state, atk.ref, t.ref, skill, 'beforeAttack'); }
@@ -1440,6 +1590,45 @@
 
   // 広域攻撃のサブターゲットを選ぶ。side='ally' は味方が敵のスキル駒を、'enemy' は敵が味方を狙う。
   // keep: すでに決めてあるサブ(有効なものはそのまま残し、足りない分だけ補う)
+  function enemySlots(state) {
+    var slots = A(state.pieces).slice();
+    if (state.phase !== 'setup' && state.phase !== 'over') {
+      Object.keys(state.units).forEach(function (id) {
+        var eu = state.units[id];
+        if (eu.side !== 'enemy') { return; }
+        A(eu.parts).forEach(function (part, i) {
+          if (part.destroyed) { return; }
+          var has = slots.some(function (P) { return P.unitId === id && P.partIdx === i; });
+          if (!has) { slots.push(getPiece(state, pieceId(id, i, 'b'))); }
+        });
+      });
+    }
+    return slots.filter(function (P) {
+      if (!P) { return false; }
+      var g = getB(state, pieceRef(P));
+      return !!g && !isOut(g) && (P.blank || !!pieceSkill(state, P));
+    });
+  }
+  function enemySubCands(state, selfId, mainPid) {
+    var counts = {};
+    Object.keys(state.units).forEach(function (id) {
+      var u = state.units[id];
+      if (u.side !== 'ally' || id === selfId || !u.choice) { return; }
+      var seen = {};
+      [u.choice.target].concat(A(u.choice.subs)).forEach(function (pid) {
+        if (pid && !seen[pid]) { seen[pid] = true; counts[pid] = (counts[pid] || 0) + 1; }
+      });
+    });
+    return enemySlots(state).filter(function (P) { return P.pid !== mainPid; }).map(function (P) {
+      var u = state.units[P.unitId];
+      var n = P.blank ? 99 : Number(String(P.pid).split('|')[2]);
+      return { id: P.pid, count: counts[P.pid] || 0, pri: priorityOf(state, P), pos: [u.ord || 0, P.partIdx, n], w: slotWeightOf(state, P) };
+    }).sort(subOrder);
+  }
+  function subOrder(a, b) {
+    return a.count - b.count || b.pri - a.pri || a.pos[0] - b.pos[0] || a.pos[1] - b.pos[1] || a.pos[2] - b.pos[2];
+  }
+
   function pickSubs(state, side, selfId, skill, mainId, keep) {
     var total = skillWeight(skill);
     if (total < 2 || !mainId) { return []; }
@@ -1448,36 +1637,7 @@
     var cands;
     if (side === 'ally') {
       budget = total - slotWeightOf(state, getPiece(state, mainId));
-      var counts = {};
-      Object.keys(state.units).forEach(function (id) {
-        var u = state.units[id];
-        if (u.side !== 'ally' || id === selfId || !u.choice) { return; }
-        var seen = {};
-        [u.choice.target].concat(A(u.choice.subs)).forEach(function (pid) {
-          if (pid && !seen[pid]) { seen[pid] = true; counts[pid] = (counts[pid] || 0) + 1; }
-        });
-      });
-      var slots = A(state.pieces).slice();
-      if (state.phase !== 'setup' && state.phase !== 'over') {
-        Object.keys(state.units).forEach(function (id) {
-          var eu = state.units[id];
-          if (eu.side !== 'enemy') { return; }
-          A(eu.parts).forEach(function (part, i) {
-            if (part.destroyed) { return; }
-            var has = slots.some(function (P) { return P.unitId === id && P.partIdx === i; });
-            if (!has) { slots.push(getPiece(state, pieceId(id, i, 'b'))); }
-          });
-        });
-      }
-      cands = slots.filter(function (P) {
-        if (!P || P.pid === mainId) { return false; }
-        var g = getB(state, pieceRef(P));
-        return !!g && !isOut(g) && (P.blank || !!pieceSkill(state, P));
-      }).map(function (P) {
-        var u = state.units[P.unitId];
-        var n = P.blank ? 99 : Number(String(P.pid).split('|')[2]);
-        return { id: P.pid, count: counts[P.pid] || 0, pri: priorityOf(state, P), pos: [u.ord || 0, P.partIdx, n], w: slotWeightOf(state, P) };
-      });
+      cands = enemySubCands(state, selfId, mainId);
     } else {
       budget = total - 1;
       var ecounts = {};
@@ -1502,9 +1662,7 @@
       out.push(id);
       budget -= byId[id].w;
     });
-    cands.sort(function (a, b) {
-      return a.count - b.count || b.pri - a.pri || a.pos[0] - b.pos[0] || a.pos[1] - b.pos[1] || a.pos[2] - b.pos[2];
-    });
+    cands.sort(subOrder);
     cands.forEach(function (c) {
       if (budget <= 0 || out.indexOf(c.id) >= 0) { return; }
       out.push(c.id);
@@ -1529,12 +1687,54 @@
     return refs;
   }
 
+  function blindAllies(state, u, mode, exclude) {
+    if (mode === 'erodeEnemy') { return []; }
+    return Object.keys(state.units).filter(function (id) {
+      var x = state.units[id];
+      return x.side === 'ally' && !x.dead && id !== u.id && exclude.indexOf(id) < 0;
+    });
+  }
+  function blindMain(state, u, mode, rng) {
+    var list = [];
+    enemySlots(state).forEach(function (P) { list.push({ pid: P.pid }); });
+    blindAllies(state, u, mode, []).forEach(function (id) { list.push({ allyId: id }); });
+    if (!list.length) { return null; }
+    return list[randInt(0, list.length - 1, rng)];
+  }
+  function blindSubs(state, u, skill, main, mode, rng) {
+    var total = skillWeight(skill);
+    var refs = [];
+    if (total < 2) { return refs; }
+    var budget = total - (main.pid ? slotWeightOf(state, getPiece(state, main.pid)) : 1);
+    var usedAllies = main.allyId ? [main.allyId] : [];
+    var cands = enemySubCands(state, u.id, main.pid || null);
+    var guard = 0;
+    while (budget > 0 && guard < 50) {
+      guard += 1;
+      var allies = blindAllies(state, u, mode, usedAllies);
+      var wantAlly = mode !== 'erodeEnemy' && rng() < 0.5;
+      if (wantAlly && !allies.length) { wantAlly = false; }
+      if (!wantAlly && !cands.length) { wantAlly = allies.length > 0; }
+      if (wantAlly) {
+        var id = allies[randInt(0, allies.length - 1, rng)];
+        usedAllies.push(id);
+        refs.push({ u: id, p: null });
+        budget -= 1;
+      } else if (cands.length) {
+        var c = cands.shift();
+        refs.push(pieceRef(getPiece(state, c.id)));
+        budget -= c.w;
+      } else { break; }
+    }
+    return refs;
+  }
+
   function sideOfAlly(state, unit, skill) {
     state.atkSeq = num(state.atkSeq, 0) + 1;
     var side = { ref: { u: unit.id, p: null }, skill: skill, coins: skill.coins.slice(), uid: 'k' + state.atkSeq, subs: [] };
     var ch = unit.choice;
     var mainP = ch && ch.target ? getPiece(state, ch.target) : null;
-    if (mainP && skill.kind === 'attack' && skillWeight(skill) >= 2) {
+    if (mainP && skill.kind === 'attack' && skillWeight(skill) >= 2 && !(ch.sel === 'ego' && skill.blind)) {
       var ids = pickSubs(state, 'ally', unit.id, skill, mainP.pid, ch.subs);
       if (JSON.stringify(ids) !== JSON.stringify(A(ch.subs))) { log(state, unit.name + ' の広域攻撃のサブターゲットを選び直した'); }
       ch.subs = ids;
@@ -1675,34 +1875,58 @@
     var u = state.units[e.unitId];
     var ch = u.choice;
     if (u.dead) { return; }
-    if (incap(u)) { log(state, u.name + ' は' + (u.stagger ? '混乱' : 'パニック') + 'で行動できない'); return; }
+    if (incap(u)) { log(state, u.name + ' は' + (u.stagger ? '混乱' : 'パニック') + 'で行動できない'); refundEgoPay(state, u); return; }
     if (ch.sel === 'def') {
       log(state, u.name + ' は守備の構え');
       return;
     }
     var base = chosenSkill(state, u);
-    if (!base) { return; }
+    if (!base) { refundEgoPay(state, u); return; }
     if (base.kind === 'defense' || base.kind === 'counter') {
       ch.sel = 'def';
       ch.acted = true;
       return;
     }
-    var P = getPiece(state, ch.target);
-    if (!P) { log(state, u.name + ' の対象がありません'); return; }
-    var tg = getB(state, pieceRef(P));
+    var blind = ch.sel === 'ego' && !!base.blind;
+    var allyMain = null;
+    var P = null;
+    if (blind) {
+      var pk = blindMain(state, u, ch.ego.mode, rng);
+      if (!pk) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u); return; }
+      if (pk.pid) { ch.target = pk.pid; P = getPiece(state, pk.pid); } else { allyMain = pk.allyId; }
+      ch.blindMain = pk;
+    } else {
+      P = getPiece(state, ch.target);
+    }
+    if (!P && !allyMain) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u); return; }
+    var tg = getB(state, allyMain ? { u: allyMain, p: null } : pieceRef(P));
     if (isOut(tg)) {
       log(state, u.name + ' の攻撃は対象が既にいないため取り消された');
       fx(state, { u: u.id, p: null }, '取消', 'cancel');
+      refundEgoPay(state, u);
+      return;
+    }
+    if (allyMain) {
+      var aref = { u: allyMain, p: null };
+      var askill0 = resolveSkill(state, { u: u.id, p: null }, base, aref);
+      applyGrants(state, { u: u.id, p: null }, aref, askill0, 'use');
+      egoUsed(state, u);
+      ch.acted = true;
+      log(state, u.name + ' が「' + (askill0.name || '') + '」で ' + state.units[allyMain].name + ' を攻撃(敵味方識別不可)');
+      var XA = sideOfAlly(state, u, askill0);
+      XA.subs = blindSubs(state, u, askill0, ch.blindMain, ch.ego.mode, rng);
+      engage(state, XA, aref, rng);
       return;
     }
     var skill = resolveSkill(state, { u: u.id, p: null }, base, pieceRef(P));
     applyGrants(state, { u: u.id, p: null }, pieceRef(P), skill, 'use');
-    gainRes(state, { u: u.id, p: null }, skill);
+    if (ch.sel === 'ego') { egoUsed(state, u); } else { gainRes(state, { u: u.id, p: null }, skill); }
     ch.acted = true;
-    log(state, u.name + ' が「' + (skill.name || '') + '」で ' + nameOf(state, pieceRef(P)) + ' を攻撃');
+    log(state, u.name + ' が「' + (skill.name || '') + '」で ' + nameOf(state, pieceRef(P)) + ' を攻撃' + (blind ? '(敵味方識別不可)' : ''));
     var pairs = state.proc.pairs || { matchOf: {} };
     activateEnemyDefense(state, u.id, pieceRef(P));
     var X = sideOfAlly(state, u, skill);
+    if (blind) { X.subs = blindSubs(state, u, skill, ch.blindMain, ch.ego.mode, rng); }
     X.subs.forEach(function (r) { activateEnemyDefense(state, u.id, r); });
     var partnerOk = false;
     if (pairs.matchOf[P.pid] === u.id && !P.blank && !P.acted) {
@@ -1767,7 +1991,7 @@
       if (ae) { ae.done = true; }
       var askill = resolveSkill(state, { u: au.id, p: null }, chosenSkill(state, au), ref);
       applyGrants(state, { u: au.id, p: null }, ref, askill, 'use');
-      gainRes(state, { u: au.id, p: null }, askill);
+      if (au.choice.sel === 'ego') { egoUsed(state, au); } else { gainRes(state, { u: au.id, p: null }, askill); }
       activateEnemyDefense(state, au.id, ref);
       clash(state, X, sideOfAlly(state, au, askill), rng);
     } else {
@@ -1854,6 +2078,12 @@
         b.sp = 0;
         syncSp(state.units[ref.u], 0);
       }
+      if (b.erosion && b.erosion.until <= state.round) {
+        log(state, nameOf(state, ref) + ' のE.G.O侵食が収まった(精神力は0に戻る)');
+        b.erosion = null;
+        b.sp = 0;
+        syncSp(state.units[ref.u], 0);
+      }
       if (b.stagger && b.stagger.until <= state.round) {
         log(state, nameOf(state, ref) + ' の混乱が回復した');
         b.stagger = null;
@@ -1866,9 +2096,14 @@
       ensureDeck(u, rng);
       var csk = ch && (ch.sel === 'c0' || ch.sel === 'c1') ? chosenSkill(state, u) : null;
       var defUsedUp = !!(csk && (csk.kind === 'defense' || csk.kind === 'counter'));
+      if (ch && ch.sel === 'ego' && !ch.egoUsed) {
+        if (ch.ego && ch.ego.paid) { log(state, u.name + ' のE.G.Oは不発だったため、資源が返却された'); }
+        refundEgoPay(state, u);
+      }
       if (ch && (ch.acted || ch.sel === 'def' || defUsedUp)) {
         var q = A(u.deck.q);
         if (ch.sel === 'def') { q.splice(0, 1); }
+        else if (ch.sel === 'ego') { q.splice(0, 1); }
         else if (ch.sel === 'c0') { q.splice(0, 1); }
         else if (ch.sel === 'c1') { q.splice(1, 1); }
         u.deck.q = q;
@@ -1899,11 +2134,29 @@
     return true;
   }
 
-  function selectChoice(state, unitId, sel, ts) {
+  function selectChoice(state, unitId, sel, ts, egoOpt) {
     var u = state.units[unitId];
-    if (!u || u.dead || incap(u)) { return; }
+    if (!u || u.dead || incap(u) || u.erosion) { return; }
     var old = u.choice || {};
-    u.choice = { sel: sel, target: old.sel === sel ? old.target || null : null, subs: old.sel === sel ? A(old.subs) : [], confirmed: false, ts: ts };
+    var same = old.sel === sel;
+    var egoNew = null;
+    if (sel === 'ego') {
+      var oi = Math.floor(num(O(egoOpt).i, -1));
+      var mode = O(egoOpt).mode || 'awaken';
+      var eg = A(u.egos)[oi];
+      if (!eg || !egoModeOk(eg, mode) || mode === 'forced') { return; }
+      var cost = egoCost(eg, mode);
+      var back = old.sel === 'ego' && old.ego && old.ego.paid && !old.egoUsed ? old.ego.paid : {};
+      if (!canPayRes(state, cost.res, back)) { return; }
+      refundEgoPay(state, u);
+      payRes(state, cost.res);
+      egoNew = { i: oi, mode: mode, paid: cost.res, spCost: cost.sp };
+      same = old.sel === 'ego' && old.ego && old.ego.i === oi && old.ego.mode === mode;
+    } else {
+      refundEgoPay(state, u);
+    }
+    u.choice = { sel: sel, target: same ? old.target || null : null, subs: same ? A(old.subs) : [], confirmed: false, ts: ts };
+    if (egoNew) { u.choice.ego = egoNew; }
     var sk = chosenSkill(state, u);
     if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense' && sk.kind !== 'counter')) { u.choice.target = null; }
     u.choice.confirmed = canConfirm(state, u);
@@ -1960,16 +2213,19 @@
   }
 
   var ALL_RES_KEYS = ['slash', 'pierce', 'blunt', 'wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
-  function applyEgo(state, unitId, idx) {
-    var u = state.units[unitId];
-    var ego = u && A(u.egos)[idx];
-    if (!ego) { return; }
+  function egoResistOf(ego) {
     var r = O(ego.resist);
     var next = {};
     ALL_RES_KEYS.forEach(function (k) {
       next[k] = A(r.weak).indexOf(k) >= 0 ? 'weak' : (A(r.resist).indexOf(k) >= 0 ? 'resist' : 'normal');
     });
-    u.resist = next;
+    return next;
+  }
+  function applyEgo(state, unitId, idx) {
+    var u = state.units[unitId];
+    var ego = u && A(u.egos)[idx];
+    if (!ego) { return; }
+    u.resist = egoResistOf(ego);
     u.egoUsed = idx;
     log(state, u.name + ' がE.G.O「' + (ego.name || '') + '」を使用(耐性が戦闘終了まで上書きされる)');
   }
@@ -1989,7 +2245,7 @@
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
     addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
-    vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
+    egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
     winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
   };
 }));
