@@ -32,10 +32,10 @@
     $('hubState').textContent = 'ログイン中です。';
     $('hubName').textContent = user.displayName || '(名前なし)';
     $('hubUid').textContent = user.uid;
-    $('hubGm').textContent = '確認しています…';
+    $('hubGm').textContent = '';
     $('hubChar').textContent = '確認しています…';
     var db = fb.database(app);
-    read(db, 'admins/' + user.uid, 'hubGm', function (v) { return v === true ? '登録済み' : '未登録'; });
+    read(db, 'admins/' + user.uid, 'hubGm', function (v) { return v === true ? '(GM)' : ''; });
     read(db, 'players/' + user.uid, 'hubChar', function (v) { return typeof v === 'string' && v ? v : '未登録'; });
   }
 
