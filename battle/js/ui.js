@@ -51,7 +51,7 @@
 
   function statusHtml(icon, glyph, color, pw, cnt, inert, title) {
     return '<span class="st' + (inert ? ' inert' : '') + '" style="--c: ' + color + ';" title="' + esc(title) + '">' +
-      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="image/icon/status/' + esc(icon) + '" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>' +
+      '<span class="st-ic"><b>' + esc(glyph) + '</b><img src="../image/icon/status/' + esc(icon) + '" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>' +
       '<span class="st-v">' + esc(pw) + '</span>' +
       '<span class="st-c">' + esc(cnt) + '</span></span>';
   }
@@ -328,7 +328,7 @@
       '<div class="grow"><input id="mHp" type="number" placeholder="体力/耐久"><button type="button" class="btn small" data-act="m-hp">設定</button></div>' +
       '<div class="grow"><input id="mSp" type="number" placeholder="精神力(-45〜45)"><button type="button" class="btn small" data-act="m-sp">設定</button></div>' +
       '<div class="grow"><select id="mSt">' + stOpts + '</select><input id="mP" type="number" placeholder="威力/値"><input id="mC" type="number" placeholder="回数"><button type="button" class="btn small" data-act="m-st-add">付与</button></div>' +
-      '<div class="grow"><button type="button" class="btn small" data-act="m-st-del">選択中の状態を解除</button><button type="button" class="btn small" data-act="m-vib">振動爆発</button></div>' +
+      '<div class="grow"><button type="button" class="btn small" data-act="m-st-del">選択中の状態を解除</button></div>' +
       '<div class="grow"><button type="button" class="btn small" data-act="m-stag-clear">混乱を回復</button><button type="button" class="btn small" data-act="m-revive">復帰</button><button type="button" class="btn small" data-act="m-ego">E.G.O使用</button></div>' +
       '<div class="grow"><select id="mRes">' + resOpts + '</select><input id="mResV" type="number" min="0" placeholder="資源の数"><button type="button" class="btn small" data-act="m-res">資源を設定</button></div>' +
       '<label class="grow"><input id="mFlag" type="text" placeholder="手動フラグ名"><button type="button" class="btn small" data-act="m-flag">切替</button></label>' +
@@ -384,7 +384,7 @@
         '<path d="M20 20 L40 40 M40 20 L20 40" stroke="rgb(150, 135, 130)" stroke-width="3" stroke-linecap="round"/></svg>';
     }
     if (kind === 'blank') {
-      return '<img class="frame" src="image/skill/empty-action.png" alt="">';
+      return '<img class="frame" src="../image/skill/empty-action.png" alt="">';
     }
     var c = sinColor(sin);
     var lv = Math.max(1, Math.min(4, L.num(tier, 1)));
@@ -445,16 +445,16 @@
 
   function frameImg(sk, kind, stag, ring) {
     ring = ring || '';
-    if (stag) { return ring + '<img class="frame" src="image/skill/stagger-action.png" alt="">'; }
+    if (stag) { return ring + '<img class="frame" src="../image/skill/stagger-action.png" alt="">'; }
     if (!sk || kind === 'blank' || kind === 'destroyed') { return ring + frameSvg(null, 0, kind === 'destroyed' ? 'destroyed' : 'blank'); }
     if (!SIN_COLORS[sk.sin]) { return ring + frameSvg(sk.sin, sk.tier); }
     var tier = Math.max(1, Math.min(3, L.num(sk.tier, 1)));
-    var html = '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '-bg.png" alt="" onerror="this.remove()">';
+    var html = '<img class="frame skf" src="../image/skill/' + sk.sin + '/s' + tier + '-bg.png" alt="" onerror="this.remove()">';
     html += ring;
-    html += '<img class="frame skb t' + tier + '" src="image/skill/skill-base.png" alt="" onerror="this.remove()">';
+    html += '<img class="frame skb t' + tier + '" src="../image/skill/skill-base.png" alt="" onerror="this.remove()">';
     var icon = physIcon(sk);
-    if (icon) { html += '<img class="p-icon i-' + esc(icon) + '" src="image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
-    html += '<img class="frame skf" src="image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
+    if (icon) { html += '<img class="p-icon i-' + esc(icon) + '" src="../image/icon/' + esc(icon) + '.png" alt="" onerror="this.remove()">'; }
+    html += '<img class="frame skf" src="../image/skill/' + sk.sin + '/s' + tier + '.png" alt="">';
     return html;
   }
 
@@ -472,7 +472,7 @@
   function partMark(part) {
     var icon = partIconName(part);
     if (!icon) { return esc(part.name); }
-    return '<img class="p-part" src="image/icon/abnormality/' + esc(icon) + '.png" alt="' + esc(part.name) + '" title="' + esc(part.name) + '" onerror="this.outerHTML=\'' + esc(part.name) + '\'">';
+    return '<img class="p-part" src="../image/icon/abnormality/' + esc(icon) + '.png" alt="' + esc(part.name) + '" title="' + esc(part.name) + '" onerror="this.outerHTML=\'' + esc(part.name) + '\'">';
   }
 
   function pieceHtml(S, P, ctx, u, pi) {
@@ -768,7 +768,8 @@
       Object.keys(S.units).forEach(function (id) {
         if (S.units[id].side === 'ally') { opts += '<option value="' + esc(id) + '"' + (me.unitId === id ? ' selected' : '') + '>' + esc(S.units[id].name) + '</option>'; }
       });
-      tools += '<label class="inline">操作キャラ<select data-change="unit"><option value="">選択</option>' + opts + '</select></label>';
+      if (me.locked && S.units[me.unitId]) { tools += '<span class="inline">操作キャラ: ' + esc(S.units[me.unitId].name) + '</span>'; }
+      else { tools += '<label class="inline">操作キャラ<select data-change="unit"><option value="">選択</option>' + opts + '</select></label>'; }
     }
     var modes = me.role === 'player' ? [['all', '矢印:全員'], ['mine', '自分のみ'], ['off', 'なし']] : [['all', '矢印:表示'], ['off', 'なし']];
     tools += '<span class="seg">' + modes.map(function (m) {
@@ -844,7 +845,7 @@
 
   function playerPanel() { return ''; }
 
-  var RES_DIR = 'image/icon/sin/';
+  var RES_DIR = '../image/icon/sin/';
 
   function passiveItems(S, key) {
     var allies = [];
