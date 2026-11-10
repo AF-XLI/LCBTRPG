@@ -492,7 +492,6 @@
       if (!ref) { return; }
       commit(function (s) { var g = L.getB(s, ref); if (g && g.b.st) { Object.keys(g.b.st).forEach(function (k) { if (L.statusParts(k).base === key) { delete g.b.st[k]; } }); L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の ' + L.STATUS[key].label + ' を解除'); } });
     },
-    'm-vib': function () { var ref = targetRef(); if (ref) { commit(function (s) { L.vibrationBurst(s, ref, rng); }); } },
     'm-stag-clear': function () { var ref = targetRef(); if (ref) { commit(function (s) { var g = L.getB(s, ref); if (g) { g.b.stagger = null; L.log(s, '【手動】' + L.nameOf(s, g.ref) + ' の混乱を回復'); } }); } },
     'm-revive': function () { var ref = targetRef(); if (ref) { commit(function (s) { L.reviveUnit(s, ref); L.log(s, '【手動】' + L.nameOf(s, ref) + ' が復帰'); }); } },
     'm-ego': function () {
@@ -578,14 +577,17 @@
     saveMe();
     window.LCStore.create({
       roomId: me.room,
+      role: me.role,
       onState: onState,
       onStatus: function (st, msg) { conn = st === 'online' ? 'online' : 'offline'; if (st === 'error') { alert('接続エラー: ' + msg); } render(); }
     }).then(function (st) {
       store = st;
       mode = st.mode;
+      if (me.role === 'player' && st.unitId) { me.unitId = st.unitId; me.locked = true; saveMe(); }
       render();
     }).catch(function (e) {
       alert('接続できませんでした。設定を確認してください。\n' + e.message);
+      if (me && me.role === 'gm') { me.role = 'player'; saveMe(); }
       $('lobby').hidden = false;
       $('main').hidden = true;
     });
@@ -594,14 +596,13 @@
   function init() {
     me = loadMe();
     $('lobbyMode').textContent = window.LCStore.hasFirebase() ? 'Firebase に接続して共有します。' : 'Firebase が未設定のため、同じブラウザ内(タブ間)のローカル動作になります。';
-    if (me && me.room) { enter(); return; }
-    $('lobby').hidden = false;
     $('lobbyJoin').addEventListener('click', function () {
       var room = $('lobbyRoom').value.trim().replace(/[.#$\[\]\/]/g, '_');
       if (!room) { alert('ルームIDを入力してください'); return; }
       me = { room: room, role: $('lobbyRole').value, unitId: '' };
       enter();
     });
+    if (me && me.room) { enter(); } else { $('lobby').hidden = false; }
   }
 
   init();
