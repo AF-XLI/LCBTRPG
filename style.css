@@ -428,6 +428,17 @@ h4 {
   font-size: 0.875rem;
 }
  
+.st.ego .st-ic {
+  border: 0.063rem solid var(--c);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+}
+ 
+.st.ego .st-ic b {
+  font-size: 0.5rem;
+  letter-spacing: -0.031rem;
+}
+ 
 .st-ic img {
   position: absolute;
   top: 0;
@@ -1264,6 +1275,10 @@ h4 {
  
 :is(.e-badges, .a-badges) .st-ic b {
   font-size: 0.4375rem;
+}
+ 
+:is(.e-badges, .a-badges) .st.ego .st-ic b {
+  font-size: 0.25rem;
 }
  
 :is(.e-badges, .a-badges) :is(.st-v, .st-c) {
