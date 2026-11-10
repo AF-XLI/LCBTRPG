@@ -35,13 +35,25 @@
     $('hubGm').textContent = '確認しています…';
     $('hubChar').textContent = '確認しています…';
     var db = fb.database(app);
-    db.ref('admins/' + user.uid).once('value').then(function (s) {
-      $('hubGm').textContent = s.val() === true ? '登録済み' : '未登録';
-    }, function () { $('hubGm').textContent = '確認できません(データベースのルールを確認してください)'; });
-    db.ref('players/' + user.uid).once('value').then(function (s) {
-      var v = s.val();
-      $('hubChar').textContent = typeof v === 'string' && v ? v : '未登録';
-    }, function () { $('hubChar').textContent = '確認できません(データベースのルールを確認してください)'; });
+    read(db, 'admins/' + user.uid, 'hubGm', function (v) { return v === true ? '登録済み' : '未登録'; });
+    read(db, 'players/' + user.uid, 'hubChar', function (v) { return typeof v === 'string' && v ? v : '未登録'; });
+  }
+
+  // データベースの読み取り。ルールの不備や接続不良で返事が来ないときも、表示が「確認しています…」のまま止まらないようにする
+  function read(db, path, id, fmt) {
+    var done = false;
+    var timer = setTimeout(function () {
+      if (!done) { $(id).textContent = '応答がありません(接続・databaseURL・ルールを確認してください)'; }
+    }, 8000);
+    db.ref(path).once('value').then(function (snap) {
+      done = true;
+      clearTimeout(timer);
+      $(id).textContent = fmt(snap.val());
+    }, function (e) {
+      done = true;
+      clearTimeout(timer);
+      $(id).textContent = '確認できません: ' + (e && e.message ? e.message : '');
+    });
   }
 
   function init() {
@@ -72,4 +84,7 @@
   }
 
   init();
+  setTimeout(function () {
+    if ($('hubState').textContent === '確認しています…') { $('hubState').textContent = '確認が完了しません。接続情報(config.js)と、Firebase の設定(Authentication・承認済みドメイン)を確認してください。'; }
+  }, 10000);
 }(typeof self !== 'undefined' ? self : this));
