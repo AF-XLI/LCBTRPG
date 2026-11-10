@@ -169,7 +169,27 @@
               "pride"
             ]
           },
-          "passive": "ターン開始時、自分にデバフが無い場合、精神力を10回復"
+          "passive": {
+            "name": "E.G.Oパッシブ(仮名)",
+            "text": "ターン開始時、自分にデバフが無い場合、精神力を10回復",
+            "grants": []
+          },
+          "rank": "he",
+          "prisoner": false,
+          "erode": {
+            "name": "E.G.O(侵食)",
+            "kind": "attack",
+            "sin": "pride",
+            "phys": "pierce",
+            "tier": 4,
+            "base": 15,
+            "coins": [
+              5
+            ],
+            "weight": 1,
+            "text": "15+5×1(最大20) 加重値1\nⅠ[的中時]自分の解除可能デバフを1種解除\n　[デバフ解除時]次のターン、束縛2を付与\n　[デバフ解除時]沈潜を6付与",
+            "blind": true
+          }
         }
       ],
       "passives": [
