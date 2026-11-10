@@ -36,9 +36,9 @@
     $('hubGm').textContent = '';
     $('hubChar').textContent = '確認しています…';
     var db = fb.database(app);
-    read(db, 'admins/' + user.uid, 'hubAdmin', function (v) { return v === true ? '(管理者)' : ''; });
-    read(db, 'gms/' + user.uid, 'hubGm', function (v) { return v === true ? '(GM)' : ''; });
-    read(db, 'players/' + user.uid, 'hubChar', function (v) { return typeof v === 'string' && v ? v : '未登録'; });
+    read(db, 'admin/' + user.uid, 'hubAdmin', function (v) { return v === true ? '(管理者)' : ''; });
+    read(db, 'gm/' + user.uid, 'hubGm', function (v) { return v === true ? '(GM)' : ''; });
+    read(db, 'player/' + user.uid, 'hubChar', function (v) { return typeof v === 'string' && v ? v : '未登録'; });
   }
 
   // データベースの読み取り。ルールの不備や接続不良で返事が来ないときも、表示が「確認しています…」のまま止まらないようにする
