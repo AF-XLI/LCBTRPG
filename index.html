@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LCBTRPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap">
+<link rel="stylesheet" href="battle/style.css">
+<link rel="stylesheet" href="hub.css">
+</head>
+<body>
+<div class="lobby hub">
+  <h1 class="lobby-title">LCBTRPG</h1>
+  <section class="hub-box">
+    <h3>ログイン</h3>
+    <p id="hubState" class="lobby-note">確認しています…</p>
+    <dl id="hubInfo" class="hub-info" hidden>
+      <dt>アカウント</dt><dd id="hubName"></dd>
+      <dt>UID</dt><dd><span id="hubUid" class="hub-uid"></span> <button id="hubCopy" class="btn" type="button">コピー</button></dd>
+      <dt>GM</dt><dd id="hubGm"></dd>
+      <dt>持ちキャラ</dt><dd id="hubChar"></dd>
+    </dl>
+    <div class="hub-actions">
+      <button id="hubLogin" class="btn primary" type="button" hidden>Googleでログイン</button>
+      <button id="hubLogout" class="btn" type="button" hidden>ログアウト</button>
+    </div>
+  </section>
+  <section class="hub-box">
+    <h3>メニュー</h3>
+    <div class="hub-actions">
+      <a class="btn primary" href="battle/">戦闘システム</a>
+      <span class="btn" aria-disabled="true">キャラクターシート(準備中)</span>
+    </div>
+  </section>
+</div>
+<script src="config.js"></script>
+<script src="hub.js"></script>
+</body>
+</html>
