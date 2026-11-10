@@ -56,13 +56,23 @@
       '<span class="st-c">' + esc(cnt) + '</span></span>';
   }
 
-  function badges(b) {
+  function egoBadges(b, S) {
+    var out = '';
+    if (!S) { return out; }
+    A(b && b.egos).forEach(function (e, i) {
+      if (!e.passive || !L.egoPassiveOn(S, b, i)) { return; }
+      out += '<span class="st ego" style="--c: rgb(240, 200, 90);" title="' + esc('E.G.Oパッシブ「' + (e.passive.name || e.name || '') + '」: ' + (e.passive.text || '')) + '"><span class="st-ic"><b>E.G.O</b></span></span>';
+    });
+    return out;
+  }
+
+  function badges(b, S) {
     var st = O(b && b.st);
     var order = Object.keys(L.STATUS);
     var keys = Object.keys(st).sort(function (x, y) {
       return order.indexOf(L.statusParts(x).base) - order.indexOf(L.statusParts(y).base);
     });
-    var out = '';
+    var out = egoBadges(b, S);
     keys.forEach(function (k) {
       var sp = L.statusParts(k);
       var def = L.STATUS[sp.base];
@@ -152,7 +162,7 @@
     if (!u) { return ''; }
     var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '', u.side === 'enemy') +
       '<div class="line">精神力 ' + spChip(u) + ' 速度 ' + L.num(u.spd, 0) + ' (' + u.speed[0] + '〜' + u.speed[1] + ')' + staggerChip(u) + '</div>' +
-      '<div class="badges">' + badges(u) + '</div>' + resistTable(u);
+      '<div class="badges">' + badges(u, S) + '</div>' + resistTable(u);
     html += '<h4>スキル</h4>';
     [1, 2, 3, 0].forEach(function (n) { html += skillDetail(O(u.skills)[n]); });
     return html;
@@ -704,7 +714,7 @@
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
       '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
       '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' +
-      '<div class="a-badges">' + badges(u) + '</div></div>';
+      '<div class="a-badges">' + badges(u, S) + '</div></div>';
   }
 
   function stage(S, ctx) {
@@ -788,6 +798,29 @@
       (active && sk && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
   }
 
+  var EGO_MODE_LABEL = { awaken: '覚醒', erode: '侵食', erodeEnemy: '侵食(味方を除外)' };
+  function costText(c) {
+    var parts = [];
+    L.RES_ORDER.forEach(function (k) { if (c.res[k]) { parts.push(L.SINS[k].label + '×' + c.res[k]); } });
+    if (c.sp) { parts.push('精神 -' + c.sp); }
+    return parts.length ? parts.join(' ') : 'コストなし';
+  }
+  function egoRow(S, u, ego, i, mode, ch) {
+    var sk = L.egoSkillOf(ego, mode);
+    var cost = L.egoCost(ego, mode);
+    var active = ch.sel === 'ego' && ch.ego && ch.ego.i === i && ch.ego.mode === mode;
+    var back = ch.sel === 'ego' && ch.ego && ch.ego.paid && !ch.egoUsed ? ch.ego.paid : {};
+    var ok = !u.erosion && L.canPayRes(S, cost.res, back);
+    var tags = (sk.blind ? '敵味方識別不可' : '');
+    var sub = [L.PHYS[sk.phys] || '', L.SINS[sk.sin] ? L.SINS[sk.sin].label : '', tags].filter(function (x) { return x; }).join('・');
+    var nums = '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + (L.num(sk.weight, 1) >= 2 ? ' ／ 広域(加重値' + L.num(sk.weight, 1) + ')' : '');
+    return '<button type="button" class="srow ego' + (active ? ' picked' : '') + '" data-act="sel" data-sel="ego:' + i + ':' + mode + '"' + (ok ? '' : ' disabled') + ' style="--c: ' + sinColor(sk.sin) + ';">' +
+      '<span class="s-top"><b>' + esc(sk.name || ego.name || '') + '</b><span class="s-no">E.G.O ' + esc((ego.rank || '').toUpperCase()) + '・' + EGO_MODE_LABEL[mode] + '</span>' + (active ? '<span class="s-pick">選択中</span>' : '') + '</span>' +
+      '<span class="s-sub">' + esc(sub) + (sub ? ' ／ ' : '') + esc(nums) + '</span>' +
+      '<span class="s-sub">コスト: ' + esc(costText(cost)) + '</span>' +
+      (active && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
+  }
+
   function skillPopup(S, ctx) {
     var me = ctx.me;
     var u = S.units[me.unitId];
@@ -796,6 +829,12 @@
     var ch = u.choice || {};
     var html = '<h3><span>' + esc(u.name) + ' のスキル</span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
     html += skillRow(S, u, 'c0', hand.sel[0], ch, true) + skillRow(S, u, 'c1', hand.sel[1], ch, true) + skillRow(S, u, 'def', hand.def, ch, true);
+    A(u.egos).forEach(function (ego, i) {
+      ['awaken', 'erode', 'erodeEnemy'].forEach(function (mode) {
+        if (L.egoModeOk(ego, mode) && mode !== 'forced') { html += egoRow(S, u, ego, i, mode, ch); }
+      });
+    });
+    if (u.erosion) { html += '<p class="note">E.G.O侵食中のため、スキルは変更できません。</p>'; }
     if (hand.preview && hand.preview.skill) {
       html += '<p class="note">次のカード: ' + esc(hand.preview.skill.name) + ' (スキル' + hand.preview.num + ')</p>';
     }
@@ -814,7 +853,11 @@
     });
     allies.sort(function (a, b) { return a.ord - b.ord; });
     allies.forEach(function (u) {
-      A(u[key]).forEach(function (p, i) { if (p) { out.push({ u: u, p: p, i: i }); } });
+      A(u[key]).forEach(function (p, i) {
+        if (!p) { return; }
+        if (key === 'passives' && !Object.keys(O(p.need)).length && !Object.keys(O(p.reso)).length) { return; }
+        out.push({ u: u, p: p, i: i });
+      });
     });
     return out;
   }
