@@ -413,7 +413,13 @@
       var id = me.unitId;
       retarget = true;
       popupState = null;
-      commit(function (s) { L.selectChoice(s, id, el.dataset.sel, Date.now()); });
+      var key = el.dataset.sel;
+      if (key.indexOf('ego:') === 0) {
+        var pp = key.split(':');
+        commit(function (s) { L.selectChoice(s, id, 'ego', Date.now(), { i: Number(pp[1]), mode: pp[2] }); });
+      } else {
+        commit(function (s) { L.selectChoice(s, id, key, Date.now()); });
+      }
     },
     'gm-confirm': function () {
       var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && (sk.kind === 'attack' || sk.kind === 'defense') && !P.target; });
