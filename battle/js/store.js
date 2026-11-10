@@ -92,16 +92,62 @@
     });
   }
 
-  function createFirebase(roomId, config, onState, onStatus) {
+  function authReady(auth) {
+    return new Promise(function (resolve) {
+      var off = auth.onAuthStateChanged(function (user) { off(); resolve(user); });
+    });
+  }
+
+  // GMとプレイヤーはGoogleアカウントでログインする(観戦は匿名)。GMは admins/(UID) が true、プレイヤーは players/(UID) にキャラのIDが登録されている必要がある
+  function signIn(fb, auth, wantGoogle) {
+    return authReady(auth).then(function (user) {
+      if (wantGoogle) {
+        if (user && !user.isAnonymous) { return user; }
+        return auth.signInWithPopup(new fb.auth.GoogleAuthProvider()).then(function (r) { return r.user; }).catch(function (e) {
+          throw new Error('Googleログインできませんでした(ポップアップが閉じられた、またはブロックされた可能性があります)。もう一度入室してください。\n' + (e && e.message ? e.message : ''));
+        });
+      }
+      if (user) { return user; }
+      return auth.signInAnonymously().then(function (r) { return r.user; });
+    });
+  }
+
+  function createFirebase(roomId, config, onState, onStatus, role) {
     var base = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VERSION + '/';
+    var useAuth = config.useAuth !== false;
     return loadScript(base + 'firebase-app-compat.js')
       .then(function () { return loadScript(base + 'firebase-database-compat.js'); })
-      .then(function () { return config.useAuth === false ? null : loadScript(base + 'firebase-auth-compat.js'); })
+      .then(function () { return useAuth ? loadScript(base + 'firebase-auth-compat.js') : null; })
       .then(function () {
         var fb = root.firebase;
         var app = fb.apps && fb.apps.length ? fb.apps[0] : fb.initializeApp(config);
-        var ready = config.useAuth === false ? Promise.resolve() : fb.auth(app).signInAnonymously();
-        return ready.then(function () { return { fb: fb, app: app }; });
+        var ready = useAuth ? signIn(fb, fb.auth(app), role === 'gm' || role === 'player') : Promise.resolve(null);
+        return ready.then(function (user) { return { fb: fb, app: app, user: user }; });
+      })
+      .then(function (ctx) {
+        var db = ctx.fb.database(ctx.app);
+        var gate = role === 'gm' && ctx.user ? db.ref('admins/' + ctx.user.uid).once('value').then(function (snap) {
+          if (snap.val() !== true) {
+            ctx.fb.auth(ctx.app).signOut();
+            throw new Error('このアカウントにはGM権限がありません。\nGMとして登録するには、次のUIDを管理者(データベースの admins)に登録してください。\nUID: ' + ctx.user.uid);
+          }
+        }, function () {
+          ctx.fb.auth(ctx.app).signOut();
+          throw new Error('GM権限を確認できませんでした(データベースのルールに admins が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
+        }) : Promise.resolve();
+        var unitId = '';
+        var mine = role === 'player' && ctx.user ? db.ref('players/' + ctx.user.uid).once('value').then(function (snap) {
+          var v = snap.val();
+          if (typeof v !== 'string' || !v) {
+            ctx.fb.auth(ctx.app).signOut();
+            throw new Error('このアカウントにはキャラクターが登録されていません。\nGMに、次のUIDとキャラクターのIDを伝えて登録してもらってください。\nUID: ' + ctx.user.uid);
+          }
+          unitId = v;
+        }, function () {
+          ctx.fb.auth(ctx.app).signOut();
+          throw new Error('キャラクターの登録を確認できませんでした(データベースのルールに players が設定されていない可能性があります)。\nUID: ' + ctx.user.uid);
+        }) : Promise.resolve();
+        return gate.then(function () { return mine; }).then(function () { ctx.unitId = unitId; return ctx; });
       })
       .then(function (ctx) {
         var db = ctx.fb.database(ctx.app);
@@ -110,9 +156,11 @@
         db.ref('.info/connected').on('value', function (snap) { if (onStatus) { onStatus(snap.val() ? 'online' : 'offline'); } });
         return {
           mode: 'firebase',
+          uid: ctx.user ? ctx.user.uid : '',
+          unitId: ctx.unitId || '',
           write: function (patch) {
             var clean = JSON.parse(JSON.stringify(patch));
-            return ref.update(clean);
+            return ref.update(clean).catch(function (e) { if (onStatus) { onStatus('error', '書き込めませんでした: ' + e.message); } });
           },
           reset: function () { return ref.set(null); },
           close: function () { ref.off(); }
@@ -123,7 +171,7 @@
   function create(opts) {
     var cfg = root.LC_FIREBASE_CONFIG;
     var usable = cfg && cfg.apiKey && cfg.databaseURL;
-    if (usable && !opts.forceLocal) { return createFirebase(opts.roomId, cfg, opts.onState, opts.onStatus); }
+    if (usable && !opts.forceLocal) { return createFirebase(opts.roomId, cfg, opts.onState, opts.onStatus, opts.role); }
     return createLocal(opts.roomId, opts.onState);
   }
 
