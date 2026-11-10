@@ -1136,6 +1136,8 @@
           tg.b.mods.push({ k: 'taken', pct: num(gr.takenPct, 0), scope: 'round', dmgIf: gr.dmgIf });
           log(state, nameOf(state, tref) + ' の受けるダメージ ' + (num(gr.takenPct, 0) >= 0 ? '+' : '') + num(gr.takenPct, 0) + '%');
         }
+        if (gr.burst) { vibrationBurst(state, tref, null); }
+        if (gr.convert) { convertVibration(state, tref, gr.convert); }
         if (!gr.status) { return; }
         if (gr.next) {
           tg.b.next = O(tg.b.next);
