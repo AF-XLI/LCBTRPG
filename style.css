@@ -1137,10 +1137,6 @@ h4 {
   opacity: 0.45;
 }
  
-.piece.staggered .p-frame {
-  filter: grayscale(1);
-}
- 
 .piece.destroyed {
   cursor: default;
 }
