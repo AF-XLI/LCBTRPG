@@ -1,0 +1,16 @@
+{
+  "lcb": {
+    "name": "LCB囚人",
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "hp": 220,
+    "speed": [3, 7],
+    "resist": { "slash": 2, "pierce": 0.5, "blunt": 1 },
+    "skills": [
+      { "tier": 1, "sin": "pride", "type": "slash", "base": 4, "coin": 3, "coins": 2 },
+      { "tier": 2, "sin": "wrath", "type": "pierce", "base": 4, "coin": 4, "coins": 2 },
+      { "tier": 3, "sin": "sloth", "type": "pierce", "base": 6, "coin": 3, "coins": 3 }
+    ],
+    "defense": { "sin": "sloth", "type": "evade", "base": 2, "coin": 10, "coins": 1 }
+  }
+}
