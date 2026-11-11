@@ -1,0 +1,14 @@
+{
+  "gray": {
+    "name": "グレイ",
+    "portrait": "image/character/gray/portrait.png",
+    "icon": "image/character/gray/icon.png",
+    "background": "image/character/gray/bg.png",
+    "identities": ["lcb"],
+    "egos": ["end-of-spring"],
+    "default": {
+      "identity": "lcb",
+      "egos": { "ZAYIN": "end-of-spring" }
+    }
+  }
+}
