@@ -359,7 +359,7 @@
 
   function init() {
     if (!charId) { showError('囚人が指定されていません。'); return; }
-    Promise.all([loadJson('data/prisoners.json'), loadJson('data/identities.json'), loadJson('data/egos.json')])
+    Promise.all([loadJson('data/prisoners.json'), loadJson('data/' + charId + '/identities.json'), loadJson('data/' + charId + '/egos.json')])
       .then(function (r) {
         state.prisoner = r[0][charId];
         state.identities = r[1];
