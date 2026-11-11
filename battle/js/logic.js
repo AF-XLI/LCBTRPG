@@ -18,8 +18,8 @@
   };
   var RES_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
-  var RES_MULT = { normal: 1, weak: 2, resist: 0.75 };
-  var RES_LABEL = { normal: '普通', weak: '脆弱', resist: '抵抗' };
+  var RES_MULT = { normal: 1, weak: 2, resist: 0.75, strong: 0.5 };
+  var RES_LABEL = { normal: '普通', weak: '脆弱', resist: '抵抗', strong: '耐性' };
   var SP_MIN = -45;
   var SP_MAX = 45;
   var KIND_LABEL = { attack: '攻撃', defense: '守備', counter: '反撃' };
@@ -2266,7 +2266,7 @@
     var r = O(ego.resist);
     var next = {};
     ALL_RES_KEYS.forEach(function (k) {
-      next[k] = A(r.weak).indexOf(k) >= 0 ? 'weak' : (A(r.resist).indexOf(k) >= 0 ? 'resist' : 'normal');
+      next[k] = A(r.weak).indexOf(k) >= 0 ? 'weak' : (A(r.strong).indexOf(k) >= 0 ? 'strong' : (A(r.resist).indexOf(k) >= 0 ? 'resist' : 'normal'));
     });
     return next;
   }
