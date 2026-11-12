@@ -3,18 +3,58 @@
 
   var FIREBASE_VERSION = '10.12.2';
   var RANKS = ['ZAYIN', 'TETH', 'HE', 'WAW', 'ALEPH'];
-  var RESIST_TYPES = ['slash', 'pierce', 'blunt'];
   var TAG_COLOR = { 1: 'blue', 2: 'red', 3: 'yellow' };
   var ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
+
+  /* 罪悪の属性。資源・耐性の並び順(憤怒→色欲→怠惰→暴食→憂鬱→傲慢→嫉妬)で登録する。text は帯の文字色 */
+  var SINS = [
+    { id: 'wrath', label: '憤怒', color: 'rgb(220, 60, 50)', text: 'rgb(255, 255, 255)' },
+    { id: 'lust', label: '色欲', color: 'rgb(240, 140, 50)', text: 'rgb(255, 255, 255)' },
+    { id: 'sloth', label: '怠惰', color: 'rgb(230, 200, 60)', text: 'rgb(24, 16, 6)' },
+    { id: 'gluttony', label: '暴食', color: 'rgb(110, 190, 70)', text: 'rgb(255, 255, 255)' },
+    { id: 'gloom', label: '憂鬱', color: 'rgb(60, 190, 200)', text: 'rgb(255, 255, 255)' },
+    { id: 'pride', label: '傲慢', color: 'rgb(70, 120, 230)', text: 'rgb(255, 255, 255)' },
+    { id: 'envy', label: '嫉妬', color: 'rgb(150, 70, 220)', text: 'rgb(255, 255, 255)' }
+  ];
+  var SIN_BY_ID = {};
+  SINS.forEach(function (x) { SIN_BY_ID[x.id] = x; });
+
+  /* 物理属性 */
+  var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
+  var RESIST_TYPES = Object.keys(PHYS);
+
+  /* 状態異常。ID は戦闘サイト(battle/js/logic.js)と同じ。icon は image/icon/status/ 内のファイル名 */
   var STATUS = {
-    'sinking': '沈潜',
-    'power-down': '威力減少',
-    'bind': '束縛'
+    burn: { label: '火傷', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
+    bleed: { label: '出血', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
+    vibration: { label: '振動', icon: 'tremor.png', color: 'rgb(140, 170, 235)' },
+    rupture: { label: '破裂', icon: 'rupture.png', color: 'rgb(235, 130, 190)' },
+    sinking: { label: '沈潜', icon: 'sinking.png', color: 'rgb(110, 190, 230)' },
+    breath: { label: '呼吸', icon: 'poise.png', color: 'rgb(110, 205, 150)' },
+    charge: { label: '充電', icon: 'charge.png', color: 'rgb(240, 215, 80)' },
+    trance: { label: '夢現', icon: 'trance.png', color: 'rgb(240, 160, 70)' },
+    paralysis: { label: '麻痺', icon: 'paralyze.png', color: 'rgb(200, 190, 90)' },
+    bind: { label: '束縛', icon: 'bind.png', color: 'rgb(200, 170, 120)' },
+    dmgDown: { label: 'ダメージ量減少', icon: 'damage-down.png', color: 'rgb(170, 140, 140)' },
+    fragile: { label: '脆弱', icon: 'fragile.png', color: 'rgb(230, 120, 120)' },
+    powerDown: { label: '威力減少', icon: 'power-down.png', color: 'rgb(230, 120, 100)' },
+    atkPowerDown: { label: '攻撃威力減少', icon: 'attack-power-down.png', color: 'rgb(170, 140, 140)' },
+    defPowerDown: { label: '守備威力減少', icon: 'defense-power-down.png', color: 'rgb(170, 140, 140)' },
+    matchPowerDown: { label: 'マッチ威力減少', icon: 'clash-power-down.png', color: 'rgb(170, 140, 140)' },
+    coinWeak: { label: '加算コイン弱化', icon: 'plus-coin-drop.png', color: 'rgb(170, 140, 140)' },
+    quick: { label: 'クイック', icon: 'haste.png', color: 'rgb(120, 210, 230)' },
+    dmgUp: { label: 'ダメージ量増加', icon: 'damage-up.png', color: 'rgb(240, 170, 90)' },
+    protect: { label: '保護', icon: 'protection.png', color: 'rgb(120, 190, 240)' },
+    powerUp: { label: '威力増加', icon: 'power-up.png', color: 'rgb(240, 170, 90)' },
+    atkPowerUp: { label: '攻撃威力増加', icon: 'attack-power-up.png', color: 'rgb(240, 170, 90)' },
+    defPowerUp: { label: '守備威力増加', icon: 'defense-power-up.png', color: 'rgb(240, 170, 90)' },
+    matchPowerUp: { label: 'マッチ威力増加', icon: 'clash-power-up.png', color: 'rgb(240, 170, 90)' },
+    coinStrong: { label: '加算コイン強化', icon: 'plus-coin-boost.png', color: 'rgb(240, 170, 90)' }
   };
-  var SIN_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
-  var SIN_NAMES = { wrath: '憤怒', lust: '色欲', sloth: '怠惰', gluttony: '暴食', gloom: '憂鬱', pride: '傲慢', envy: '嫉妬' };
-  var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
+  var DEFAULT_STATUS_COLOR = 'rgb(238, 228, 210)';
+
   var TAB_NAMES = { overview: '概要', skill: 'スキル', ego: 'E.G.O' };
+  var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
   var PANEL_NAMES = { desc: '説明', memo: 'メモ' };
   var ICON_BACK = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>';
   var ICON_DESC = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13"/></svg>';
@@ -54,6 +94,30 @@
 
   function img(path, cls, alt) {
     return '<img class="' + cls + '" alt="' + esc(alt || '') + '" src="' + esc(base + path) + '">';
+  }
+
+  function sinLabel(id) {
+    return SIN_BY_ID[id] ? SIN_BY_ID[id].label : id;
+  }
+
+  function sinVars(id) {
+    var d = SIN_BY_ID[id];
+    return d ? '--sin: ' + d.color + '; --sin-text: ' + d.text + ';' : '';
+  }
+
+  function statusInfo(id) {
+    var parts = String(id).split('@');
+    var def = STATUS[parts[0]];
+    var suf = parts[1] || '';
+    var sufLabel = suf ? (SIN_BY_ID[suf] ? SIN_BY_ID[suf].label : (PHYS[suf] || suf)) : '';
+    var icon = def ? def.icon : parts[0] + '.png';
+    if (suf && parts[0] === 'dmgUp') { icon = suf + '-dmg-up.png'; }
+    if (suf && parts[0] === 'protect') { icon = suf + '-protection.png'; }
+    return {
+      label: (def ? def.label : parts[0]) + (sufLabel ? '(' + sufLabel + ')' : ''),
+      icon: 'image/icon/status/' + icon,
+      color: def ? def.color : DEFAULT_STATUS_COLOR
+    };
   }
 
   function loadJson(path) {
@@ -193,7 +257,8 @@
   }
 
   function statusHtml(id) {
-    return '<span class="kw is-' + esc(id) + '">' + img('image/icon/status/' + id + '.png', 'kw-icon') + esc(STATUS[id] || id) + '</span>';
+    var info = statusInfo(id);
+    return '<span class="kw" style="--kw: ' + info.color + ';">' + img(info.icon, 'kw-icon') + esc(info.label) + '</span>';
   }
 
   function effectHtml(e) {
@@ -217,7 +282,7 @@
   function passiveHtml(label, p) {
     return '<section class="passive" aria-label="' + label + '">' +
       '<div class="passive-kind">' + label + '</div>' +
-      (p.name ? '<div class="passive-name"><span class="ribbon is-' + esc(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
+      (p.name ? '<div class="passive-name"><span class="ribbon" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
       (p.name ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
       '<p class="passive-text">' + esc(p.text) + '</p>' +
       '</section>';
@@ -256,7 +321,7 @@
       '<div class="detail-piece">' + piece(cur.piece) + '</div>' +
       '<div class="detail-info">' +
       coinsHtml(cur.coins) +
-      '<div class="detail-line"><span class="ribbon is-' + esc(cur.sin) + '">' + esc(cur.name) + '</span>' +
+      '<div class="detail-line"><span class="ribbon" style="' + sinVars(cur.sin) + '">' + esc(cur.name) + '</span>' +
       (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数">×' + cur.deck + '</span>') + '</div>' +
       (cur.defense ? '' : '<span class="detail-weight">攻撃加重値' + weight + '</span>') +
       '</div></div>';
@@ -307,9 +372,10 @@
       body = detailHtml(egoSkill(ego, ego));
     }
     var cost = '';
-    SIN_ORDER.forEach(function (k) {
+    SINS.forEach(function (sin) {
+      var k = sin.id;
       var n = (ego.cost && ego.cost[k]) || 0;
-      cost += '<div class="cost' + (n ? '' : ' is-zero') + '" role="group" aria-label="' + SIN_NAMES[k] + ' ' + n + '">' +
+      cost += '<div class="cost' + (n ? '' : ' is-zero') + '" role="group" aria-label="' + sin.label + ' ' + n + '">' +
         img('image/icon/sin/' + k + '.png', 'cost-icon') + '<span class="cost-num">' + n + '</span></div>';
     });
     return '<div class="skill-tab is-ego">' + head + scrollWrap(body) +
@@ -318,11 +384,12 @@
 
   function sinResistHtml(ego) {
     var h = '';
-    SIN_ORDER.forEach(function (k) {
+    SINS.forEach(function (sin) {
+      var k = sin.id;
       var m = ego && ego.resist && ego.resist[k] != null ? ego.resist[k] : 1;
       var kind = m > 1 ? 'weak' : (m < 0.75 ? 'strong' : (m < 1 ? 'resist' : 'normal'));
       var label = m > 1 ? '脆弱' : (m < 0.75 ? '耐性' : (m < 1 ? '抵抗' : '普通'));
-      h += '<div class="resist is-' + kind + '" role="group" aria-label="' + SIN_NAMES[k] + ' ' + label + ' ×' + m + '">' +
+      h += '<div class="resist is-' + kind + '" role="group" aria-label="' + sin.label + ' ' + label + ' ×' + m + '">' +
         img('image/icon/sin/' + k + '.png', 'resist-icon') +
         '<div class="resist-text"><div class="resist-label">' + label + '</div><div class="resist-mult">[x' + m + ']</div></div></div>';
     });
@@ -429,7 +496,7 @@
         '<div class="head-rank">' + esc(curEgo.rank) + '</div>' +
         '<div class="head-identity">' +
         '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
-        '<div class="head-banner is-' + esc(curEgo.sin) + '">' + esc(curEgo.name) + '</div>' +
+        '<div class="head-banner is-sin" style="' + sinVars(curEgo.sin) + '">' + esc(curEgo.name) + '</div>' +
         '</div>' +
         (curEgo.sp != null ? '<div class="head-sp"><span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>' : '') +
         '</div></header>';
