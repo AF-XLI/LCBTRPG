@@ -9,22 +9,22 @@
     "skills": [
       { "tier": 1, "sin": "pride", "type": "slash", "name": "斬る", "base": 4, "coin": 3, "coins": 2,
         "effects": [
-          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "1 付与" }
+          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "1を付与" }
         ] },
       { "tier": 2, "sin": "wrath", "type": "pierce", "name": "刺し貫く", "base": 4, "coin": 4, "coins": 2,
         "effects": [
-          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "1 付与" },
-          { "coin": 2, "timing": "的中時", "status": "power-down", "text": "1 付与" }
+          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "1を付与" },
+          { "coin": 2, "timing": "的中時", "status": "powerDown", "text": "1を付与" }
         ] },
-      { "tier": 3, "sin": "sloth", "type": "pierce", "name": "身躱し付き", "base": 6, "coin": 3, "coins": 3,
+      { "tier": 3, "sin": "sloth", "type": "pierce", "name": "身躱し突き", "base": 6, "coin": 3, "coins": 3,
         "effects": [
-          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "回数 1 増加" },
-          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "回数 1 増加" },
-          { "coin": 3, "timing": "的中時", "status": "sinking", "text": "3 付与" }
+          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "回数が1増加" },
+          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "回数が1増加" },
+          { "coin": 3, "timing": "的中時", "status": "sinking", "text": "3を付与" }
         ] }
     ],
-    "passive": { "name": "純真無垢", "sin": "pride", "count": 3, "text": "自分より精神力の低い対象へのダメージ量+15%" },
-    "support": { "name": "風雅指南", "sin": "pride", "count": 5, "text": "自分より精神力の低い対象へのダメージ量+10%" },
+    "passive": { "name": "純真無垢", "sin": "pride", "count": 3, "text": "自分より精神力が低い敵を攻撃時にダメージ量+15%" },
+    "support": { "name": "風雅指南", "sin": "pride", "count": 5, "text": "味方全員が、自分より精神力が低い敵を攻撃時にダメージ量+10%" },
     "defense":
       { "sin": "sloth", "type": "evade", "name": "回避", "base": 2, "coin": 10, "coins": 1,
         "effects": [] }
