@@ -412,6 +412,11 @@ textarea {
   transform: translate(-50%, -50%);
 }
  
+.head-banner.is-sin {
+  background: var(--sin);
+  color: var(--sin-text);
+}
+ 
 .head-banner {
   display: flex;
   align-items: center;
@@ -887,41 +892,18 @@ textarea {
  
 .ribbon {
   padding: 0.125rem 1.375rem 0.125rem 0.75rem;
+  background: var(--sin, var(--gold-banner));
   clip-path: polygon(0 0, 100% 0, calc(100% - 0.625rem) 100%, 0 100%);
-  color: rgb(255, 255, 255);
+  color: var(--sin-text, rgb(255, 255, 255));
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.4;
-}
+} 
  
-.ribbon.is-pride {
-  background: rgb(46, 98, 214);
-}
  
-.ribbon.is-wrath {
-  background: rgb(190, 40, 36);
-}
  
-.ribbon.is-sloth {
-  background: rgb(214, 182, 40);
-  color: var(--ink);
-}
  
-.ribbon.is-lust {
-  background: rgb(214, 104, 30);
-}
  
-.ribbon.is-gluttony {
-  background: rgb(96, 164, 44);
-}
- 
-.ribbon.is-gloom {
-  background: rgb(36, 140, 160);
-}
- 
-.ribbon.is-envy {
-  background: rgb(124, 66, 184);
-}
  
 .detail-deck {
   color: var(--gold);
@@ -994,6 +976,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  color: var(--kw, var(--cream));
   font-weight: 700;
   text-decoration: underline;
 }
@@ -1002,19 +985,8 @@ textarea {
   width: 1.25rem;
   height: 1.25rem;
   object-fit: contain;
-}
+} 
  
-.kw.is-sinking {
-  color: rgb(110, 190, 230);
-}
- 
-.kw.is-power-down {
-  color: rgb(230, 120, 100);
-}
- 
-.kw.is-bind {
-  color: rgb(200, 170, 120);
-}
   
 .mode-nav {
   position: absolute;
@@ -1188,41 +1160,12 @@ textarea {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
-}
+} 
  
-.head-banner.is-pride {
-  background: rgb(46, 98, 214);
-  color: rgb(255, 255, 255);
-}
  
-.head-banner.is-wrath {
-  background: rgb(190, 40, 36);
-  color: rgb(255, 255, 255);
-}
  
-.head-banner.is-sloth {
-  background: rgb(214, 182, 40);
-}
  
-.head-banner.is-lust {
-  background: rgb(214, 104, 30);
-  color: rgb(255, 255, 255);
-}
  
-.head-banner.is-gluttony {
-  background: rgb(96, 164, 44);
-  color: rgb(255, 255, 255);
-}
- 
-.head-banner.is-gloom {
-  background: rgb(36, 140, 160);
-  color: rgb(255, 255, 255);
-}
- 
-.head-banner.is-envy {
-  background: rgb(124, 66, 184);
-  color: rgb(255, 255, 255);
-}
  
 .hub {
   max-width: 32rem;
