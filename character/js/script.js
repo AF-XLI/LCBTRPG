@@ -33,6 +33,7 @@
     roles: { admin: false, gm: false, player: false },
     tab: 'overview',
     sub: 0,
+    passive: false,
     panel: '',
     editing: false,
     saving: false,
@@ -201,14 +202,34 @@
       '</span></div>';
   }
 
+  function passiveHtml(label, p) {
+    return '<section class="passive" aria-label="' + label + '">' +
+      '<div class="passive-kind">' + label + '</div>' +
+      '<div class="passive-name"><span class="ribbon is-' + esc(p.sin) + '">' + esc(p.name) + '</span></div>' +
+      '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' +
+      '<p class="passive-text">' + esc(p.text) + '</p>' +
+      '</section>';
+  }
+
+  function passiveTabHtml(identity, subs) {
+    var h = '';
+    if (identity.passive) { h += passiveHtml('パッシブ', identity.passive); }
+    if (identity.support) { h += passiveHtml('サポートパッシブ', identity.support); }
+    return '<div class="skill-tab">' +
+      '<div class="subtabs" role="group" aria-label="スキルの切り替え">' + subs + '</div>' +
+      scrollWrap('<div class="passives">' + h + '</div>') +
+      '</div>';
+  }
+
   function skillTabHtml(identity) {
     var items = skillItems(identity);
     if (state.sub >= items.length) { state.sub = 0; }
     var cur = items[state.sub];
     var subs = '';
     items.forEach(function (it, i) {
-      subs += '<button class="subtab" type="button" aria-pressed="' + (i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
+      subs += '<button class="subtab" type="button" aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
     });
+    if (state.passive) { return passiveTabHtml(identity, subs); }
     var detail = '<div class="detail">' +
       '<span class="detail-base" aria-label="基礎威力">' + esc(cur.base) + '</span>' +
       '<div class="detail-piece">' + piece(cur.piece) + '</div>' +
@@ -346,6 +367,9 @@
       '</div>' +
       '</header>' +
       '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs + '</div>' +
+      (state.tab === 'skill' && (identity.passive || identity.support)
+        ? '<button class="passive-btn" type="button" aria-pressed="' + state.passive + '" data-act="passive">パッシブ</button>'
+        : '') +
       '<section class="content">' + tabContent + '</section>' +
       '</main>' +
       '</div>';
@@ -386,6 +410,9 @@
       state.tab = el.getAttribute('data-tab');
     } else if (act === 'sub') {
       state.sub = Number(el.getAttribute('data-sub')) || 0;
+      state.passive = false;
+    } else if (act === 'passive') {
+      state.passive = !state.passive;
     } else if (act === 'panel') {
       var name = el.getAttribute('data-panel');
       state.panel = state.panel === name ? '' : name;
