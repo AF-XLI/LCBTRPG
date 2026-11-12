@@ -6,7 +6,6 @@
   var TAG_COLOR = { 1: 'blue', 2: 'red', 3: 'yellow' };
   var ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
 
-  /* 罪悪の属性。資源・耐性の並び順(憤怒→色欲→怠惰→暴食→憂鬱→傲慢→嫉妬)で登録する。text は帯の文字色 */
   var SINS = [
     { id: 'wrath', label: '憤怒', color: 'rgb(220, 60, 50)', text: 'rgb(255, 255, 255)' },
     { id: 'lust', label: '色欲', color: 'rgb(240, 140, 50)', text: 'rgb(255, 255, 255)' },
@@ -19,11 +18,9 @@
   var SIN_BY_ID = {};
   SINS.forEach(function (x) { SIN_BY_ID[x.id] = x; });
 
-  /* 物理属性 */
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
   var RESIST_TYPES = Object.keys(PHYS);
 
-  /* 状態異常。ID は戦闘サイト(battle/js/logic.js)と同じ。icon は image/icon/status/ 内のファイル名 */
   var STATUS = {
     burn: { label: '火傷', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
     bleed: { label: '出血', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
