@@ -6,6 +6,11 @@
   var RESIST_TYPES = ['slash', 'pierce', 'blunt'];
   var TAG_COLOR = { 1: 'blue', 2: 'red', 3: 'yellow' };
   var ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
+  var STATUS = {
+    'sinking': '沈潜',
+    'power-down': '威力減少'
+  };
+  var PHYS_NAMES = { slash: '斬撃', pierce: '貫通', blunt: '打撃', evade: '回避', guard: '防御' };
   var TAB_NAMES = { overview: '概要', skill: 'スキル', ego: 'E.G.O' };
   var PANEL_NAMES = { desc: '説明', memo: 'メモ' };
   var ICON_BACK = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>';
@@ -27,6 +32,7 @@
     remote: {},
     roles: { admin: false, gm: false, player: false },
     tab: 'overview',
+    sub: 0,
     panel: '',
     editing: false,
     saving: false,
@@ -141,6 +147,91 @@
     return h;
   }
 
+  function scrollWrap(inner) {
+    return '<div class="scroll-wrap"><div class="scroll">' + inner + '</div></div>';
+  }
+
+  function skillItems(identity) {
+    var items = [];
+    identity.skills.forEach(function (s) {
+      items.push({
+        tab: 'スキル' + s.tier,
+        name: s.name,
+        sin: s.sin,
+        type: s.type,
+        base: s.base,
+        coin: s.coin,
+        coins: s.coins,
+        deck: 4 - s.tier,
+        piece: { sin: s.sin, tier: s.tier, type: s.type, tag: s.coin, color: TAG_COLOR[s.tier] || 'yellow' },
+        effects: s.effects || [],
+        defense: false
+      });
+    });
+    var d = identity.defense;
+    if (d) {
+      items.push({
+        tab: '守備',
+        name: d.name,
+        sin: d.sin,
+        type: d.type,
+        base: d.base,
+        coin: d.coin,
+        coins: d.coins,
+        deck: 0,
+        piece: { sin: d.sin, tier: 1, type: d.type, tag: d.coin, color: 'yellow' },
+        effects: d.effects || [],
+        defense: true
+      });
+    }
+    return items;
+  }
+
+  function effectHtml(e) {
+    var label = STATUS[e.status] || e.status || '';
+    var kw = e.status
+      ? '<span class="kw is-' + esc(e.status) + '">' + img('image/icon/status/' + e.status + '.png', 'kw-icon') + esc(label) + '</span>'
+      : '';
+    return '<div class="effect">' +
+      img('image/icon/coin/' + e.coin + '.png', 'effect-coin', 'コイン' + e.coin) +
+      '<span class="effect-text">' +
+      (e.timing ? '<span>[' + esc(e.timing) + ']</span>' : '') +
+      kw +
+      (e.text ? '<span>' + esc(e.text) + '</span>' : '') +
+      '</span></div>';
+  }
+
+  function skillTabHtml(identity) {
+    var items = skillItems(identity);
+    if (state.sub >= items.length) { state.sub = 0; }
+    var cur = items[state.sub];
+    var subs = '';
+    items.forEach(function (it, i) {
+      subs += '<button class="subtab" type="button" aria-pressed="' + (i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
+    });
+    var detail = '<div class="detail">' +
+      '<span class="detail-base" aria-label="基礎威力">' + esc(cur.base) + '</span>' +
+      '<div class="detail-piece">' + piece(cur.piece) + '</div>' +
+      '<div class="detail-info">' +
+      coinsHtml(cur.coins) +
+      '<div class="detail-line"><span class="ribbon is-' + esc(cur.sin) + '">' + esc(cur.name) + '</span>' +
+      (cur.defense ? '' : '<span class="detail-deck" aria-label="山札の枚数">×' + cur.deck + '</span>') + '</div>' +
+      '<div class="detail-line">' + img('image/icon/' + cur.type + '.png', 'detail-phys', PHYS_NAMES[cur.type] || '') +
+      (cur.defense ? '' : '<span class="detail-weight">攻撃加重値<i aria-label="1"></i></span>') + '</div>' +
+      '</div></div>';
+    var effects = '';
+    if (cur.effects.length) {
+      cur.effects.forEach(function (e) { effects += effectHtml(e); });
+      effects = '<div class="effects">' + effects + '</div>';
+    } else {
+      effects = '<div class="effects-none">コイン効果はありません。</div>';
+    }
+    return '<div class="skill-tab">' +
+      '<div class="subtabs" role="group" aria-label="スキルの切り替え">' + subs + '</div>' +
+      scrollWrap(detail + effects) +
+      '</div>';
+  }
+
   function egoUnit(rank, ego) {
     var cls = 'ego-unit' + (ego ? ' is-on' : '');
     var h = '<div class="' + cls + '" role="group" aria-label="' + esc(rank + ' ' + (ego ? ego.name : '未装備')) + '">';
@@ -206,11 +297,11 @@
 
     var tabContent;
     if (state.tab === 'overview') {
-      tabContent = '<div class="ego-row">' + egoRow + '</div>' +
+      tabContent = scrollWrap('<div class="ego-row">' + egoRow + '</div>' +
         '<div class="divider" aria-hidden="true"></div>' +
-        '<div class="skill-row">' + skillsHtml(identity) + '</div>';
+        '<div class="skill-row">' + skillsHtml(identity) + '</div>');
     } else if (state.tab === 'skill') {
-      tabContent = '<div class="tab-note">スキルタブ(人格の詳細・各スキルの効果・パッシブ)は、これから作ります。</div>';
+      tabContent = skillTabHtml(identity);
     } else {
       tabContent = '<div class="tab-note">E.G.Oタブ(ランクごとの詳細)は、これから作ります。</div>';
     }
@@ -293,6 +384,8 @@
     var act = el.getAttribute('data-act');
     if (act === 'tab') {
       state.tab = el.getAttribute('data-tab');
+    } else if (act === 'sub') {
+      state.sub = Number(el.getAttribute('data-sub')) || 0;
     } else if (act === 'panel') {
       var name = el.getAttribute('data-panel');
       state.panel = state.panel === name ? '' : name;
