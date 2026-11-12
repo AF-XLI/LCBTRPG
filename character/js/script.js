@@ -8,9 +8,12 @@
   var ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
   var STATUS = {
     'sinking': '沈潜',
-    'power-down': '威力減少'
+    'power-down': '威力減少',
+    'bind': '束縛'
   };
-  var PHYS_NAMES = { slash: '斬撃', pierce: '貫通', blunt: '打撃', evade: '回避', guard: '防御' };
+  var SIN_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
+  var SIN_NAMES = { wrath: '憤怒', lust: '色欲', sloth: '怠惰', gluttony: '暴食', gloom: '憂鬱', pride: '傲慢', envy: '嫉妬' };
+  var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
   var TAB_NAMES = { overview: '概要', skill: 'スキル', ego: 'E.G.O' };
   var PANEL_NAMES = { desc: '説明', memo: 'メモ' };
   var ICON_BACK = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>';
@@ -34,6 +37,7 @@
     tab: 'overview',
     sub: 0,
     passive: false,
+    egoMode: 'awaken',
     panel: '',
     editing: false,
     saving: false,
@@ -188,25 +192,33 @@
     return items;
   }
 
+  function statusHtml(id) {
+    return '<span class="kw is-' + esc(id) + '">' + img('image/icon/status/' + id + '.png', 'kw-icon') + esc(STATUS[id] || id) + '</span>';
+  }
+
   function effectHtml(e) {
-    var label = STATUS[e.status] || e.status || '';
-    var kw = e.status
-      ? '<span class="kw is-' + esc(e.status) + '">' + img('image/icon/status/' + e.status + '.png', 'kw-icon') + esc(label) + '</span>'
-      : '';
+    var segs = e.segs || [];
+    if (!e.segs) {
+      if (e.status) { segs.push({ status: e.status }); }
+      if (e.text) { segs.push({ text: e.text }); }
+    }
+    var body = '';
+    segs.forEach(function (g) {
+      body += g.status ? statusHtml(g.status) : '<span>' + esc(g.text) + '</span>';
+    });
     return '<div class="effect">' +
       img('image/icon/coin/' + e.coin + '.png', 'effect-coin', 'コイン' + e.coin) +
       '<span class="effect-text">' +
-      (e.timing ? '<span>[' + esc(e.timing) + ']</span>' : '') +
-      kw +
-      (e.text ? '<span>' + esc(e.text) + '</span>' : '') +
+      (e.timing ? '<span class="effect-timing">[' + esc(e.timing) + ']</span>' : '') +
+      '<span class="effect-body">' + body + '</span>' +
       '</span></div>';
   }
 
   function passiveHtml(label, p) {
     return '<section class="passive" aria-label="' + label + '">' +
       '<div class="passive-kind">' + label + '</div>' +
-      '<div class="passive-name"><span class="ribbon is-' + esc(p.sin) + '">' + esc(p.name) + '</span></div>' +
-      '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' +
+      (p.name ? '<div class="passive-name"><span class="ribbon is-' + esc(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
+      (p.name ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
       '<p class="passive-text">' + esc(p.text) + '</p>' +
       '</section>';
   }
@@ -230,15 +242,23 @@
       subs += '<button class="subtab" type="button" aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
     });
     if (state.passive) { return passiveTabHtml(identity, subs); }
+    return '<div class="skill-tab">' +
+      '<div class="subtabs" role="group" aria-label="スキルの切り替え">' + subs + '</div>' +
+      scrollWrap(detailHtml(cur)) +
+      '</div>';
+  }
+
+  function detailHtml(cur) {
+    var weight = '';
+    for (var i = 0; i < (cur.weight || 1); i++) { weight += '<i></i>'; }
     var detail = '<div class="detail">' +
       '<span class="detail-base" aria-label="基礎威力">' + esc(cur.base) + '</span>' +
       '<div class="detail-piece">' + piece(cur.piece) + '</div>' +
       '<div class="detail-info">' +
       coinsHtml(cur.coins) +
       '<div class="detail-line"><span class="ribbon is-' + esc(cur.sin) + '">' + esc(cur.name) + '</span>' +
-      (cur.defense ? '' : '<span class="detail-deck" aria-label="山札の枚数">×' + cur.deck + '</span>') + '</div>' +
-      '<div class="detail-line">' + img('image/icon/' + cur.type + '.png', 'detail-phys', PHYS_NAMES[cur.type] || '') +
-      (cur.defense ? '' : '<span class="detail-weight">攻撃加重値<i aria-label="1"></i></span>') + '</div>' +
+      (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数">×' + cur.deck + '</span>') + '</div>' +
+      (cur.defense ? '' : '<span class="detail-weight">攻撃加重値' + weight + '</span>') +
       '</div></div>';
     var effects = '';
     if (cur.effects.length) {
@@ -247,10 +267,74 @@
     } else {
       effects = '<div class="effects-none">コイン効果はありません。</div>';
     }
-    return '<div class="skill-tab">' +
-      '<div class="subtabs" role="group" aria-label="スキルの切り替え">' + subs + '</div>' +
-      scrollWrap(detail + effects) +
-      '</div>';
+    return detail + effects;
+  }
+
+  function egoSkill(ego, src) {
+    return {
+      name: src.name || ego.name,
+      sin: src.sin || ego.sin,
+      type: src.type || ego.type,
+      base: src.base,
+      coin: src.coin,
+      coins: src.coins,
+      weight: src.weight,
+      piece: { sin: src.sin || ego.sin, tier: 3, type: src.type || ego.type, tag: src.coin, color: 'yellow' },
+      effects: src.effects || [],
+      ego: true
+    };
+  }
+
+  function egoTabHtml(eq) {
+    var rank = RANKS[state.sub] || RANKS[0];
+    var ego = eq.egos[rank];
+    var subs = '';
+    RANKS.forEach(function (rk, i) {
+      var on = !!eq.egos[rk];
+      subs += '<button class="subtab is-rank is-' + rk.toLowerCase() + '" type="button" aria-pressed="' + (on && i === state.sub && state.egoMode !== 'passive') + '"' +
+        (on ? ' data-act="sub" data-sub="' + i + '"' : ' disabled') + ' aria-label="' + rk + '">' + RANK_LETTERS[rk] + '</button>';
+    });
+    var head = '<div class="subtabs is-rank" role="group" aria-label="E.G.Oの等級">' + subs + '</div>';
+    if (!ego) {
+      return '<div class="skill-tab">' + head + '<div class="tab-note">この等級のE.G.Oは未装備です。</div></div>';
+    }
+    var body;
+    if (state.egoMode === 'passive' && ego.passive) {
+      body = '<div class="passives">' + passiveHtml('パッシブ', { text: ego.passive }) + '</div>';
+    } else if (state.egoMode === 'corrosion' && ego.corrosion) {
+      body = detailHtml(egoSkill(ego, ego.corrosion));
+    } else {
+      body = detailHtml(egoSkill(ego, ego));
+    }
+    var cost = '';
+    SIN_ORDER.forEach(function (k) {
+      var n = (ego.cost && ego.cost[k]) || 0;
+      cost += '<div class="cost' + (n ? '' : ' is-zero') + '" role="group" aria-label="' + SIN_NAMES[k] + ' ' + n + '">' +
+        img('image/icon/sin/' + k + '.png', 'cost-icon') + '<span class="cost-num">' + n + '</span></div>';
+    });
+    return '<div class="skill-tab is-ego">' + head + scrollWrap(body) +
+      '<aside class="costs" aria-label="必要資源">' + cost + '</aside></div>';
+  }
+
+  function sinResistHtml(ego) {
+    var h = '';
+    SIN_ORDER.forEach(function (k) {
+      var m = ego && ego.resist && ego.resist[k] != null ? ego.resist[k] : 1;
+      var kind = m > 1 ? 'weak' : (m < 0.75 ? 'strong' : (m < 1 ? 'resist' : 'normal'));
+      var label = m > 1 ? '脆弱' : (m < 0.75 ? '耐性' : (m < 1 ? '抵抗' : '普通'));
+      h += '<div class="resist is-' + kind + '" role="group" aria-label="' + SIN_NAMES[k] + ' ' + label + ' ×' + m + '">' +
+        img('image/icon/sin/' + k + '.png', 'resist-icon') +
+        '<div class="resist-text"><div class="resist-label">' + label + '</div><div class="resist-mult">[x' + m + ']</div></div></div>';
+    });
+    return h;
+  }
+
+  function modeNavHtml(items) {
+    var h = '<div class="mode-nav">';
+    items.forEach(function (it) {
+      h += '<button class="mode-btn" type="button" aria-pressed="' + it.on + '" data-act="' + it.act + '"' + (it.mode ? ' data-mode="' + it.mode + '"' : '') + '>' + it.label + '</button>';
+    });
+    return h + '</div>';
   }
 
   function egoUnit(rank, ego) {
@@ -324,7 +408,45 @@
     } else if (state.tab === 'skill') {
       tabContent = skillTabHtml(identity);
     } else {
-      tabContent = '<div class="tab-note">E.G.Oタブ(ランクごとの詳細)は、これから作ります。</div>';
+      tabContent = egoTabHtml(eq);
+    }
+    var isEgoTab = state.tab === 'ego';
+    var curEgo = isEgoTab ? eq.egos[RANKS[state.sub] || RANKS[0]] : null;
+    var modeNav = '';
+    if (state.tab === 'skill' && (identity.passive || identity.support)) {
+      modeNav = modeNavHtml([{ label: 'パッシブ', on: state.passive, act: 'passive' }]);
+    } else if (isEgoTab && curEgo) {
+      var items = [{ label: '覚醒', on: state.egoMode === 'awaken', act: 'mode', mode: 'awaken' }];
+      if (curEgo.corrosion) { items.push({ label: '侵食', on: state.egoMode === 'corrosion', act: 'mode', mode: 'corrosion' }); }
+      if (curEgo.passive) { items.push({ label: 'パッシブ', on: state.egoMode === 'passive', act: 'mode', mode: 'passive' }); }
+      modeNav = modeNavHtml(items);
+    }
+    var headHtml;
+    if (isEgoTab && curEgo) {
+      headHtml = '<header class="head">' +
+        '<div class="head-ghost" aria-hidden="true">' + esc(curEgo.source || '') + '</div>' +
+        '<div class="head-body">' +
+        '<div class="head-rank">' + esc(curEgo.rank) + '</div>' +
+        '<div class="head-identity">' +
+        '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
+        '<div class="head-banner is-' + esc(curEgo.sin) + '">' + esc(curEgo.name) + '</div>' +
+        '</div>' +
+        (curEgo.sp != null ? '<div class="head-sp"><span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>' : '') +
+        '</div></header>';
+    } else {
+      headHtml = '<header class="head">' +
+      '<div class="head-ghost" aria-hidden="true">' + esc(p.name) + '</div>' +
+      '<div class="head-body">' +
+      '<div class="head-top">' +
+      '<div class="head-affiliation">' + esc(identity.affiliation || '') + '</div>' +
+      (identity.rarity != null ? img('image/icon/rarity/' + identity.rarity + '.png', 'head-rarity', 'レアリティ') : '') +
+      '</div>' +
+      '<div class="head-identity">' +
+      '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
+      '<div class="head-banner">' + esc(identity.name) + '</div>' +
+      '</div>' +
+      '</div>' +
+      '</header>';
     }
 
     var tabs = '';
@@ -334,7 +456,7 @@
 
     appEl.innerHTML =
       '<div class="sheet">' +
-      '<section class="stage" aria-label="囚人表示" style="background-image: url(\'' + esc(base + p.background) + '\')">' +
+      '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + p.background) + '\')">' +
       img(p.portrait, 'stage-portrait', p.name + 'の立ち絵') +
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
@@ -351,25 +473,13 @@
       '</div></div>' +
       '<div><div class="info-chip">耐性情報</div><div class="resist-row">' + resistHtml(identity) + '</div></div>' +
       '</div>' +
+      (isEgoTab && curEgo ? '<div class="sin-resists" role="group" aria-label="E.G.Oの罪悪耐性">' + sinResistHtml(curEgo) + '</div>' : '') +
       '</section>' +
       '<main class="main">' +
-      '<header class="head">' +
-      '<div class="head-ghost" aria-hidden="true">' + esc(p.name) + '</div>' +
-      '<div class="head-body">' +
-      '<div class="head-top">' +
-      '<div class="head-affiliation">' + esc(identity.affiliation || '') + '</div>' +
-      (identity.rarity != null ? img('image/icon/rarity/' + identity.rarity + '.png', 'head-rarity', 'レアリティ') : '') +
-      '</div>' +
-      '<div class="head-identity">' +
-      '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
-      '<div class="head-banner">' + esc(identity.name) + '</div>' +
-      '</div>' +
-      '</div>' +
-      '</header>' +
+      headHtml +
       '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs + '</div>' +
-      (state.tab === 'skill' && (identity.passive || identity.support)
-        ? '<button class="passive-btn" type="button" aria-pressed="' + state.passive + '" data-act="passive">パッシブ</button>'
-        : '') +
+      modeNav +
+
       '<section class="content">' + tabContent + '</section>' +
       '</main>' +
       '</div>';
@@ -408,9 +518,15 @@
     var act = el.getAttribute('data-act');
     if (act === 'tab') {
       state.tab = el.getAttribute('data-tab');
+      state.sub = 0;
+      state.passive = false;
+      state.egoMode = 'awaken';
     } else if (act === 'sub') {
       state.sub = Number(el.getAttribute('data-sub')) || 0;
       state.passive = false;
+      state.egoMode = 'awaken';
+    } else if (act === 'mode') {
+      state.egoMode = el.getAttribute('data-mode') || 'awaken';
     } else if (act === 'passive') {
       state.passive = !state.passive;
     } else if (act === 'panel') {
