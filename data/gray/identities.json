@@ -23,6 +23,8 @@
           { "coin": 3, "timing": "的中時", "status": "sinking", "text": "3 付与" }
         ] }
     ],
+    "passive": { "name": "純真無垢", "sin": "pride", "count": 3, "text": "自分より精神力の低い対象へのダメージ量+15%" },
+    "support": { "name": "風雅指南", "sin": "pride", "count": 5, "text": "自分より精神力の低い対象へのダメージ量+10%" },
     "defense":
       { "sin": "sloth", "type": "evade", "name": "回避", "base": 2, "coin": 10, "coins": 1,
         "effects": [] }
