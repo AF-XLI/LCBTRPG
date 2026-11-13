@@ -22,47 +22,47 @@
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
 
   var STATUS = {
-    burn: { label: '火傷', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
-    bleed: { label: '出血', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
-    vibration: { label: '振動', icon: 'tremor.png', color: 'rgb(140, 170, 235)' },
-    rupture: { label: '破裂', icon: 'rupture.png', color: 'rgb(235, 130, 190)' },
-    sinking: { label: '沈潜', icon: 'sinking.png', color: 'rgb(110, 190, 230)' },
-    breath: { label: '呼吸', icon: 'poise.png', color: 'rgb(110, 205, 150)' },
-    charge: { label: '充電', icon: 'charge.png', color: 'rgb(240, 215, 80)' },
-    trance: { label: '夢現', icon: 'trance.png', color: 'rgb(240, 160, 70)' },
-    paralysis: { label: '麻痺', icon: 'paralyze.png', color: 'rgb(200, 190, 90)' },
-    bind: { label: '束縛', icon: 'bind.png', color: 'rgb(200, 170, 120)' },
-    dmgDown: { label: 'ダメージ量減少', icon: 'damage-down.png', color: 'rgb(170, 140, 140)' },
-    fragile: { label: '脆弱', icon: 'fragile.png', color: 'rgb(230, 120, 120)' },
-    powerDown: { label: '威力減少', icon: 'power-down.png', color: 'rgb(230, 120, 100)' },
-    atkPowerDown: { label: '攻撃威力減少', icon: 'attack-power-down.png', color: 'rgb(170, 140, 140)' },
-    defPowerDown: { label: '守備威力減少', icon: 'defense-power-down.png', color: 'rgb(170, 140, 140)' },
-    matchPowerDown: { label: 'マッチ威力減少', icon: 'clash-power-down.png', color: 'rgb(170, 140, 140)' },
-    coinWeak: { label: '加算コイン弱化', icon: 'plus-coin-drop.png', color: 'rgb(170, 140, 140)' },
-    quick: { label: 'クイック', icon: 'haste.png', color: 'rgb(120, 210, 230)' },
-    dmgUp: { label: 'ダメージ量増加', icon: 'damage-up.png', color: 'rgb(240, 170, 90)' },
-    protect: { label: '保護', icon: 'protection.png', color: 'rgb(120, 190, 240)' },
-    powerUp: { label: '威力増加', icon: 'power-up.png', color: 'rgb(240, 170, 90)' },
-    atkPowerUp: { label: '攻撃威力増加', icon: 'attack-power-up.png', color: 'rgb(240, 170, 90)' },
-    defPowerUp: { label: '守備威力増加', icon: 'defense-power-up.png', color: 'rgb(240, 170, 90)' },
-    matchPowerUp: { label: 'マッチ威力増加', icon: 'clash-power-up.png', color: 'rgb(240, 170, 90)' },
-    coinStrong: { label: '加算コイン強化', icon: 'plus-coin-boost.png', color: 'rgb(240, 170, 90)' }
+    burn: { label: '火傷', type: 'pc', kind: 'debuff', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
+    bleed: { label: '出血', type: 'pc', kind: 'debuff', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
+    vibration: { label: '振動', type: 'pc', kind: 'debuff', icon: 'tremor.png', color: 'rgb(140, 170, 235)' },
+    rupture: { label: '破裂', type: 'pc', kind: 'debuff', icon: 'rupture.png', color: 'rgb(235, 130, 190)' },
+    sinking: { label: '沈潜', type: 'pc', kind: 'debuff', icon: 'sinking.png', color: 'rgb(110, 190, 230)' },
+    breath: { label: '呼吸', type: 'pc', kind: 'buff', icon: 'poise.png', color: 'rgb(110, 205, 150)' },
+    charge: { label: '充電', type: 'pc', kind: 'buff', icon: 'charge.png', color: 'rgb(240, 215, 80)' },
+    trance: { label: '夢現', type: 'pc', kind: 'buff', icon: 'trance.png', color: 'rgb(240, 160, 70)' },
+    paralysis: { label: '麻痺', type: 'val', kind: 'debuff', icon: 'paralyze.png', color: 'rgb(200, 190, 90)' },
+    bind: { label: '束縛', type: 'val', kind: 'debuff', icon: 'bind.png', color: 'rgb(200, 170, 120)' },
+    dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', icon: 'damage-down.png', color: 'rgb(170, 140, 140)' },
+    fragile: { label: '脆弱', type: 'val', kind: 'debuff', icon: 'fragile.png', color: 'rgb(230, 120, 120)' },
+    powerDown: { label: '威力減少', type: 'val', kind: 'debuff', icon: 'power-down.png', color: 'rgb(230, 120, 100)' },
+    atkPowerDown: { label: '攻撃威力減少', type: 'val', kind: 'debuff', icon: 'attack-power-down.png', color: 'rgb(170, 140, 140)' },
+    defPowerDown: { label: '守備威力減少', type: 'val', kind: 'debuff', icon: 'defense-power-down.png', color: 'rgb(170, 140, 140)' },
+    matchPowerDown: { label: 'マッチ威力減少', type: 'val', kind: 'debuff', icon: 'clash-power-down.png', color: 'rgb(170, 140, 140)' },
+    coinWeak: { label: '加算コイン弱化', type: 'val', kind: 'debuff', icon: 'plus-coin-drop.png', color: 'rgb(170, 140, 140)' },
+    quick: { label: 'クイック', type: 'val', kind: 'buff', icon: 'haste.png', color: 'rgb(120, 210, 230)' },
+    dmgUp: { label: 'ダメージ量増加', type: 'val', kind: 'buff', icon: 'damage-up.png', color: 'rgb(240, 170, 90)' },
+    protect: { label: '保護', type: 'val', kind: 'buff', icon: 'protection.png', color: 'rgb(120, 190, 240)' },
+    powerUp: { label: '威力増加', type: 'val', kind: 'buff', icon: 'power-up.png', color: 'rgb(240, 170, 90)' },
+    atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', icon: 'attack-power-up.png', color: 'rgb(240, 170, 90)' },
+    defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', icon: 'defense-power-up.png', color: 'rgb(240, 170, 90)' },
+    matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', icon: 'clash-power-up.png', color: 'rgb(240, 170, 90)' },
+    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png', color: 'rgb(240, 170, 90)' }
   };
   var DEFAULT_STATUS_COLOR = 'rgb(238, 228, 210)';
 
   var TIMINGS = {
-    battleEnter: { label: '戦闘突入時', coin: false },
-    battleStart: { label: '戦闘開始時', coin: false },
-    turnStart: { label: 'ターン開始時', coin: false },
-    use: { label: '使用時', coin: false },
-    beforeAttack: { label: '攻撃前', coin: false },
-    matchWin: { label: 'マッチ勝利時', coin: false },
-    matchLose: { label: 'マッチ敗北時', coin: false },
-    hit: { label: '的中時', coin: true },
-    headsHit: { label: '表面的中時', coin: true },
-    tailsHit: { label: '裏面的中時', coin: true },
-    hpCond: { label: null, coin: false, cond: true, checkAt: true },
-    spCond: { label: null, coin: false, cond: true }
+    battleEnter: { label: '戦闘突入時', coin: false, when: 'firstRound' },
+    battleStart: { label: '戦闘開始時', coin: false, when: 'combatStart' },
+    turnStart: { label: 'ターン開始時', coin: false, when: 'roundStart' },
+    use: { label: '使用時', coin: false, when: 'use' },
+    beforeAttack: { label: '攻撃前', coin: false, when: 'beforeAttack' },
+    matchWin: { label: 'マッチ勝利時', coin: false, when: 'matchWin' },
+    matchLose: { label: 'マッチ敗北時', coin: false, when: 'matchLose' },
+    hit: { label: '的中時', coin: true, when: 'hit' },
+    headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads' },
+    tailsHit: { label: '裏面的中時', coin: true, when: 'hit', side: 'tails' },
+    hpCond: { label: null, coin: false, cond: true, checkAt: true, when: 'hit' },
+    spCond: { label: null, coin: false, cond: true, when: 'hit' }
   };
   var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'hpCond', 'spCond'];
 
@@ -109,7 +109,7 @@
 
   function items(e) {
     if (e.items) { return e.items; }
-    return [{ status: e.status, power: e.power }];
+    return [{ status: e.status, power: e.power, count: e.count }];
   }
 
   function head(e, mid) {
@@ -119,16 +119,40 @@
     return s.add(mid);
   }
 
+  var BATTLE_TO = { target: 'target', enemy: 'target', self: 'self', allAllies: 'allies', ally: 'allies' };
+  var BATTLE_OPS = { lte: '<=', gte: '>=', lt: '<', gt: '>' };
+
+  function battleTo(e) {
+    return BATTLE_TO[e.target || 'target'] || 'target';
+  }
+
+  function amountKey(id) {
+    var def = STATUS[String(id).split('@')[0]];
+    return def && def.type === 'val' ? 'v' : 'p';
+  }
+
   var TYPES = {
     grant: {
       required: ['items|status'],
       statuses: function (e) { return items(e).map(function (i) { return i.status; }); },
+      grants: function (e) {
+        return items(e).map(function (i) {
+          var g = { status: i.status, to: battleTo(e) };
+          if (i.power !== undefined) { g[amountKey(i.status)] = i.power; }
+          if (i.count !== undefined) { g.c = i.count; }
+          if (e.delay === 'nextTurn') { g.next = true; }
+          return g;
+        });
+      },
       render: function (e) {
         var s = new Segs();
         if (e.target && e.target !== 'target' && e.target !== 'enemy') { s.text(TARGETS[e.target] + 'に'); }
         items(e).forEach(function (i, n) {
           if (n) { s.text('と'); }
-          s.status(i.status).text(String(i.power));
+          var amount = '';
+          if (i.power !== undefined) { amount += String(i.power); }
+          if (i.count !== undefined) { amount += i.power !== undefined ? '(回数' + i.count + ')' : '回数' + i.count; }
+          s.status(i.status).text(amount);
         });
         return head(e, s.text('を付与'));
       }
@@ -136,6 +160,9 @@
     gain: {
       required: ['status', 'count'],
       statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        return [{ status: e.status, c: e.count, to: battleTo(e) }];
+      },
       render: function (e) {
         var s = new Segs();
         if (e.target && e.target !== 'target' && e.target !== 'enemy') { s.text(TARGETS[e.target] + 'の'); }
@@ -145,6 +172,9 @@
     dispel: {
       required: ['target', 'count'],
       statuses: function () { return []; },
+      grants: function (e) {
+        return [{ dispel: { count: e.count, kind: e.kind || 'debuff' }, to: battleTo(e) }];
+      },
       render: function (e) {
         var s = new Segs();
         s.text(TARGETS[e.target] + 'の解除可能デバフを' + e.count + '種解除');
@@ -154,6 +184,11 @@
     dmgBonus: {
       required: ['percent'],
       statuses: function () { return []; },
+      grants: function (e) {
+        var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: 'round', when: 'combatStart' };
+        if (e.when && e.when.targetSp === 'lowerThanSelf') { g.dmgIf = { sp: { of: 'target', vs: 'self', op: '<' } }; }
+        return [g];
+      },
       render: function (e) {
         var s = new Segs();
         if (e.scope === 'allies') { s.text('味方全員が、'); }
@@ -164,6 +199,11 @@
     spHeal: {
       required: ['amount'],
       statuses: function () { return []; },
+      grants: function (e) {
+        var g = { sp: e.amount, to: 'self' };
+        if (e.when && e.when.self === 'noDebuff') { g['if'] = { noDebuff: 'self' }; }
+        return [g];
+      },
       render: function (e) {
         var s = new Segs();
         if (e.when && e.when.self === 'noDebuff') { s.text('自分にデバフが無い場合に'); }
@@ -216,6 +256,79 @@
     }).map(function (x) { return x.e; });
   }
 
+
+  function toGrants(effects, opts) {
+    opts = opts || {};
+    var out = [];
+    (effects || []).forEach(function (e) {
+      var t = e.timing ? TIMINGS[e.timing] : null;
+      var type = TYPES[e.type];
+      if (!type || !type.grants) {
+        throw new Error('戦闘用の変換がない効果種類です: ' + e.type);
+      }
+      var base = {};
+      var when = t ? t.when : opts.defaultWhen;
+      if (when) { base.when = when; }
+      if (t && t.side) { base.side = t.side; }
+      if (e.coin !== undefined) { base.coin = e.coin; }
+      var cond = null;
+      if (t && t.cond) {
+        var c = e.cond;
+        var key = e.timing === 'hpCond' ? 'hp' : 'sp';
+        var one = { of: c.of || 'target', op: BATTLE_OPS[c.op], v: c.value };
+        if (c.unit === 'percent') { one.pct = true; }
+        cond = {};
+        cond[key] = one;
+        if (e.checkAt === 'afterDamage') { cond.check = 'after'; }
+      }
+      var list = type.grants(e);
+      var follow = [];
+      (e.then || []).forEach(function (x) {
+        var sub = {};
+        Object.keys(x).forEach(function (k) { sub[k] = x[k]; });
+        sub.coin = e.coin;
+        sub.timing = e.timing;
+        sub.cond = e.cond;
+        sub.checkAt = e.checkAt;
+        follow = follow.concat(toGrants([sub], opts).map(function (g) {
+          if (x['if'] === 'dispelled') { g.ifDispelled = true; }
+          return g;
+        }));
+      });
+      list.forEach(function (g) {
+        Object.keys(base).forEach(function (k) { if (g[k] === undefined) { g[k] = base[k]; } });
+        if (cond) {
+          var merged = {};
+          Object.keys(cond).forEach(function (k) { merged[k] = cond[k]; });
+          Object.keys(g['if'] || {}).forEach(function (k) { merged[k] = g['if'][k]; });
+          g['if'] = merged;
+        }
+        if (e['if'] === 'dispelled') { g.ifDispelled = true; }
+        out.push(g);
+      });
+      out = out.concat(follow);
+    });
+    return out;
+  }
+
+  var ROMAN_NUM = ['', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
+
+  function skillText(skill) {
+    var max = skill.base + skill.coin * skill.coins;
+    var lines = [skill.base + '+' + skill.coin + '×' + skill.coins + '(最大' + max + ')'];
+    sortByTiming(skill.effects || []).forEach(function (e) {
+      lines.push((e.coin ? ROMAN_NUM[e.coin] : '') + toPlain(render(e)));
+    });
+    return lines.join('\n');
+  }
+
+  function passiveText(effects) {
+    return (effects || []).map(function (e) {
+      var r = render(e);
+      return (e.timing ? r.timing + '、' : '') + toPlain({ timing: null, segs: r.segs });
+    }).join('\n');
+  }
+
   function has(e, key) {
     return key.split('|').some(function (k) { return e[k] !== undefined && e[k] !== null; });
   }
@@ -231,6 +344,9 @@
     }
     if (type) {
       type.required.forEach(function (k) { if (!has(e, k)) { err('"' + e.type + '" に必須項目 ' + k + ' がありません'); } });
+      if (e.type === 'grant') {
+        items(e).forEach(function (i) { if (i.power === undefined && i.count === undefined) { err('付与する威力(power)か回数(count)がありません'); } });
+      }
       type.statuses(e).forEach(function (id) {
         if (!id) { err('状態異常が指定されていません'); } else if (!statusInfo(id).known) { err('未登録の状態異常 "' + id + '"'); }
       });
@@ -268,6 +384,9 @@
     render: render,
     toPlain: toPlain,
     sortByTiming: sortByTiming,
-    validate: validate
+    validate: validate,
+    toGrants: toGrants,
+    skillText: skillText,
+    passiveText: passiveText
   };
 }));
