@@ -114,7 +114,7 @@
       img(dir + 's' + o.tier + '.png', 'piece-orn');
     if (o.tag != null) {
       var text = '+' + o.tag;
-      h += '<span class="piece-tag is-' + o.color + (text.length > 2 ? ' is-wide' : '') + '">' + esc(text) + '</span>';
+      h += '<span class="piece-tag is-' + o.color + ' is-' + o.sin + (text.length > 2 ? ' is-wide' : '') + '">' + esc(text) + '</span>';
     }
     return h + '</div>';
   }
@@ -240,7 +240,7 @@
   function passiveHtml(label, p) {
     return '<section class="passive" aria-label="' + label + '">' +
       '<div class="passive-kind">' + label + '</div>' +
-      (p.name ? '<div class="passive-name"><span class="ribbon" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
+      (p.name ? '<div class="passive-name"><span class="ribbon is-' + p.sin + '" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
       (p.name ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
       passiveTextHtml(p) +
       '</section>';
@@ -279,17 +279,22 @@
       '<div class="detail-piece">' + piece(cur.piece) + '</div>' +
       '<div class="detail-info">' +
       coinsHtml(cur.coins) +
-      '<div class="detail-line"><span class="ribbon" style="' + sinVars(cur.sin) + '">' + esc(cur.name) + '</span>' +
+      '<div class="detail-line"><span class="ribbon is-' + cur.sin + '" style="' + sinVars(cur.sin) + '">' + esc(cur.name) + '</span>' +
       (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数"><span class="mult-x">×</span>' + cur.deck + '</span>') + '</div>' +
       (cur.defense ? '' : '<span class="detail-weight">攻撃加重値' + weight + '</span>') +
       '</div></div>';
-    var effects = '';
-    if (cur.effects.length) {
-      FX.sortByTiming(cur.effects).forEach(function (e) { effects += effectHtml(e); });
-      effects = '<div class="effects">' + effects + '</div>';
-    } else {
-      effects = '<div class="effects-none">コイン効果はありません。</div>';
+    var rows = '';
+    var plain = cur.effects.filter(function (e) { return e.coin === undefined; });
+    FX.sortByTiming(plain).forEach(function (e) { rows += effectHtml(e); });
+    for (var c = 1; c <= (cur.coins || 0); c++) {
+      var own = cur.effects.filter(function (e) { return e.coin === c; });
+      if (own.length) {
+        FX.sortByTiming(own).forEach(function (e) { rows += effectHtml(e); });
+      } else {
+        rows += '<div class="effect">' + img('image/icon/coin/' + c + '.png', 'effect-coin', 'コイン' + c) + '</div>';
+      }
     }
+    var effects = rows ? '<div class="effects">' + rows + '</div>' : '<div class="effects-none">コイン効果はありません。</div>';
     return detail + effects;
   }
 
