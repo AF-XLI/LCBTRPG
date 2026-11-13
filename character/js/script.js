@@ -6,49 +6,11 @@
   var TAG_COLOR = { 1: 'blue', 2: 'red', 3: 'yellow' };
   var ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
 
-  var SINS = [
-    { id: 'wrath', label: '憤怒', color: 'rgb(220, 60, 50)', text: 'rgb(255, 255, 255)' },
-    { id: 'lust', label: '色欲', color: 'rgb(240, 140, 50)', text: 'rgb(255, 255, 255)' },
-    { id: 'sloth', label: '怠惰', color: 'rgb(230, 200, 60)', text: 'rgb(24, 16, 6)' },
-    { id: 'gluttony', label: '暴食', color: 'rgb(110, 190, 70)', text: 'rgb(255, 255, 255)' },
-    { id: 'gloom', label: '憂鬱', color: 'rgb(60, 190, 200)', text: 'rgb(255, 255, 255)' },
-    { id: 'pride', label: '傲慢', color: 'rgb(70, 120, 230)', text: 'rgb(255, 255, 255)' },
-    { id: 'envy', label: '嫉妬', color: 'rgb(150, 70, 220)', text: 'rgb(255, 255, 255)' }
-  ];
-  var SIN_BY_ID = {};
-  SINS.forEach(function (x) { SIN_BY_ID[x.id] = x; });
-
-  var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
+  var FX = root.LCEffects;
+  var SINS = FX.SINS;
+  var SIN_BY_ID = FX.SIN_BY_ID;
+  var PHYS = FX.PHYS;
   var RESIST_TYPES = Object.keys(PHYS);
-
-  var STATUS = {
-    burn: { label: '火傷', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
-    bleed: { label: '出血', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
-    vibration: { label: '振動', icon: 'tremor.png', color: 'rgb(140, 170, 235)' },
-    rupture: { label: '破裂', icon: 'rupture.png', color: 'rgb(235, 130, 190)' },
-    sinking: { label: '沈潜', icon: 'sinking.png', color: 'rgb(110, 190, 230)' },
-    breath: { label: '呼吸', icon: 'poise.png', color: 'rgb(110, 205, 150)' },
-    charge: { label: '充電', icon: 'charge.png', color: 'rgb(240, 215, 80)' },
-    trance: { label: '夢現', icon: 'trance.png', color: 'rgb(240, 160, 70)' },
-    paralysis: { label: '麻痺', icon: 'paralyze.png', color: 'rgb(200, 190, 90)' },
-    bind: { label: '束縛', icon: 'bind.png', color: 'rgb(200, 170, 120)' },
-    dmgDown: { label: 'ダメージ量減少', icon: 'damage-down.png', color: 'rgb(170, 140, 140)' },
-    fragile: { label: '脆弱', icon: 'fragile.png', color: 'rgb(230, 120, 120)' },
-    powerDown: { label: '威力減少', icon: 'power-down.png', color: 'rgb(230, 120, 100)' },
-    atkPowerDown: { label: '攻撃威力減少', icon: 'attack-power-down.png', color: 'rgb(170, 140, 140)' },
-    defPowerDown: { label: '守備威力減少', icon: 'defense-power-down.png', color: 'rgb(170, 140, 140)' },
-    matchPowerDown: { label: 'マッチ威力減少', icon: 'clash-power-down.png', color: 'rgb(170, 140, 140)' },
-    coinWeak: { label: '加算コイン弱化', icon: 'plus-coin-drop.png', color: 'rgb(170, 140, 140)' },
-    quick: { label: 'クイック', icon: 'haste.png', color: 'rgb(120, 210, 230)' },
-    dmgUp: { label: 'ダメージ量増加', icon: 'damage-up.png', color: 'rgb(240, 170, 90)' },
-    protect: { label: '保護', icon: 'protection.png', color: 'rgb(120, 190, 240)' },
-    powerUp: { label: '威力増加', icon: 'power-up.png', color: 'rgb(240, 170, 90)' },
-    atkPowerUp: { label: '攻撃威力増加', icon: 'attack-power-up.png', color: 'rgb(240, 170, 90)' },
-    defPowerUp: { label: '守備威力増加', icon: 'defense-power-up.png', color: 'rgb(240, 170, 90)' },
-    matchPowerUp: { label: 'マッチ威力増加', icon: 'clash-power-up.png', color: 'rgb(240, 170, 90)' },
-    coinStrong: { label: '加算コイン強化', icon: 'plus-coin-boost.png', color: 'rgb(240, 170, 90)' }
-  };
-  var DEFAULT_STATUS_COLOR = 'rgb(238, 228, 210)';
 
   var TAB_NAMES = { overview: '概要', skill: 'スキル', ego: 'E.G.O' };
   var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
@@ -103,18 +65,7 @@
   }
 
   function statusInfo(id) {
-    var parts = String(id).split('@');
-    var def = STATUS[parts[0]];
-    var suf = parts[1] || '';
-    var sufLabel = suf ? (SIN_BY_ID[suf] ? SIN_BY_ID[suf].label : (PHYS[suf] || suf)) : '';
-    var icon = def ? def.icon : parts[0] + '.png';
-    if (suf && parts[0] === 'dmgUp') { icon = suf + '-dmg-up.png'; }
-    if (suf && parts[0] === 'protect') { icon = suf + '-protection.png'; }
-    return {
-      label: (def ? def.label : parts[0]) + (sufLabel ? '(' + sufLabel + ')' : ''),
-      icon: 'image/icon/status/' + icon,
-      color: def ? def.color : DEFAULT_STATUS_COLOR
-    };
+    return FX.statusInfo(id);
   }
 
   function loadJson(path) {
@@ -258,22 +209,32 @@
     return '<span class="kw" style="--kw: ' + info.color + ';">' + img(info.icon, 'kw-icon') + esc(info.label) + '</span>';
   }
 
-  function effectHtml(e) {
-    var segs = e.segs || [];
-    if (!e.segs) {
-      if (e.status) { segs.push({ status: e.status }); }
-      if (e.text) { segs.push({ text: e.text }); }
-    }
+  function segsHtml(segs) {
     var body = '';
-    segs.forEach(function (g) {
+    segs.list.forEach(function (g) {
       body += g.status ? statusHtml(g.status) : '<span>' + esc(g.text) + '</span>';
     });
+    return body;
+  }
+
+  function effectHtml(e) {
+    var r = FX.render(e);
     return '<div class="effect">' +
-      img('image/icon/coin/' + e.coin + '.png', 'effect-coin', 'コイン' + e.coin) +
+      (r.coin ? img('image/icon/coin/' + r.coin + '.png', 'effect-coin', 'コイン' + r.coin) : '') +
       '<span class="effect-text">' +
-      (e.timing ? '<span class="effect-timing">[' + esc(e.timing) + ']</span>' : '') +
-      '<span class="effect-body">' + body + '</span>' +
+      (r.timing ? '<span class="effect-timing">[' + esc(r.timing) + ']</span>' : '') +
+      '<span class="effect-body">' + segsHtml(r.segs) + '</span>' +
       '</span></div>';
+  }
+
+  function passiveTextHtml(p) {
+    var lines = [];
+    (p.effects || []).forEach(function (e) {
+      var r = FX.render(e);
+      var head = e.timing ? '<span>' + esc(r.timing) + '、</span>' : '';
+      lines.push(head + segsHtml(r.segs));
+    });
+    return '<p class="passive-text">' + lines.join('<br>') + '</p>';
   }
 
   function passiveHtml(label, p) {
@@ -281,7 +242,7 @@
       '<div class="passive-kind">' + label + '</div>' +
       (p.name ? '<div class="passive-name"><span class="ribbon" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
       (p.name ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
-      '<p class="passive-text">' + esc(p.text) + '</p>' +
+      passiveTextHtml(p) +
       '</section>';
   }
 
@@ -324,7 +285,7 @@
       '</div></div>';
     var effects = '';
     if (cur.effects.length) {
-      cur.effects.forEach(function (e) { effects += effectHtml(e); });
+      FX.sortByTiming(cur.effects).forEach(function (e) { effects += effectHtml(e); });
       effects = '<div class="effects">' + effects + '</div>';
     } else {
       effects = '<div class="effects-none">コイン効果はありません。</div>';
@@ -362,7 +323,7 @@
     }
     var body;
     if (state.egoMode === 'passive' && ego.passive) {
-      body = '<div class="passives">' + passiveHtml('パッシブ', { text: ego.passive }) + '</div>';
+      body = '<div class="passives">' + passiveHtml('パッシブ', ego.passive) + '</div>';
     } else if (state.egoMode === 'corrosion' && ego.corrosion) {
       body = detailHtml(egoSkill(ego, ego.corrosion));
     } else {
