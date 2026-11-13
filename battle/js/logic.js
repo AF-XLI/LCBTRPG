@@ -1,10 +1,10 @@
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
+    module.exports = factory(require('../../shared/effects.js'));
   } else {
-    root.LC = factory();
+    root.LC = factory(root.LCEffects);
   }
-}(typeof self !== 'undefined' ? self : this, function () {
+}(typeof self !== 'undefined' ? self : this, function (FX) {
   'use strict';
 
   var SINS = {
@@ -127,6 +127,111 @@
     if (sm) { out.sp = Number(sm[1]); }
     return out;
   }
+
+  var RES_NAME_OF = { 2: 'weak', 1: 'normal', 0.75: 'resist', 0.5: 'strong' };
+  function resNameOf(v) {
+    if (typeof v === 'string') { return RES_MULT[v] !== undefined ? v : 'normal'; }
+    return RES_NAME_OF[v] || 'normal';
+  }
+  function normResistMap(r) {
+    var out = {};
+    ['slash', 'pierce', 'blunt', 'wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'].forEach(function (k) { out[k] = resNameOf(O(r)[k] === undefined ? 1 : r[k]); });
+    return out;
+  }
+
+  // スキル(攻撃・守備・反撃)の素のデータ(type / base / coin / coins枚数 / effects)から、戦闘で使う値を求める
+  function normSkill(s, tier) {
+    if (!s || typeof s !== 'object' || s.norm) { return s; }
+    var type = s.type;
+    if (!s.kind) { s.kind = type === 'evade' || type === 'guard' ? 'defense' : (type === 'counter' ? 'counter' : 'attack'); }
+    if (s.kind === 'defense' && !s.sub) { s.sub = type === 'evade' ? 'evade' : 'guard'; }
+    if (s.phys === undefined) { s.phys = s.kind === 'attack' ? type : ''; }
+    if (tier && !s.tier) { s.tier = tier; }
+    if (!Array.isArray(s.coins)) {
+      if (s.text === undefined) { s.text = FX.skillText(s); }
+      var n = Math.max(0, Math.floor(num(s.coins, 0)));
+      var arr = [];
+      for (var i = 0; i < n; i += 1) { arr.push(num(s.coin, 0)); }
+      s.coins = arr;
+    }
+    if (s.effects) { s.grants = FX.toGrants(s.effects); }
+    s.norm = true;
+    return s;
+  }
+  function normPassive(p) {
+    if (!p || typeof p !== 'object' || p.norm) { return p; }
+    if (p.effects) {
+      p.grants = FX.toGrants(p.effects, { defaultWhen: 'combatStart' });
+      if (p.text === undefined) { p.text = FX.passiveText(p.effects); }
+    }
+    if (p.sin && p.count !== undefined && !p.need && !p.reso) {
+      var m = {};
+      m[p.sin] = p.count;
+      if (p.resonance) { p.reso = m; } else { p.need = m; }
+    }
+    p.norm = true;
+    return p;
+  }
+  function rawEgo(e) {
+    if (!e || typeof e !== 'object' || e.skill) { return e; }
+    var res = {};
+    Object.keys(O(e.cost)).forEach(function (k) { res[k] = e.cost[k]; });
+    var lists = { weak: [], resist: [], strong: [] };
+    Object.keys(O(e.resist)).forEach(function (k) {
+      var n = resNameOf(e.resist[k]);
+      if (lists[n]) { lists[n].push(k); }
+    });
+    var out = {
+      name: e.name,
+      rank: e.rank,
+      prisoner: !!e.prisoner,
+      cost: { res: res, sp: e.sp || 0 },
+      resist: lists,
+      skill: { tier: 3, ego: true, name: e.name, sin: e.sin, type: e.type, base: e.base, coin: e.coin, coins: e.coins, weight: e.weight, effects: e.effects }
+    };
+    if (e.corrosion) {
+      var c = e.corrosion;
+      out.erode = { tier: 3, ego: true, blind: !!c.blind, name: c.name || e.name, sin: c.sin || e.sin, type: c.type || e.type, base: c.base, coin: c.coin, coins: c.coins, weight: c.weight, effects: c.effects };
+    }
+    if (e.passive) {
+      out.passive = { name: e.passive.name || e.name + '(パッシブ)', effects: e.passive.effects };
+    }
+    return out;
+  }
+  // 人格・敵のデータの形を揃える。何度呼んでも同じ結果になる
+  function normalizeUnit(u) {
+    if (u.side === 'enemy') {
+      A(u.parts).forEach(function (p) {
+        p.resist = normResistMap(p.resist);
+        Object.keys(O(p.skills)).forEach(function (k) { normSkill(p.skills[k], 1); });
+        if (p.effects && !p.grants) { p.grants = FX.toGrants(p.effects, { defaultWhen: 'combatStart' }); }
+      });
+      if (u.effects && !u.grants) { u.grants = FX.toGrants(u.effects, { defaultWhen: 'combatStart' }); }
+      return u;
+    }
+    if (Array.isArray(u.skills)) {
+      var map = {};
+      u.skills.forEach(function (s) { map[s.tier || 1] = s; });
+      if (u.defense) { map[0] = u.defense; }
+      u.skills = map;
+    }
+    delete u.defense;
+    Object.keys(O(u.skills)).forEach(function (k) { normSkill(u.skills[k], Number(k) || 1); });
+    if (u.maxHp === undefined && u.hp !== undefined) { u.maxHp = u.hp; delete u.hp; }
+    if (u.passive) { u.passives = A(u.passives).concat([u.passive]); delete u.passive; }
+    if (u.support) { u.supportPassives = A(u.supportPassives).concat([u.support]); delete u.support; }
+    A(u.passives).forEach(normPassive);
+    A(u.supportPassives).forEach(normPassive);
+    u.resist = normResistMap(u.resist);
+    u.egos = A(u.egos).map(rawEgo);
+    u.egos.forEach(function (e) {
+      if (e.skill) { normSkill(e.skill); }
+      if (e.erode) { normSkill(e.erode); }
+      if (e.passive) { normPassive(e.passive); }
+    });
+    return u;
+  }
+
   function normEgo(e) {
     e = e && typeof e === 'object' ? e : {};
     var rank = String(e.rank || '').toLowerCase();
@@ -302,6 +407,7 @@
   function initUnit(raw, ord, usedIds, rng) {
     var u = clone(raw);
     u.side = u.side === 'enemy' ? 'enemy' : 'ally';
+    normalizeUnit(u);
     u.id = sanitizeId(u.id, (u.side === 'enemy' ? 'e' : 'a') + (ord + 1), usedIds);
     u.name = u.name || u.id;
     u.ord = ord;
@@ -318,7 +424,9 @@
       u.replace = A(u.replace);
       u.egos = A(u.egos).map(normEgo);
       var zayin = u.egos.filter(function (e) { return e.rank === 'zayin'; })[0];
-      if (zayin && zayin.resist) { u.resist = egoResistOf(zayin); }
+      u.physBase = {};
+      ['slash', 'pierce', 'blunt'].forEach(function (k) { u.physBase[k] = O(u.resist)[k] || 'normal'; });
+      if (zayin && zayin.resist) { u.resist = egoResistOf(zayin, u); }
       u.deck = { q: [] };
       u.choice = null;
       u.owner = null;
@@ -375,6 +483,7 @@
     if (!list.length) { errors.push('キャラクターが1体も見つかりませんでした(allies / enemies を確認してください)'); }
     list.forEach(function (u, i) {
       if (!u || typeof u !== 'object') { errors.push((i + 1) + '番目が不正です'); return; }
+      try { normalizeUnit(u); } catch (err) { errors.push((u.name || (i + 1) + '番目') + ': ' + err.message); }
       if (u.side === 'ally') {
         [1, 2, 3, 0].forEach(function (n) {
           if (!u.skills || !u.skills[n]) { errors.push((u.name || (i + 1) + '番目') + ': スキル' + n + 'がありません'); }
@@ -647,6 +756,7 @@
   }
 
   function startRound(state, rng) {
+    activeRng = rng || activeRng;
     state.round += 1;
     state.once = {};
     state.phase = 'enemy';
@@ -684,8 +794,9 @@
         });
       }
     });
-    if (state.round === 1) { fireUnitTiming(state, 'firstRound'); }
+    if (state.round === 1) { fireUnitTiming(state, 'firstRound'); firePassives(state, 'firstRound'); }
     fireUnitTiming(state, 'roundStart');
+    firePassives(state, 'roundStart');
     Object.keys(state.units).forEach(function (id) {
       var u = state.units[id];
       if (u.dead) { return; }
@@ -697,6 +808,7 @@
   }
 
   function beginCombat(state, rng) {
+    activeRng = rng || activeRng;
     state.round = 0;
     state.log = [];
     state.res = resEmpty();
@@ -1033,6 +1145,10 @@
   function condOkG(cnd, selfG, otherG) {
     if (!cnd) { return true; }
     var ok = true;
+    if (cnd.noDebuff) {
+      var dg = cnd.noDebuff === 'self' ? selfG : otherG;
+      if (!dg || debuffKeys(dg.b).length) { ok = false; }
+    }
     ['hp', 'sp'].forEach(function (key) {
       var c = cnd[key];
       if (!c) { return; }
@@ -1058,8 +1174,24 @@
     return A(skill.grants).map(function (gr) { return grantCheckBefore(gr) ? grantCondOk(state, gr, atkRef, defRef) : undefined; });
   }
 
+  var activeRng = Math.random;
+
+  function debuffKeys(b) {
+    return Object.keys(O(b && b.st)).filter(function (k) {
+      var def = STATUS[statusParts(k).base];
+      return !!def && def.kind === 'debuff';
+    });
+  }
+  // 解除可能なデバフからランダムに種類を選び、威力・回数・数値を全て0にする(消す)
+  function dispelDebuffs(b, spec) {
+    var keys = shuffle(debuffKeys(b), activeRng).slice(0, Math.max(0, num(spec && spec.count, 1)));
+    keys.forEach(function (k) { delete b.st[k]; });
+    return keys;
+  }
+
   function applyGrants(state, atkRef, defRef, skill, when, coin, ctx) {
     ctx = ctx || {};
+    var dispelledNow = false;
     A(skill.grants).forEach(function (gr, gi) {
       var tm = grantTiming(gr);
       if (tm.when !== when) { return; }
@@ -1068,6 +1200,7 @@
       if (tm.side && (tm.side === 'heads') !== !!ctx.heads) { return; }
       var okc = ctx.pre && ctx.pre[gi] !== undefined ? ctx.pre[gi] : grantCondOk(state, gr, atkRef, defRef);
       if (!okc) { return; }
+      if (gr.ifDispelled && !dispelledNow) { return; }
       var onceKey = null;
       if (gr.once) {
         onceKey = (ctx.onceKey || atkRef.u + '|' + (skill.name || '')) + '|' + gi;
@@ -1135,6 +1268,13 @@
           tg.b.mods = A(tg.b.mods);
           tg.b.mods.push({ k: 'taken', pct: num(gr.takenPct, 0), scope: 'round', dmgIf: gr.dmgIf });
           log(state, nameOf(state, tref) + ' の受けるダメージ ' + (num(gr.takenPct, 0) >= 0 ? '+' : '') + num(gr.takenPct, 0) + '%');
+        }
+        if (gr.dispel) {
+          var gone = dispelDebuffs(tg.b, gr.dispel);
+          if (gone.length) {
+            dispelledNow = true;
+            log(state, nameOf(state, tref) + ' のデバフを解除: ' + gone.map(function (k) { return STATUS[statusParts(k).base].label; }).join('、'));
+          }
         }
         if (gr.burst) { vibrationBurst(state, tref, null); }
         if (gr.convert) { convertVibration(state, tref, gr.convert); }
@@ -2161,6 +2301,7 @@
   }
 
   function stepProcess(state, rng) {
+    activeRng = rng || activeRng;
     if (state.result) { return false; }
     var plan = A(state.plan);
     var proc = state.proc;
@@ -2262,11 +2403,13 @@
   }
 
   var ALL_RES_KEYS = ['slash', 'pierce', 'blunt', 'wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
-  function egoResistOf(ego) {
+  function egoResistOf(ego, unit) {
     var r = O(ego.resist);
     var next = {};
     ALL_RES_KEYS.forEach(function (k) {
+      var listed = A(r.weak).indexOf(k) >= 0 || A(r.strong).indexOf(k) >= 0 || A(r.resist).indexOf(k) >= 0;
       next[k] = A(r.weak).indexOf(k) >= 0 ? 'weak' : (A(r.strong).indexOf(k) >= 0 ? 'strong' : (A(r.resist).indexOf(k) >= 0 ? 'resist' : 'normal'));
+      if (!listed && unit && O(unit.physBase)[k]) { next[k] = unit.physBase[k]; }
     });
     return next;
   }
@@ -2274,7 +2417,7 @@
     var u = state.units[unitId];
     var ego = u && A(u.egos)[idx];
     if (!ego) { return; }
-    u.resist = egoResistOf(ego);
+    u.resist = egoResistOf(ego, u);
     u.egoUsed = idx;
     log(state, u.name + ' がE.G.O「' + (ego.name || '') + '」を使用(耐性が戦闘終了まで上書きされる)');
   }
@@ -2293,7 +2436,7 @@
     startRound: startRound, beginCombat: beginCombat, gmConfirm: gmConfirm, planEnemyPieces: planEnemyPieces, rebuildPiecesFor: rebuildPiecesFor,
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
-    addStatus: addStatus, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
+    addStatus: addStatus, debuffKeys: debuffKeys, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
     egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoErodeMode: egoErodeMode, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
     winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
   };
