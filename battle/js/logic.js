@@ -1120,7 +1120,7 @@
 
   var TIMING_ALIAS = {
     '戦闘開始時': ['combatStart'], '戦闘突入時': ['firstRound'], 'ターン開始時': ['roundStart'],
-    '使用時': ['use'], '攻撃前': ['beforeAttack'], 'マッチ勝利時': ['matchWin'], 'マッチ敗北時': ['matchLose'],
+    '使用時': ['use'], '攻撃前': ['beforeAttack'], 'マッチ勝利時': ['matchWin'], 'マッチ敗北': ['matchLose'], 'マッチ敗北時': ['matchLose'],
     '対象討伐時': ['kill'], '的中時': ['hit'], '表面的中時': ['hit', 'heads'], '裏面的中時': ['hit', 'tails'],
     hitHeads: ['hit', 'heads'], hitTails: ['hit', 'tails']
   };
