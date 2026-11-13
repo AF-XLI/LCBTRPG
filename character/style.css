@@ -74,7 +74,7 @@ textarea {
   bottom: 0;
   right: 0;
   height: 11.875rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0, rgba(0, 0, 0, 0.7) 60%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0, rgba(0, 0, 0, 0.92) 60%, rgba(0, 0, 0, 0) 100%);
 }
  
 .stage-edge {
@@ -237,10 +237,10 @@ textarea {
   bottom: 1.625rem;
   left: 1.5rem;
   z-index: 2;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  align-items: end;
   gap: 1rem;
-  justify-content: space-between;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
  
 .info-chip {
@@ -279,8 +279,9 @@ textarea {
 }
  
 .resist-row {
-  display: flex;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
  
 .resist {
