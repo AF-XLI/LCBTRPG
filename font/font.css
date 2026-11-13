@@ -1,0 +1,24 @@
+@font-face {
+  font-family: "Corporate Logo";
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("CorporateLogo-Bold-ver3.woff2") format("woff2");
+}
+ 
+@font-face {
+  font-family: "HigashiOme Gothic C";
+  font-display: swap;
+  src: url("HigashiOmeGothicC-1.3.woff2") format("woff2");
+}
+ 
+@font-face {
+  font-family: "Excelsior Sans";
+  font-display: swap;
+  src: url("ExcelsiorSans.woff2") format("woff2");
+}
+ 
+:root {
+  --font-body: "HigashiOme Gothic C", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --font-display: "Corporate Logo", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --font-num: "Excelsior Sans", "Corporate Logo", "Noto Sans JP", sans-serif;
+}
