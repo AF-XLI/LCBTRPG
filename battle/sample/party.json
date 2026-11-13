@@ -3,213 +3,158 @@
     {
       "id": "gray",
       "name": "グレイ",
-      "maxHp": 130,
+      "hp": 130,
       "sp": 0,
-      "speed": [
-        2,
-        5
-      ],
-      "thr": [
-        50,
-        25
-      ],
-      "resist": {
-        "slash": "normal",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
-      },
-      "sinStock": {
-        "pride": 8
-      },
-      "dmgBonusIf": [
+      "speed": [2, 5],
+      "thr": [75, 50],
+      "resist": {},
+      "sinStock": { "pride": 8 },
+      "skills": [
         {
-          "when": "targetSpLower",
-          "value": 0.15,
-          "label": "パッシブ: 自分より精神力の低い対象へのダメージ量+15%"
-        },
-        {
-          "when": "targetSpLower",
-          "value": 0.1,
-          "label": "サポートパッシブ: 全員自分より精神力の低い対象へのダメージ量+10%"
-        }
-      ],
-      "skills": {
-        "0": {
-          "name": "守備",
-          "kind": "defense",
-          "sub": "evade",
-          "sin": "sloth",
-          "phys": "",
           "tier": 1,
-          "base": 2,
-          "coins": [
-            10
-          ],
-          "text": "怠惰・回避(2+10、最大12)"
-        },
-        "1": {
-          "name": "スキル1",
-          "kind": "attack",
           "sin": "gluttony",
-          "phys": "slash",
-          "tier": 1,
+          "type": "slash",
+          "name": "スキル1",
           "base": 4,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "4+3×2(最大10)\nⅡ[的中時]沈潜 1 付与",
-          "grants": [
-            {
-              "status": "sinking",
-              "p": 1,
-              "to": "target",
-              "when": "hit",
-              "coin": 2
-            }
+          "coin": 3,
+          "coins": 2,
+          "effects": [
+            { "coin": 2, "timing": "hit", "type": "grant", "status": "sinking", "power": 1 }
           ]
         },
-        "2": {
-          "name": "スキル2",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "pride",
+          "type": "slash",
+          "name": "スキル2",
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": "4+4×2(最大12)\nⅠ[的中時]沈潜 1 付与\nⅡ[的中時]威力減少 1 付与",
-          "grants": [
-            {
-              "status": "sinking",
-              "p": 1,
-              "to": "target",
-              "when": "hit",
-              "coin": 1
-            },
-            {
-              "status": "powerDown",
-              "v": 1,
-              "to": "target",
-              "when": "hit",
-              "coin": 2
-            }
+          "coin": 4,
+          "coins": 2,
+          "effects": [
+            { "coin": 1, "timing": "hit", "type": "grant", "status": "sinking", "power": 1 },
+            { "coin": 2, "timing": "hit", "type": "grant", "status": "powerDown", "power": 1 }
           ]
         },
-        "3": {
-          "name": "スキル3",
-          "kind": "attack",
-          "sin": "sloth",
-          "phys": "pierce",
+        {
           "tier": 3,
+          "sin": "sloth",
+          "type": "pierce",
+          "name": "スキル3",
           "base": 6,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": "6+3×3(最大15)\nⅠ[的中時]沈潜回数 1 増加\nⅡ[的中時]沈潜回数 1 増加\nⅢ[的中時]沈潜 3 付与",
-          "grants": [
-            {
-              "status": "sinking",
-              "c": 1,
-              "to": "target",
-              "when": "hit",
-              "coin": 1
-            },
-            {
-              "status": "sinking",
-              "c": 1,
-              "to": "target",
-              "when": "hit",
-              "coin": 2
-            },
-            {
-              "status": "sinking",
-              "p": 3,
-              "to": "target",
-              "when": "hit",
-              "coin": 3
-            }
+          "coin": 3,
+          "coins": 3,
+          "effects": [
+            { "coin": 1, "timing": "hit", "type": "gain", "status": "sinking", "count": 1 },
+            { "coin": 2, "timing": "hit", "type": "gain", "status": "sinking", "count": 1 },
+            { "coin": 3, "timing": "hit", "type": "grant", "status": "sinking", "power": 3 }
           ]
         }
+      ],
+      "defense": {
+        "sin": "sloth",
+        "type": "evade",
+        "name": "守備",
+        "base": 2,
+        "coin": 10,
+        "coins": 1,
+        "effects": []
+      },
+      "passive": {
+        "name": "(仮)パッシブ",
+        "sin": "pride",
+        "count": 3,
+        "effects": [
+          {
+            "type": "dmgBonus",
+            "percent": 15,
+            "when": { "targetSp": "lowerThanSelf" }
+          }
+        ]
+      },
+      "support": {
+        "name": "(仮)サポートパッシブ",
+        "sin": "sloth",
+        "count": 2,
+        "effects": [
+          {
+            "type": "dmgBonus",
+            "percent": 10,
+            "scope": "allies",
+            "when": { "targetSp": "lowerThanSelf" }
+          }
+        ]
       },
       "egos": [
         {
+          "rank": "HE",
           "name": "E.G.O(仮名)",
-          "cost": "傲慢×3 怠惰×2 精神-10",
-          "skill": {
-            "name": "E.G.O",
-            "kind": "attack",
-            "sin": "pride",
-            "phys": "pierce",
-            "tier": 4,
-            "base": 15,
-            "coins": [
-              5
-            ],
-            "weight": 1,
-            "text": "15+5×1(最大20) 加重値1\nⅠ[的中時]自分の解除可能デバフを1種解除\n　[デバフ解除時]次のターン、束縛2を付与\n　[デバフ解除時]沈潜を6付与"
-          },
-          "resist": {
-            "weak": [
-              "wrath",
-              "gloom"
-            ],
-            "resist": [
-              "pride"
-            ],
-            "strong": [
-              "lust"
-            ]
-          },
+          "sin": "pride",
+          "type": "pierce",
+          "base": 15,
+          "coin": 5,
+          "coins": 1,
+          "weight": 1,
+          "sp": 10,
+          "cost": { "pride": 3, "sloth": 2 },
+          "resist": { "wrath": 2, "gloom": 2, "pride": 0.75, "lust": 0.5 },
+          "effects": [
+            {
+              "coin": 1,
+              "timing": "hit",
+              "type": "dispel",
+              "target": "self",
+              "count": 1,
+              "then": [
+                {
+                  "type": "grant",
+                  "if": "dispelled",
+                  "delay": "nextTurn",
+                  "items": [
+                    { "status": "sinking", "power": 6 },
+                    { "status": "bind", "power": 2 }
+                  ]
+                }
+              ]
+            }
+          ],
           "passive": {
             "name": "E.G.Oパッシブ(仮名)",
-            "text": "ターン開始時、自分にデバフが無い場合、精神力を10回復",
-            "grants": []
+            "effects": [
+              {
+                "timing": "turnStart",
+                "type": "spHeal",
+                "amount": 10,
+                "when": { "self": "noDebuff" }
+              }
+            ]
           },
-          "rank": "he",
-          "prisoner": false,
-          "erode": {
+          "corrosion": {
             "name": "E.G.O(侵食)",
-            "kind": "attack",
-            "sin": "pride",
-            "phys": "pierce",
-            "tier": 4,
             "base": 15,
-            "coins": [
-              5
-            ],
+            "coin": 5,
+            "coins": 1,
             "weight": 1,
-            "text": "15+5×1(最大20) 加重値1\nⅠ[的中時]自分の解除可能デバフを1種解除\n　[デバフ解除時]次のターン、束縛2を付与\n　[デバフ解除時]沈潜を6付与",
-            "blind": true
-          }
-        }
-      ],
-      "passives": [
-        {
-          "name": "(仮)パッシブ",
-          "text": "自分より精神力の低い対象へのダメージ量+15%",
-          "need": {
-            "pride": 3
-          }
-        }
-      ],
-      "supportPassives": [
-        {
-          "name": "(仮)サポートパッシブ",
-          "text": "全員、自分より精神力の低い対象へのダメージ量+10%",
-          "need": {
-            "sloth": 2
+            "blind": true,
+            "effects": [
+              {
+                "coin": 1,
+                "timing": "hit",
+                "type": "dispel",
+                "target": "self",
+                "count": 1,
+                "then": [
+                  {
+                    "type": "grant",
+                    "if": "dispelled",
+                    "delay": "nextTurn",
+                    "items": [
+                      { "status": "sinking", "power": 6 },
+                      { "status": "bind", "power": 2 }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         }
       ]
@@ -217,679 +162,378 @@
     {
       "id": "dummy_b",
       "name": "テストB",
-      "maxHp": 120,
+      "hp": 120,
       "sp": 5,
-      "speed": [
-        3,
-        6
-      ],
-      "thr": [
-        50
-      ],
-      "resist": {
-        "slash": "resist",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
+      "speed": [3, 6],
+      "thr": [50],
+      "resist": { "slash": 0.75 },
+      "st": {
+        "breath": { "p": 6, "c": 5 }
       },
-      "skills": {
-        "0": {
-          "name": "受け流し",
-          "kind": "defense",
-          "sin": "pride",
-          "phys": "slash",
+      "skills": [
+        {
           "tier": 1,
-          "base": 3,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "防御。相手が攻撃したとき、威力分のバリアを得る",
-          "sub": "guard"
-        },
-        "1": {
+          "sin": "pride",
+          "type": "pierce",
           "name": "ひと突き",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": ""
+          "coin": 4,
+          "coins": 2,
+          "effects": []
         },
-        "2": {
-          "name": "振り抜き",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "gluttony",
+          "type": "slash",
+          "name": "振り抜き",
           "base": 5,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": "使用時に自分へ呼吸3/3を付与",
-          "grants": [
-            {
-              "status": "breath",
-              "p": 3,
-              "c": 3,
-              "to": "self",
-              "when": "use"
-            }
+          "coin": 3,
+          "coins": 3,
+          "effects": [
+            { "timing": "use", "type": "grant", "status": "breath", "power": 3, "count": 3, "target": "self" }
           ]
         },
-        "3": {
-          "name": "乱舞",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
+        {
           "tier": 3,
+          "sin": "pride",
+          "type": "pierce",
+          "name": "乱舞",
           "base": 6,
-          "coins": [
-            3,
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 4,
+          "effects": []
         }
-      },
-      "st": {
-        "breath": {
-          "p": 6,
-          "c": 5
-        }
+      ],
+      "defense": {
+        "sin": "pride",
+        "type": "guard",
+        "name": "受け流し",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_c",
       "name": "テストC",
-      "maxHp": 100,
+      "hp": 100,
       "sp": -10,
-      "speed": [
-        1,
-        4
-      ],
-      "thr": [
-        40
-      ],
-      "resist": {
-        "slash": "normal",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "weak",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
-      },
-      "skills": {
-        "0": {
-          "name": "回避",
-          "kind": "defense",
-          "sin": "sloth",
-          "phys": "slash",
+      "speed": [1, 4],
+      "thr": [40],
+      "resist": { "sloth": 2 },
+      "skills": [
+        {
           "tier": 1,
-          "base": 4,
-          "coins": [
-            2,
-            2
-          ],
-          "text": "回避。相手のコインごとに威力を判定。攻撃威力≦回避威力なら無効化",
-          "sub": "evade"
-        },
-        "1": {
+          "sin": "sloth",
+          "type": "slash",
           "name": "探求",
-          "kind": "attack",
-          "sin": "sloth",
-          "phys": "slash",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": "的中時、次ラウンドにクイック1を自分に付与",
-          "grants": [
-            {
-              "status": "quick",
-              "v": 1,
-              "to": "self",
-              "when": "hit",
-              "next": true
-            }
+          "coin": 4,
+          "coins": 2,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "quick", "power": 1, "target": "self", "delay": "nextTurn" }
           ]
         },
-        "2": {
-          "name": "空間を切り裂く",
-          "kind": "attack",
-          "sin": "sloth",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "sloth",
+          "type": "slash",
+          "name": "空間を切り裂く",
           "base": 5,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 3,
+          "effects": []
         },
-        "3": {
-          "name": "大断裂",
-          "kind": "attack",
-          "sin": "envy",
-          "phys": "slash",
+        {
           "tier": 3,
+          "sin": "envy",
+          "type": "slash",
+          "name": "大断裂",
           "base": 7,
-          "coins": [
-            4,
-            4,
-            4
-          ],
-          "text": "的中時、対象に破裂3/3を付与",
-          "grants": [
-            {
-              "status": "rupture",
-              "p": 3,
-              "c": 3,
-              "to": "target",
-              "when": "hit"
-            }
+          "coin": 4,
+          "coins": 3,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "rupture", "power": 3, "count": 3 }
           ]
         }
+      ],
+      "defense": {
+        "sin": "sloth",
+        "type": "evade",
+        "name": "回避",
+        "base": 4,
+        "coin": 2,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_d",
       "name": "テストD",
-      "maxHp": 140,
+      "hp": 140,
       "sp": 15,
-      "speed": [
-        2,
-        5
-      ],
-      "thr": [
-        50,
-        25
-      ],
-      "resist": {
-        "slash": "normal",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
-      },
-      "skills": {
-        "0": {
-          "name": "防御",
-          "kind": "defense",
-          "sin": "gluttony",
-          "phys": "blunt",
+      "speed": [2, 5],
+      "thr": [50, 25],
+      "resist": {},
+      "skills": [
+        {
           "tier": 1,
-          "base": 3,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "防御。バリアを得る",
-          "sub": "guard"
-        },
-        "1": {
+          "sin": "gluttony",
+          "type": "blunt",
           "name": "打ち据える",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "blunt",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 3,
+          "effects": []
         },
-        "2": {
-          "name": "押し潰す",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "blunt",
+        {
           "tier": 2,
+          "sin": "gluttony",
+          "type": "blunt",
+          "name": "押し潰す",
           "base": 5,
-          "coins": [
-            4,
-            4
-          ],
-          "text": "的中時、対象に沈潜2/3を付与",
-          "grants": [
-            {
-              "status": "sinking",
-              "p": 2,
-              "c": 3,
-              "to": "target",
-              "when": "hit"
-            }
+          "coin": 4,
+          "coins": 2,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "sinking", "power": 2, "count": 3 }
           ]
         },
-        "3": {
-          "name": "怒りの一撃",
-          "kind": "attack",
-          "sin": "wrath",
-          "phys": "blunt",
+        {
           "tier": 3,
+          "sin": "wrath",
+          "type": "blunt",
+          "name": "怒りの一撃",
           "base": 7,
-          "coins": [
-            5,
-            5,
-            5
-          ],
-          "text": ""
+          "coin": 5,
+          "coins": 3,
+          "effects": []
         }
+      ],
+      "defense": {
+        "sin": "gluttony",
+        "type": "guard",
+        "name": "防御",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_e",
       "name": "テストE",
-      "maxHp": 120,
+      "hp": 120,
       "sp": 5,
-      "speed": [
-        3,
-        6
-      ],
-      "thr": [
-        50
-      ],
-      "resist": {
-        "slash": "resist",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
+      "speed": [3, 6],
+      "thr": [50],
+      "resist": { "slash": 0.75 },
+      "st": {
+        "breath": { "p": 6, "c": 5 }
       },
-      "skills": {
-        "0": {
-          "name": "受け流し",
-          "kind": "defense",
-          "sin": "pride",
-          "phys": "slash",
+      "skills": [
+        {
           "tier": 1,
-          "base": 3,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "防御。相手が攻撃したとき、威力分のバリアを得る",
-          "sub": "guard"
-        },
-        "1": {
+          "sin": "pride",
+          "type": "pierce",
           "name": "ひと突き",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": ""
+          "coin": 4,
+          "coins": 2,
+          "effects": []
         },
-        "2": {
-          "name": "振り抜き",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "gluttony",
+          "type": "slash",
+          "name": "振り抜き",
           "base": 5,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": "使用時に自分へ呼吸3/3を付与",
-          "grants": [
-            {
-              "status": "breath",
-              "p": 3,
-              "c": 3,
-              "to": "self",
-              "when": "use"
-            }
+          "coin": 3,
+          "coins": 3,
+          "effects": [
+            { "timing": "use", "type": "grant", "status": "breath", "power": 3, "count": 3, "target": "self" }
           ]
         },
-        "3": {
-          "name": "乱舞",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
+        {
           "tier": 3,
+          "sin": "pride",
+          "type": "pierce",
+          "name": "乱舞",
           "base": 6,
-          "coins": [
-            3,
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 4,
+          "effects": []
         }
-      },
-      "st": {
-        "breath": {
-          "p": 6,
-          "c": 5
-        }
+      ],
+      "defense": {
+        "sin": "pride",
+        "type": "guard",
+        "name": "受け流し",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_f",
       "name": "テストF",
-      "maxHp": 100,
+      "hp": 100,
       "sp": -10,
-      "speed": [
-        1,
-        4
-      ],
-      "thr": [
-        40
-      ],
-      "resist": {
-        "slash": "normal",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "weak",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
-      },
-      "skills": {
-        "0": {
-          "name": "回避",
-          "kind": "defense",
-          "sin": "sloth",
-          "phys": "slash",
+      "speed": [1, 4],
+      "thr": [40],
+      "resist": { "sloth": 2 },
+      "skills": [
+        {
           "tier": 1,
-          "base": 4,
-          "coins": [
-            2,
-            2
-          ],
-          "text": "回避。相手のコインごとに威力を判定。攻撃威力≦回避威力なら無効化",
-          "sub": "evade"
-        },
-        "1": {
+          "sin": "sloth",
+          "type": "slash",
           "name": "探求",
-          "kind": "attack",
-          "sin": "sloth",
-          "phys": "slash",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": "的中時、次ラウンドにクイック1を自分に付与",
-          "grants": [
-            {
-              "status": "quick",
-              "v": 1,
-              "to": "self",
-              "when": "hit",
-              "next": true
-            }
+          "coin": 4,
+          "coins": 2,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "quick", "power": 1, "target": "self", "delay": "nextTurn" }
           ]
         },
-        "2": {
-          "name": "空間を切り裂く",
-          "kind": "attack",
-          "sin": "sloth",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "sloth",
+          "type": "slash",
+          "name": "空間を切り裂く",
           "base": 5,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 3,
+          "effects": []
         },
-        "3": {
-          "name": "大断裂",
-          "kind": "attack",
-          "sin": "envy",
-          "phys": "slash",
+        {
           "tier": 3,
+          "sin": "envy",
+          "type": "slash",
+          "name": "大断裂",
           "base": 7,
-          "coins": [
-            4,
-            4,
-            4
-          ],
-          "text": "的中時、対象に破裂3/3を付与",
-          "grants": [
-            {
-              "status": "rupture",
-              "p": 3,
-              "c": 3,
-              "to": "target",
-              "when": "hit"
-            }
+          "coin": 4,
+          "coins": 3,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "rupture", "power": 3, "count": 3 }
           ]
         }
+      ],
+      "defense": {
+        "sin": "sloth",
+        "type": "evade",
+        "name": "回避",
+        "base": 4,
+        "coin": 2,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_g",
       "name": "テストG",
-      "maxHp": 140,
+      "hp": 140,
       "sp": 15,
-      "speed": [
-        2,
-        5
-      ],
-      "thr": [
-        50,
-        25
-      ],
-      "resist": {
-        "slash": "normal",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
-      },
-      "skills": {
-        "0": {
-          "name": "防御",
-          "kind": "defense",
-          "sin": "gluttony",
-          "phys": "blunt",
+      "speed": [2, 5],
+      "thr": [50, 25],
+      "resist": {},
+      "skills": [
+        {
           "tier": 1,
-          "base": 3,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "防御。バリアを得る",
-          "sub": "guard"
-        },
-        "1": {
+          "sin": "gluttony",
+          "type": "blunt",
           "name": "打ち据える",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "blunt",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 3,
+          "effects": []
         },
-        "2": {
-          "name": "押し潰す",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "blunt",
+        {
           "tier": 2,
+          "sin": "gluttony",
+          "type": "blunt",
+          "name": "押し潰す",
           "base": 5,
-          "coins": [
-            4,
-            4
-          ],
-          "text": "的中時、対象に沈潜2/3を付与",
-          "grants": [
-            {
-              "status": "sinking",
-              "p": 2,
-              "c": 3,
-              "to": "target",
-              "when": "hit"
-            }
+          "coin": 4,
+          "coins": 2,
+          "effects": [
+            { "timing": "hit", "type": "grant", "status": "sinking", "power": 2, "count": 3 }
           ]
         },
-        "3": {
-          "name": "怒りの一撃",
-          "kind": "attack",
-          "sin": "wrath",
-          "phys": "blunt",
+        {
           "tier": 3,
+          "sin": "wrath",
+          "type": "blunt",
+          "name": "怒りの一撃",
           "base": 7,
-          "coins": [
-            5,
-            5,
-            5
-          ],
-          "text": ""
+          "coin": 5,
+          "coins": 3,
+          "effects": []
         }
+      ],
+      "defense": {
+        "sin": "gluttony",
+        "type": "guard",
+        "name": "防御",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": []
       }
     },
     {
       "id": "dummy_h",
       "name": "テストH",
-      "maxHp": 120,
+      "hp": 120,
       "sp": 5,
-      "speed": [
-        3,
-        6
-      ],
-      "thr": [
-        50
-      ],
-      "resist": {
-        "slash": "resist",
-        "pierce": "normal",
-        "blunt": "normal",
-        "wrath": "normal",
-        "lust": "normal",
-        "sloth": "normal",
-        "gluttony": "normal",
-        "gloom": "normal",
-        "pride": "normal",
-        "envy": "normal"
+      "speed": [3, 6],
+      "thr": [50],
+      "resist": { "slash": 0.75 },
+      "st": {
+        "breath": { "p": 6, "c": 5 }
       },
-      "skills": {
-        "0": {
-          "name": "受け流し",
-          "kind": "defense",
-          "sin": "pride",
-          "phys": "slash",
+      "skills": [
+        {
           "tier": 1,
-          "base": 3,
-          "coins": [
-            3,
-            3
-          ],
-          "text": "防御。相手が攻撃したとき、威力分のバリアを得る",
-          "sub": "guard"
-        },
-        "1": {
+          "sin": "pride",
+          "type": "pierce",
           "name": "ひと突き",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
-          "tier": 1,
           "base": 4,
-          "coins": [
-            4,
-            4
-          ],
-          "text": ""
+          "coin": 4,
+          "coins": 2,
+          "effects": []
         },
-        "2": {
-          "name": "振り抜き",
-          "kind": "attack",
-          "sin": "gluttony",
-          "phys": "slash",
+        {
           "tier": 2,
+          "sin": "gluttony",
+          "type": "slash",
+          "name": "振り抜き",
           "base": 5,
-          "coins": [
-            3,
-            3,
-            3
-          ],
-          "text": "使用時に自分へ呼吸3/3を付与",
-          "grants": [
-            {
-              "status": "breath",
-              "p": 3,
-              "c": 3,
-              "to": "self",
-              "when": "use"
-            }
+          "coin": 3,
+          "coins": 3,
+          "effects": [
+            { "timing": "use", "type": "grant", "status": "breath", "power": 3, "count": 3, "target": "self" }
           ]
         },
-        "3": {
-          "name": "乱舞",
-          "kind": "attack",
-          "sin": "pride",
-          "phys": "pierce",
+        {
           "tier": 3,
+          "sin": "pride",
+          "type": "pierce",
+          "name": "乱舞",
           "base": 6,
-          "coins": [
-            3,
-            3,
-            3,
-            3
-          ],
-          "text": ""
+          "coin": 3,
+          "coins": 4,
+          "effects": []
         }
-      },
-      "st": {
-        "breath": {
-          "p": 6,
-          "c": 5
-        }
+      ],
+      "defense": {
+        "sin": "pride",
+        "type": "guard",
+        "name": "受け流し",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": []
       }
     }
   ]
