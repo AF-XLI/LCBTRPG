@@ -223,7 +223,7 @@
       (r.coin ? img('image/icon/coin/' + r.coin + '.png', 'effect-coin', 'コイン' + r.coin) : '') +
       '<span class="effect-text">' +
       (r.timing ? '<span class="effect-timing">[' + esc(r.timing) + ']</span>' : '') +
-      '<span class="effect-body">' + segsHtml(r.segs) + '</span>' +
+      segsHtml(r.segs) +
       '</span></div>';
   }
 
