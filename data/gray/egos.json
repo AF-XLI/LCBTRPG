@@ -9,15 +9,8 @@
     "coins": 1,
     "weight": 1,
     "sp": 10,
-    "cost": {
-      "sloth": 3,
-      "pride": 2
-    },
-    "resist": {
-      "wrath": 2,
-      "gloom": 2,
-      "sloth": 0.75
-    },
+    "cost": { "sloth": 3, "pride": 2 },
+    "resist": { "wrath": 2, "gloom": 2, "sloth": 0.75 },
     "effects": [
       {
         "coin": 1,
@@ -31,14 +24,8 @@
             "if": "dispelled",
             "delay": "nextTurn",
             "items": [
-              {
-                "status": "sinking",
-                "power": 6
-              },
-              {
-                "status": "bind",
-                "power": 2
-              }
+              { "status": "sinking", "power": 6 },
+              { "status": "bind", "power": 2 }
             ]
           }
         ]
@@ -50,9 +37,7 @@
           "timing": "turnStart",
           "type": "spHeal",
           "amount": 10,
-          "when": {
-            "self": "noDebuff"
-          }
+          "when": { "self": "noDebuff" }
         }
       ]
     }
