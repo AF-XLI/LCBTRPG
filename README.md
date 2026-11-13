@@ -11,6 +11,8 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
 | `battle/` | 戦闘システム(説明は [battle/README.md](battle/README.md)) |
 | `character/` | キャラクターシート(ハブ `character/` と、囚人ごとのページ `character/<囚人ID>/`。説明は下の「キャラクターシート」) |
 | `data/` | キャラクターシートのマスターデータ(JSON。`prisoners.json` と、囚人ごとのフォルダ `data/<囚人ID>/` に人格・E.G.O) |
+| `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理) |
+| `tools/` | データの検査ツール(`node tools/validate.js` で `data/` の人格・E.G.Oの誤りを調べます) |
 | `image/` | 画像(各ページで共用) |
 
 ## ログインと役職
@@ -93,8 +95,9 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 入口は `character/`(メインページの「キャラクターシート」から入れます)。囚人ごとのページは `character/<囚人ID>/index.html` です(試験用: `character/gray/`)。
 - 表示するデータは `data/` のJSONで、管理者がGitHubに置きます。プレイヤーは書き換えられません。
   - `data/prisoners.json`: 囚人(名前、立ち絵・アイコン・背景の画像、所持している人格・E.G.OのID、装備の初期値 `default`)
-  - `data/<囚人ID>/identities.json`: その囚人の人格(名前、所属、レアリティ、体力、速度、耐性の倍率 `resist`、スキル1〜3、守備)
-  - `data/<囚人ID>/egos.json`: その囚人のE.G.O(ランク、名前、罪悪、物理属性、基礎威力、コイン威力、コイン枚数)
+  - `data/<囚人ID>/identities.json`: その囚人の人格(名前、所属、レアリティ、体力、速度、混乱区間 `thr`、耐性の倍率 `resist`、スキル1〜3、守備、パッシブ、サポートパッシブ)
+  - `data/<囚人ID>/egos.json`: その囚人のE.G.O(ランク、名前、罪悪、物理属性、基礎威力、コイン威力、コイン枚数、精神消耗量、必要資源、耐性、効果、パッシブ)
+  - スキル・パッシブ・E.G.Oの効果は `effects` に1効果ずつ書きます(書き方は [battle/README.md](battle/README.md) の「効果(effects)」)。表示は効果から自動で作られ、戦闘システムも同じデータを読みます。
   - 人格・E.G.OのIDは囚人ごとに独立しているので、別の囚人に同じ名前の人格があっても、性能は囚人ごとに別に書けます。`prisoners.json` の `identities` `egos` `default` には、その囚人のフォルダ内のIDを書きます。
 - Firebase に保存するのは、説明・メモ・装備です(`characters/<囚人ID>`)。装備が未保存のときは、`data/prisoners.json` の `default` を表示します。
 - 囚人を増やすには、`data/prisoners.json` に追記して `data/<囚人ID>/` に人格・E.G.Oを置き、`character/<囚人ID>/index.html` を `character/gray/index.html` からコピーして `data-prisoner` を書き換えます。画像は `image/character/<囚人ID>/` に `portrait.png`(立ち絵)・`icon.png`(アイコン)・`bg.png`(立ち絵の背景)を置き、`data/prisoners.json` の `portrait` `icon` `background` で指定します。レアリティ画像は `image/icon/rarity/<レア>.png`(例: レア1は `1.png`)で、人格の `rarity` にその数字を書きます。
