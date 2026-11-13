@@ -9,9 +9,18 @@ var dataDir = path.join(root, 'data');
 var errors = [];
 
 function check(effects, where, allowCoin, coins) {
+  var broken = false;
   (effects || []).forEach(function (e, i) {
-    FX.validate(e, { where: where + ' effects[' + i + ']', allowCoin: allowCoin, coins: coins }).forEach(function (m) { errors.push(m); });
+    var found = FX.validate(e, { where: where + ' effects[' + i + ']', allowCoin: allowCoin, coins: coins });
+    if (found.length) { broken = true; }
+    found.forEach(function (m) { errors.push(m); });
   });
+  if (broken) { return; }
+  try {
+    FX.toGrants(effects || []);
+  } catch (err) {
+    errors.push(where + ': ' + err.message);
+  }
 }
 
 function checkPassive(p, where) {
