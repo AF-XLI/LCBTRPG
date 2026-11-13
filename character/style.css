@@ -1,11 +1,12 @@
 :root {
   --gold: rgb(232, 178, 56);
+  --gold-text: rgb(252, 198, 0);
   --gold-banner: rgb(222, 164, 48);
   --brown: rgb(122, 88, 40);
   --brown-light: rgb(150, 110, 50);
   --ink: rgb(24, 16, 6);
-  --cream: rgb(238, 228, 210);
-  --sub: rgb(190, 172, 146);
+  --cream: rgb(237, 205, 164);
+  --sub: rgb(159, 106, 58);
   --stage-dark: rgb(10, 9, 8);
   --main-bg: rgb(22, 18, 15);
 }
@@ -107,7 +108,7 @@ textarea {
   background: rgb(24, 20, 16);
   border: 0.125rem solid var(--brown-light);
   border-radius: 0.25rem;
-  color: var(--gold);
+  color: var(--gold-text);
   cursor: pointer;
 }
  
@@ -147,7 +148,7 @@ textarea {
  
 .panel-head h2 {
   margin: 0;
-  color: var(--gold);
+  color: var(--gold-text);
   font-family: var(--font-display);
   font-size: 1.125rem;
 }
@@ -211,7 +212,7 @@ textarea {
  
 .panel-btn[data-act="edit"] {
   border-color: var(--gold);
-  color: var(--gold);
+  color: var(--gold-text);
 }
  
 .panel-btn.is-primary {
@@ -313,19 +314,19 @@ textarea {
 }
  
 .resist.is-weak {
-  color: rgb(244, 100, 90);
+  color: rgb(254, 69, 70);
 }
  
 .resist.is-strong {
-  color: rgb(168, 168, 168);
+  color: rgb(128, 128, 128);
 }
  
 .resist.is-resist {
-  color: rgb(206, 206, 206);
+  color: rgb(204, 204, 204);
 }
  
 .resist.is-normal {
-  color: rgb(255, 255, 255);
+  color: var(--cream);
 }
  
 .main {
@@ -621,7 +622,7 @@ textarea {
  
 .skill-mult {
   min-width: 1.5rem;
-  color: var(--gold);
+  color: var(--cream);
   font-family: var(--font-num);
   font-size: 1.5rem;
   font-weight: 700;
@@ -640,7 +641,7 @@ textarea {
 }
  
 .skill-label {
-  color: var(--gold);
+  color: var(--gold-text);
   font-family: var(--font-display);
   font-size: 1.063rem;
   font-weight: 700;
@@ -864,7 +865,7 @@ textarea {
  
 .subtab[aria-pressed="true"] {
   background: linear-gradient(to right, rgba(232, 178, 56, 0.55), rgba(232, 178, 56, 0.18));
-  color: rgb(255, 214, 120);
+  color: var(--gold-text);
 }
  
 .detail {
@@ -926,8 +927,12 @@ textarea {
  
  
  
+.mult-x {
+  color: var(--sub);
+}
+ 
 .detail-deck {
-  color: var(--gold);
+  color: var(--cream);
   font-family: var(--font-num);
   font-size: 1.5rem;
   font-weight: 700;
@@ -982,6 +987,7 @@ textarea {
  
 .effect-timing {
   margin-inline-end: 0.375rem;
+  color: var(--timing, var(--cream));
 }
  
 .kw {
@@ -1025,7 +1031,7 @@ textarea {
   background: rgb(52, 40, 24);
   border-color: var(--gold);
   box-shadow: 0 0 0.875rem rgba(232, 178, 56, 0.45);
-  color: var(--gold);
+  color: var(--gold-text);
 }
  
 .mode-btn[aria-pressed="true"]::after {
@@ -1150,7 +1156,7 @@ textarea {
   margin-inline-end: 0.875rem;
   padding: 0 0.5rem;
   background: rgb(38, 30, 22);
-  color: var(--gold);
+  color: var(--gold-text);
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.063rem;
@@ -1189,7 +1195,7 @@ textarea {
  
 .hub-title {
   margin: 0 0 1.25rem;
-  color: var(--gold);
+  color: var(--gold-text);
   font-family: var(--font-display);
   font-size: 1.5rem;
 }
