@@ -957,29 +957,20 @@ textarea {
 }
  
 .effect-text {
-  display: flex;
-  align-items: center;
   min-width: 0;
+  flex: 1 1 0;
   font-size: 1rem;
 }
  
 .effect-timing {
   margin-inline-end: 0.375rem;
-  flex: none;
-}
- 
-.effect-body {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  min-width: 0;
-  flex: 1 1 0;
 }
  
 .kw {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  vertical-align: middle;
   color: var(--kw, var(--cream));
   font-weight: 700;
   text-decoration: underline;
