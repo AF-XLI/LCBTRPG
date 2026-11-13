@@ -13,7 +13,6 @@
   --sub: rgb(160, 154, 170);
   --ok: rgb(110, 190, 110);
   --bar-bg: rgb(21, 13, 13);
-  --font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
   --font-serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
  
@@ -50,7 +49,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -64,11 +63,13 @@ textarea {
  
 h3 {
   margin: 0 0 0.5rem;
+  font-family: var(--font-display);
   font-size: 1rem;
 }
  
 h4 {
   margin: 0.75rem 0 0.25rem;
+  font-family: var(--font-display);
   font-size: 0.875rem;
 }
  
@@ -82,6 +83,7 @@ h4 {
  
 .lobby-title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   letter-spacing: 0.1em;
 }
@@ -117,6 +119,7 @@ h4 {
   border: var(--line) solid var(--edge);
   border-radius: 0.25rem;
   color: var(--text);
+  font-family: var(--font-display);
   cursor: pointer;
   text-align: center;
 }
@@ -293,6 +296,7 @@ h4 {
  
 .res-n {
   color: rgb(255, 244, 230);
+  font-family: var(--font-num);
   font-size: 1.25rem;
   font-weight: bold;
   text-align: left;
@@ -453,6 +457,7 @@ h4 {
   position: absolute;
   bottom: 0;
   color: rgb(255, 255, 255);
+  font-family: var(--font-num);
   font-size: 1.05rem;
   font-weight: bold;
   line-height: 1;
@@ -747,6 +752,7 @@ h4 {
 }
  
 .head-main .title {
+  font-family: var(--font-display);
   font-size: 1.125rem;
 }
  
@@ -994,6 +1000,7 @@ h4 {
  
 .p-spd {
   color: rgb(230, 200, 60);
+  font-family: var(--font-num);
   font-size: 1.35rem;
   font-weight: bold;
   line-height: 1.1;
@@ -1163,6 +1170,7 @@ h4 {
   z-index: 1;
   margin-block-end: -0.62rem;
   color: rgb(230, 200, 60);
+  font-family: var(--font-num);
   font-size: 1.35rem;
   font-weight: bold;
   line-height: 1.1;
