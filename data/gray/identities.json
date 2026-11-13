@@ -4,15 +4,9 @@
     "affiliation": "ルナリスカンパニー",
     "rarity": "1",
     "hp": 220,
-    "speed": [
-      3,
-      7
-    ],
-    "resist": {
-      "slash": 2,
-      "pierce": 0.5,
-      "blunt": 1
-    },
+    "speed": [3, 7],
+    "thr": [75, 50],
+    "resist": { "slash": 2, "pierce": 0.5, "blunt": 1 },
     "skills": [
       {
         "tier": 1,
@@ -23,13 +17,7 @@
         "coin": 3,
         "coins": 2,
         "effects": [
-          {
-            "coin": 2,
-            "timing": "hit",
-            "type": "grant",
-            "status": "sinking",
-            "power": 1
-          }
+          { "coin": 2, "timing": "hit", "type": "grant", "status": "sinking", "power": 1 }
         ]
       },
       {
@@ -41,20 +29,8 @@
         "coin": 4,
         "coins": 2,
         "effects": [
-          {
-            "coin": 1,
-            "timing": "hit",
-            "type": "grant",
-            "status": "sinking",
-            "power": 1
-          },
-          {
-            "coin": 2,
-            "timing": "hit",
-            "type": "grant",
-            "status": "powerDown",
-            "power": 1
-          }
+          { "coin": 1, "timing": "hit", "type": "grant", "status": "sinking", "power": 1 },
+          { "coin": 2, "timing": "hit", "type": "grant", "status": "powerDown", "power": 1 }
         ]
       },
       {
@@ -66,27 +42,9 @@
         "coin": 3,
         "coins": 3,
         "effects": [
-          {
-            "coin": 1,
-            "timing": "hit",
-            "type": "gain",
-            "status": "sinking",
-            "count": 1
-          },
-          {
-            "coin": 2,
-            "timing": "hit",
-            "type": "gain",
-            "status": "sinking",
-            "count": 1
-          },
-          {
-            "coin": 3,
-            "timing": "hit",
-            "type": "grant",
-            "status": "sinking",
-            "power": 3
-          }
+          { "coin": 1, "timing": "hit", "type": "gain", "status": "sinking", "count": 1 },
+          { "coin": 2, "timing": "hit", "type": "gain", "status": "sinking", "count": 1 },
+          { "coin": 3, "timing": "hit", "type": "grant", "status": "sinking", "power": 3 }
         ]
       }
     ],
@@ -98,9 +56,7 @@
         {
           "type": "dmgBonus",
           "percent": 15,
-          "when": {
-            "targetSp": "lowerThanSelf"
-          }
+          "when": { "targetSp": "lowerThanSelf" }
         }
       ]
     },
@@ -113,9 +69,7 @@
           "type": "dmgBonus",
           "percent": 10,
           "scope": "allies",
-          "when": {
-            "targetSp": "lowerThanSelf"
-          }
+          "when": { "targetSp": "lowerThanSelf" }
         }
       ]
     },
