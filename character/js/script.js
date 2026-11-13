@@ -130,7 +130,7 @@
       '<div class="skill-main">' +
       '<span class="skill-base" aria-hidden="true">' + esc(o.base) + '</span>' +
       piece(o.piece) +
-      '<span class="skill-mult" aria-hidden="true">' + esc(o.mult) + '</span>' +
+      '<span class="skill-mult" aria-hidden="true">' + o.mult + '</span>' +
       '</div>' +
       coinsHtml(o.coins) +
       '<div class="skill-label">' + esc(o.label) + '</div>' +
@@ -144,7 +144,7 @@
       h += skillUnit({
         aria: 'スキル' + s.tier + ' 基礎威力' + s.base + ' コイン威力+' + s.coin + ' コイン' + s.coins + '枚 山札' + deck + '枚',
         base: s.base,
-        mult: '×' + deck,
+        mult: '<span class="mult-x">×</span>' + deck,
         coins: s.coins,
         label: ROMAN[s.tier] || String(s.tier),
         piece: { sin: s.sin, tier: s.tier, type: s.type, tag: s.coin, color: TAG_COLOR[s.tier] || 'yellow' }
@@ -222,7 +222,7 @@
     return '<div class="effect">' +
       (r.coin ? img('image/icon/coin/' + r.coin + '.png', 'effect-coin', 'コイン' + r.coin) : '') +
       '<span class="effect-text">' +
-      (r.timing ? '<span class="effect-timing">[' + esc(r.timing) + ']</span>' : '') +
+      (r.timing ? '<span class="effect-timing" style="--timing: ' + r.timingColor + ';">[' + esc(r.timing) + ']</span>' : '') +
       segsHtml(r.segs) +
       '</span></div>';
   }
@@ -280,7 +280,7 @@
       '<div class="detail-info">' +
       coinsHtml(cur.coins) +
       '<div class="detail-line"><span class="ribbon" style="' + sinVars(cur.sin) + '">' + esc(cur.name) + '</span>' +
-      (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数">×' + cur.deck + '</span>') + '</div>' +
+      (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数"><span class="mult-x">×</span>' + cur.deck + '</span>') + '</div>' +
       (cur.defense ? '' : '<span class="detail-weight">攻撃加重値' + weight + '</span>') +
       '</div></div>';
     var effects = '';
