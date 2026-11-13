@@ -22,48 +22,54 @@
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
 
   var STATUS = {
-    burn: { label: '火傷', type: 'pc', kind: 'debuff', icon: 'burn.png', color: 'rgb(235, 110, 50)' },
-    bleed: { label: '出血', type: 'pc', kind: 'debuff', icon: 'bleed.png', color: 'rgb(210, 50, 70)' },
-    vibration: { label: '振動', type: 'pc', kind: 'debuff', icon: 'tremor.png', color: 'rgb(140, 170, 235)' },
-    rupture: { label: '破裂', type: 'pc', kind: 'debuff', icon: 'rupture.png', color: 'rgb(235, 130, 190)' },
-    sinking: { label: '沈潜', type: 'pc', kind: 'debuff', icon: 'sinking.png', color: 'rgb(110, 190, 230)' },
-    breath: { label: '呼吸', type: 'pc', kind: 'buff', icon: 'poise.png', color: 'rgb(110, 205, 150)' },
-    charge: { label: '充電', type: 'pc', kind: 'buff', icon: 'charge.png', color: 'rgb(240, 215, 80)' },
-    trance: { label: '夢現', type: 'pc', kind: 'buff', icon: 'trance.png', color: 'rgb(240, 160, 70)' },
-    paralysis: { label: '麻痺', type: 'val', kind: 'debuff', icon: 'paralyze.png', color: 'rgb(200, 190, 90)' },
-    bind: { label: '束縛', type: 'val', kind: 'debuff', icon: 'bind.png', color: 'rgb(200, 170, 120)' },
-    dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', icon: 'damage-down.png', color: 'rgb(170, 140, 140)' },
-    fragile: { label: '脆弱', type: 'val', kind: 'debuff', icon: 'fragile.png', color: 'rgb(230, 120, 120)' },
-    powerDown: { label: '威力減少', type: 'val', kind: 'debuff', icon: 'power-down.png', color: 'rgb(230, 120, 100)' },
-    atkPowerDown: { label: '攻撃威力減少', type: 'val', kind: 'debuff', icon: 'attack-power-down.png', color: 'rgb(170, 140, 140)' },
-    defPowerDown: { label: '守備威力減少', type: 'val', kind: 'debuff', icon: 'defense-power-down.png', color: 'rgb(170, 140, 140)' },
-    matchPowerDown: { label: 'マッチ威力減少', type: 'val', kind: 'debuff', icon: 'clash-power-down.png', color: 'rgb(170, 140, 140)' },
-    coinWeak: { label: '加算コイン弱化', type: 'val', kind: 'debuff', icon: 'plus-coin-drop.png', color: 'rgb(170, 140, 140)' },
-    quick: { label: 'クイック', type: 'val', kind: 'buff', icon: 'haste.png', color: 'rgb(120, 210, 230)' },
-    dmgUp: { label: 'ダメージ量増加', type: 'val', kind: 'buff', icon: 'damage-up.png', color: 'rgb(240, 170, 90)' },
-    protect: { label: '保護', type: 'val', kind: 'buff', icon: 'protection.png', color: 'rgb(120, 190, 240)' },
-    powerUp: { label: '威力増加', type: 'val', kind: 'buff', icon: 'power-up.png', color: 'rgb(240, 170, 90)' },
-    atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', icon: 'attack-power-up.png', color: 'rgb(240, 170, 90)' },
-    defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', icon: 'defense-power-up.png', color: 'rgb(240, 170, 90)' },
-    matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', icon: 'clash-power-up.png', color: 'rgb(240, 170, 90)' },
-    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png', color: 'rgb(240, 170, 90)' }
+    burn: { label: '火傷', type: 'pc', kind: 'debuff', icon: 'burn.png' },
+    bleed: { label: '出血', type: 'pc', kind: 'debuff', icon: 'bleed.png' },
+    vibration: { label: '振動', type: 'pc', kind: 'debuff', icon: 'tremor.png' },
+    rupture: { label: '破裂', type: 'pc', kind: 'debuff', icon: 'rupture.png' },
+    sinking: { label: '沈潜', type: 'pc', kind: 'debuff', icon: 'sinking.png' },
+    breath: { label: '呼吸', type: 'pc', kind: 'buff', icon: 'poise.png' },
+    charge: { label: '充電', type: 'pc', kind: 'buff', icon: 'charge.png' },
+    trance: { label: '夢現', type: 'pc', kind: 'buff', icon: 'trance.png' },
+    paralysis: { label: '麻痺', type: 'val', kind: 'debuff', icon: 'paralyze.png' },
+    bind: { label: '束縛', type: 'val', kind: 'debuff', icon: 'bind.png' },
+    dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', icon: 'damage-down.png' },
+    fragile: { label: '脆弱', type: 'val', kind: 'debuff', icon: 'fragile.png' },
+    powerDown: { label: '威力減少', type: 'val', kind: 'debuff', icon: 'power-down.png' },
+    atkPowerDown: { label: '攻撃威力減少', type: 'val', kind: 'debuff', icon: 'attack-power-down.png' },
+    defPowerDown: { label: '守備威力減少', type: 'val', kind: 'debuff', icon: 'defense-power-down.png' },
+    matchPowerDown: { label: 'マッチ威力減少', type: 'val', kind: 'debuff', icon: 'clash-power-down.png' },
+    coinWeak: { label: '加算コイン弱化', type: 'val', kind: 'debuff', icon: 'plus-coin-drop.png' },
+    quick: { label: 'クイック', type: 'val', kind: 'buff', icon: 'haste.png' },
+    dmgUp: { label: 'ダメージ量増加', type: 'val', kind: 'buff', icon: 'damage-up.png' },
+    protect: { label: '保護', type: 'val', kind: 'buff', icon: 'protection.png' },
+    powerUp: { label: '威力増加', type: 'val', kind: 'buff', icon: 'power-up.png' },
+    atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', icon: 'attack-power-up.png' },
+    defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', icon: 'defense-power-up.png' },
+    matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', icon: 'clash-power-up.png' },
+    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png' }
   };
-  var DEFAULT_STATUS_COLOR = 'rgb(238, 228, 210)';
+  var DEFAULT_STATUS_COLOR = 'rgb(237, 205, 164)';
+  var KIND_COLOR = {
+    buff: 'rgb(252, 198, 0)',
+    debuff: 'rgb(222, 0, 0)',
+    neutral: 'rgb(155, 103, 57)'
+  };
 
   var TIMINGS = {
     battleEnter: { label: '戦闘突入時', coin: false, when: 'firstRound' },
     battleStart: { label: '戦闘開始時', coin: false, when: 'combatStart' },
     turnStart: { label: 'ターン開始時', coin: false, when: 'roundStart' },
-    use: { label: '使用時', coin: false, when: 'use' },
+    use: { label: '使用時', coin: false, when: 'use', color: 'rgb(37, 191, 236)' },
     beforeAttack: { label: '攻撃前', coin: false, when: 'beforeAttack' },
-    matchWin: { label: 'マッチ勝利時', coin: false, when: 'matchWin' },
-    matchLose: { label: 'マッチ敗北時', coin: false, when: 'matchLose' },
+    matchWin: { label: 'マッチ勝利時', coin: false, when: 'matchWin', color: 'rgb(251, 124, 0)' },
+    matchLose: { label: 'マッチ敗北', coin: false, when: 'matchLose', color: 'rgb(222, 0, 0)' },
     hit: { label: '的中時', coin: true, when: 'hit' },
-    headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads' },
+    headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads', color: 'rgb(199, 254, 149)' },
     tailsHit: { label: '裏面的中時', coin: true, when: 'hit', side: 'tails' },
     hpCond: { label: null, coin: false, cond: true, checkAt: true, when: 'hit' },
     spCond: { label: null, coin: false, cond: true, when: 'hit' }
   };
+  var TIMING_COLOR = 'rgb(147, 240, 64)';
   var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'hpCond', 'spCond'];
 
   var OPS = { lte: '以下', gte: '以上', lt: '未満', gt: '超' };
@@ -84,7 +90,7 @@
       known: !!def,
       label: (def ? def.label : parts[0]) + (sufLabel ? '(' + sufLabel + ')' : ''),
       icon: 'image/icon/status/' + icon,
-      color: def ? def.color : DEFAULT_STATUS_COLOR
+      color: def ? (KIND_COLOR[def.kind] || DEFAULT_STATUS_COLOR) : DEFAULT_STATUS_COLOR
     };
   }
 
@@ -225,6 +231,11 @@
     return t.cond ? condLabel(e) : t.label;
   }
 
+  function timingColor(e) {
+    var t = TIMINGS[e.timing];
+    return t && t.color ? t.color : TIMING_COLOR;
+  }
+
   function render(e) {
     var type = TYPES[e.type];
     var segs;
@@ -239,6 +250,7 @@
     return {
       coin: e.coin,
       timing: e.timing ? timingLabel(e) : null,
+      timingColor: e.timing ? timingColor(e) : null,
       segs: segs
     };
   }
@@ -377,6 +389,7 @@
     SIN_BY_ID: SIN_BY_ID,
     PHYS: PHYS,
     STATUS: STATUS,
+    KIND_COLOR: KIND_COLOR,
     TIMINGS: TIMINGS,
     TIMING_ORDER: TIMING_ORDER,
     TYPES: TYPES,
