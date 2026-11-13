@@ -13,13 +13,39 @@
           "destroyable": false,
           "speed": [3, 6],
           "thr": [50],
-          "resist": { "slash": "normal", "pierce": "resist", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "weak", "pride": "normal", "envy": "normal" },
+          "resist": { "pierce": 0.75, "gloom": 2 },
           "skills": {
-            "bite": { "name": "噛みつき", "kind": "attack", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }], "sin": "gloom", "phys": "pierce", "tier": 2, "base": 5, "coins": [3, 3], "text": "対象に出血2/2を付与" },
-            "stare": { "name": "凝視", "kind": "attack", "sin": "pride", "phys": "blunt", "tier": 1, "base": 4, "coins": [3, 3], "text": "" }
+            "bite": {
+              "tier": 2,
+              "sin": "gloom",
+              "type": "pierce",
+              "name": "噛みつき",
+              "base": 5,
+              "coin": 3,
+              "coins": 2,
+              "effects": [
+                { "timing": "hit", "type": "grant", "status": "bleed", "power": 2, "count": 2 }
+              ]
+            },
+            "stare": {
+              "tier": 1,
+              "sin": "pride",
+              "type": "blunt",
+              "name": "凝視",
+              "base": 4,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["bite"], ["stare"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["bite"],
+                ["stare"]
+              ]
+            }
           ]
         },
         {
@@ -28,13 +54,37 @@
           "destroyable": false,
           "speed": [2, 4],
           "thr": [50],
-          "resist": { "slash": "weak", "pierce": "normal", "blunt": "resist", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
+          "resist": { "slash": 2, "blunt": 0.75 },
           "skills": {
-            "slam": { "name": "体当たり", "kind": "attack", "sin": "wrath", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "" },
-            "brace": { "name": "踏ん張る", "kind": "defense", "sub": "guard", "sin": "sloth", "phys": "blunt", "tier": 1, "base": 3, "coins": [3, 3], "text": "防御" }
+            "slam": {
+              "tier": 3,
+              "sin": "wrath",
+              "type": "blunt",
+              "name": "体当たり",
+              "base": 5,
+              "coin": 4,
+              "coins": 3,
+              "effects": []
+            },
+            "brace": {
+              "tier": 1,
+              "sin": "sloth",
+              "type": "guard",
+              "name": "踏ん張る",
+              "base": 3,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["slam"], ["brace"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["slam"],
+                ["brace"]
+              ]
+            }
           ]
         }
       ]
@@ -43,8 +93,8 @@
       "id": "test_abno",
       "name": "試験用幻想体",
       "kind": "abnormality",
-      "noSp": true,
       "maxHp": 250,
+      "noSp": true,
       "parts": [
         {
           "name": "右腕",
@@ -53,15 +103,61 @@
           "destroyable": true,
           "speed": [3, 6],
           "thr": [50],
-          "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "weak" },
+          "resist": { "slash": 0.75, "blunt": 2, "envy": 2 },
           "skills": {
-            "slam": { "name": "叩きつけ", "kind": "attack", "grants": [{ "status": "bleed", "p": 2, "c": 2, "to": "target", "when": "hit" }], "sin": "envy", "phys": "blunt", "tier": 3, "base": 5, "coins": [4, 4, 4], "text": "対象に出血2/2を付与" },
-            "crush": { "name": "握り潰し", "kind": "attack", "weight": 3, "sin": "wrath", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" },
-            "jab": { "name": "突き", "kind": "attack", "sin": "pride", "phys": "pierce", "tier": 1, "base": 4, "coins": [3, 3], "text": "" },
-            "swipe": { "name": "薙ぎ払い", "kind": "attack", "sin": "pride", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" }
+            "slam": {
+              "tier": 3,
+              "sin": "envy",
+              "type": "blunt",
+              "name": "叩きつけ",
+              "base": 5,
+              "coin": 4,
+              "coins": 3,
+              "effects": [
+                { "timing": "hit", "type": "grant", "status": "bleed", "power": 2, "count": 2 }
+              ]
+            },
+            "crush": {
+              "tier": 2,
+              "sin": "wrath",
+              "type": "blunt",
+              "name": "握り潰し",
+              "base": 4,
+              "coin": 3,
+              "coins": 2,
+              "weight": 3,
+              "effects": []
+            },
+            "jab": {
+              "tier": 1,
+              "sin": "pride",
+              "type": "pierce",
+              "name": "突き",
+              "base": 4,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            },
+            "swipe": {
+              "tier": 2,
+              "sin": "pride",
+              "type": "slash",
+              "name": "薙ぎ払い",
+              "base": 5,
+              "coin": 4,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["slam", "jab"], ["crush", "swipe"], ["slam", "crush"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["slam", "jab"],
+                ["crush", "swipe"],
+                ["slam", "crush"]
+              ]
+            }
           ]
         },
         {
@@ -71,12 +167,26 @@
           "destroyable": true,
           "speed": [1, 4],
           "thr": [50],
-          "resist": { "slash": "normal", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "resist", "pride": "normal", "envy": "normal" },
+          "resist": { "blunt": 2, "gloom": 0.75 },
           "skills": {
-            "roar": { "name": "咆哮", "kind": "attack", "sin": "gloom", "phys": "blunt", "tier": 2, "base": 4, "coins": [3, 3], "text": "" }
+            "roar": {
+              "tier": 2,
+              "sin": "gloom",
+              "type": "blunt",
+              "name": "咆哮",
+              "base": 4,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["roar"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["roar"]
+              ]
+            }
           ]
         },
         {
@@ -85,12 +195,26 @@
           "destroyable": false,
           "speed": [1, 3],
           "thr": [50],
-          "resist": { "slash": "resist", "pierce": "weak", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "normal" },
+          "resist": { "slash": 0.75, "pierce": 2 },
           "skills": {
-            "stomp": { "name": "踏みつけ", "kind": "attack", "sin": "sloth", "phys": "blunt", "tier": 3, "base": 6, "coins": [4, 4, 4], "text": "" }
+            "stomp": {
+              "tier": 3,
+              "sin": "sloth",
+              "type": "blunt",
+              "name": "踏みつけ",
+              "base": 6,
+              "coin": 4,
+              "coins": 3,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["stomp"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["stomp"]
+              ]
+            }
           ]
         },
         {
@@ -99,13 +223,38 @@
           "destroyable": true,
           "speed": [2, 5],
           "thr": [50],
-          "resist": { "slash": "resist", "pierce": "normal", "blunt": "weak", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "weak" },
+          "resist": { "slash": 0.75, "blunt": 2, "envy": 2 },
           "skills": {
-            "sweep": { "name": "薙ぎ払い", "kind": "attack", "sin": "gluttony", "phys": "slash", "tier": 2, "base": 5, "coins": [4, 4], "text": "" },
-            "guard": { "name": "腕で受ける", "kind": "counter", "sin": "gluttony", "phys": "slash", "tier": 1, "base": 3, "coins": [3, 3], "text": "反撃" }
+            "sweep": {
+              "tier": 2,
+              "sin": "gluttony",
+              "type": "slash",
+              "name": "薙ぎ払い",
+              "base": 5,
+              "coin": 4,
+              "coins": 2,
+              "effects": []
+            },
+            "guard": {
+              "tier": 1,
+              "sin": "gluttony",
+              "type": "counter",
+              "phys": "slash",
+              "name": "腕で受ける",
+              "base": 3,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["sweep"], ["guard"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["sweep"],
+                ["guard"]
+              ]
+            }
           ]
         }
       ]
@@ -121,13 +270,38 @@
           "sp": 0,
           "speed": [2, 5],
           "thr": [50],
-          "resist": { "slash": "normal", "pierce": "normal", "blunt": "normal", "lust": "normal", "wrath": "normal", "sloth": "normal", "gluttony": "normal", "gloom": "normal", "pride": "normal", "envy": "resist" },
+          "resist": { "envy": 0.75 },
           "skills": {
-            "strike": { "name": "嫉妬の一撃", "kind": "attack", "sin": "envy", "phys": "slash", "tier": 2, "base": 5, "coins": [3, 3, 3], "text": "" },
-            "mirror": { "name": "模倣", "kind": "counter", "sin": "envy", "phys": "slash", "tier": 1, "base": 3, "coins": [3, 3], "text": "反撃" }
+            "strike": {
+              "tier": 2,
+              "sin": "envy",
+              "type": "slash",
+              "name": "嫉妬の一撃",
+              "base": 5,
+              "coin": 3,
+              "coins": 3,
+              "effects": []
+            },
+            "mirror": {
+              "tier": 1,
+              "sin": "envy",
+              "type": "counter",
+              "phys": "slash",
+              "name": "模倣",
+              "base": 3,
+              "coin": 3,
+              "coins": 2,
+              "effects": []
+            }
           },
           "skillSets": [
-            { "name": "通常", "loop": [["strike"], ["mirror"]] }
+            {
+              "name": "通常",
+              "loop": [
+                ["strike"],
+                ["mirror"]
+              ]
+            }
           ]
         }
       ]
