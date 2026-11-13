@@ -4,29 +4,129 @@
     "affiliation": "ルナリスカンパニー",
     "rarity": "1",
     "hp": 220,
-    "speed": [3, 7],
-    "resist": { "slash": 2, "pierce": 0.5, "blunt": 1 },
-    "skills": [
-      { "tier": 1, "sin": "pride", "type": "slash", "name": "斬る", "base": 4, "coin": 3, "coins": 2,
-        "effects": [
-          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "1を付与" }
-        ] },
-      { "tier": 2, "sin": "wrath", "type": "pierce", "name": "刺し貫く", "base": 4, "coin": 4, "coins": 2,
-        "effects": [
-          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "1を付与" },
-          { "coin": 2, "timing": "的中時", "status": "powerDown", "text": "1を付与" }
-        ] },
-      { "tier": 3, "sin": "sloth", "type": "pierce", "name": "身躱し突き", "base": 6, "coin": 3, "coins": 3,
-        "effects": [
-          { "coin": 1, "timing": "的中時", "status": "sinking", "text": "回数が1増加" },
-          { "coin": 2, "timing": "的中時", "status": "sinking", "text": "回数が1増加" },
-          { "coin": 3, "timing": "的中時", "status": "sinking", "text": "3を付与" }
-        ] }
+    "speed": [
+      3,
+      7
     ],
-    "passive": { "name": "純真無垢", "sin": "pride", "count": 3, "text": "自分より精神力が低い敵を攻撃時にダメージ量+15%" },
-    "support": { "name": "風雅指南", "sin": "pride", "count": 5, "text": "味方全員が、自分より精神力が低い敵を攻撃時にダメージ量+10%" },
-    "defense":
-      { "sin": "sloth", "type": "evade", "name": "回避", "base": 2, "coin": 10, "coins": 1,
-        "effects": [] }
+    "resist": {
+      "slash": 2,
+      "pierce": 0.5,
+      "blunt": 1
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "pride",
+        "type": "slash",
+        "name": "斬る",
+        "base": 4,
+        "coin": 3,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "sinking",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "wrath",
+        "type": "pierce",
+        "name": "刺し貫く",
+        "base": 4,
+        "coin": 4,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "sinking",
+            "power": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "powerDown",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "sloth",
+        "type": "pierce",
+        "name": "身躱し突き",
+        "base": 6,
+        "coin": 3,
+        "coins": 3,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "gain",
+            "status": "sinking",
+            "count": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "gain",
+            "status": "sinking",
+            "count": 1
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "grant",
+            "status": "sinking",
+            "power": 3
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "純真無垢",
+      "sin": "pride",
+      "count": 3,
+      "effects": [
+        {
+          "type": "dmgBonus",
+          "percent": 15,
+          "when": {
+            "targetSp": "lowerThanSelf"
+          }
+        }
+      ]
+    },
+    "support": {
+      "name": "風雅指南",
+      "sin": "pride",
+      "count": 5,
+      "effects": [
+        {
+          "type": "dmgBonus",
+          "percent": 10,
+          "scope": "allies",
+          "when": {
+            "targetSp": "lowerThanSelf"
+          }
+        }
+      ]
+    },
+    "defense": {
+      "sin": "sloth",
+      "type": "evade",
+      "name": "回避",
+      "base": 2,
+      "coin": 10,
+      "coins": 1,
+      "effects": []
+    }
   }
 }
