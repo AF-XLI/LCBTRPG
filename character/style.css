@@ -283,8 +283,10 @@ textarea {
  
 .resist-row {
   display: grid;
+  align-items: center;
   gap: 0.5rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 3rem;
 }
  
 .resist {
