@@ -458,7 +458,7 @@ textarea {
   color: var(--cream);
   cursor: pointer;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
 }
  
@@ -809,6 +809,7 @@ textarea {
 }
  
 .subtab {
+  position: relative;
   min-height: 3rem;
   padding: 0 0.75rem;
   background: transparent;
@@ -831,37 +832,31 @@ textarea {
   font-size: 1.5rem;
 }
  
-.subtab.is-rank[aria-pressed="true"] {
-  color: rgb(255, 255, 255);
-}
- 
-.subtab.is-zayin[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(60, 110, 230, 0.65), rgba(60, 110, 230, 0.2));
-}
- 
-.subtab.is-teth[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(130, 70, 200, 0.65), rgba(130, 70, 200, 0.2));
-}
- 
-.subtab.is-he[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(214, 182, 40, 0.65), rgba(214, 182, 40, 0.2));
-}
- 
-.subtab.is-waw[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(214, 104, 30, 0.65), rgba(214, 104, 30, 0.2));
-}
- 
-.subtab.is-aleph[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(190, 40, 36, 0.65), rgba(190, 40, 36, 0.2));
-}
- 
-.subtab + .subtab {
+.subtab + .subtab::before {
+  content: "";
+  position: absolute;
+  top: 0.625rem;
+  bottom: 0.625rem;
+  left: 0;
   border-inline-start: 0.063rem solid var(--brown);
 }
  
 .subtab[aria-pressed="true"] {
-  background: linear-gradient(to right, rgba(232, 178, 56, 0.55), rgba(232, 178, 56, 0.18));
-  color: var(--gold-text);
+  background: var(--sin, var(--gold-banner));
+  color: var(--cream);
+  text-shadow: 0.125rem 0.125rem 0 rgb(0, 0, 0);
+}
+ 
+.subtab.is-sloth[aria-pressed="true"] {
+  background: linear-gradient(to right, rgb(254, 209, 50), rgb(85, 67, 15));
+}
+ 
+.subtab.is-wrath[aria-pressed="true"] {
+  background: linear-gradient(to right, rgb(254, 2, 1), rgb(82, 0, 0));
+}
+ 
+.subtab.is-pride[aria-pressed="true"] {
+  background: linear-gradient(to right, rgb(3, 80, 214), rgb(2, 25, 69));
 }
  
 .detail {
@@ -1108,7 +1103,16 @@ textarea {
   box-sizing: border-box;
   width: 5.25rem;
   padding-inline: 0.875rem 0.5rem;
-  border-inline-start: 0.063rem solid var(--brown);
+}
+ 
+.costs::before {
+  content: "";
+  position: absolute;
+  top: calc(12.5% - 0.797rem);
+  bottom: calc(12.5% - 0.797rem);
+  left: 0;
+  width: 0.063rem;
+  background: linear-gradient(to bottom, rgba(122, 88, 40, 0), var(--brown) 15%, var(--brown) 85%, rgba(122, 88, 40, 0));
 }
  
 .cost {
