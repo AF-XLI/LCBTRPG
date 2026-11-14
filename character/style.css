@@ -888,6 +888,7 @@ textarea {
  
 .subtabs {
   display: flex;
+  margin-block: -0.5rem 0.5rem;
   background: rgb(14, 12, 10);
   border: 0.125rem solid var(--brown);
   flex: none;
@@ -1286,10 +1287,10 @@ textarea {
  
 .head-sp b {
   position: relative;
-  top: -0.625rem;
+  top: -0.5rem;
   color: var(--cream);
   font-family: var(--font-num);
-  font-size: 4.15rem;
+  font-size: 3.25rem;
   font-weight: 700;
   line-height: 1;
 } 
