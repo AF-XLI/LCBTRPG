@@ -114,7 +114,7 @@
       img(dir + 's' + o.tier + '.png', 'piece-orn');
     if (o.tag != null) {
       var text = '+' + o.tag;
-      h += '<span class="piece-tag is-' + o.color + ' is-' + o.sin + (text.length > 2 ? ' is-wide' : '') + '">' + esc(text) + '</span>';
+      h += '<span class="piece-tag is-' + o.color + ' is-' + o.sin + '">' + esc(text) + '</span>';
     }
     return h + '</div>';
   }
