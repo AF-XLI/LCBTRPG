@@ -347,7 +347,7 @@ textarea {
 .head {
   position: relative;
   isolation: isolate;
-  height: 17.25rem;
+  height: 15.75rem;
   margin-block-start: -1.625rem;
   margin-block-end: -2.25rem;
   padding-inline: 1.5rem 1.75rem;
@@ -377,6 +377,7 @@ textarea {
   display: flex;
   align-items: flex-end;
   flex-direction: column;
+  margin-block-start: -1.5rem;
   padding-block-start: 0.875rem;
 }
  
@@ -790,6 +791,12 @@ textarea {
   transform: translate(-51.11%, calc(-50.56% - 0.063rem));
 }
  
+.piece-icon.i-counter {
+  width: 66%;
+  height: 66%;
+  transform: translate(-50%, calc(-50% - 0.063rem));
+}
+ 
 .piece-empty {
   display: block;
   width: 100%;
@@ -824,19 +831,8 @@ textarea {
   bottom: 0;
   left: 0;
   z-index: -1;
+  background: var(--sin);
   clip-path: polygon(0 0.47rem, 2.667rem 0, 2.964rem 1.688rem, 0.215rem 1.688rem);
-}
- 
-.piece-tag.is-blue::before {
-  background: rgb(70, 120, 230);
-}
- 
-.piece-tag.is-red::before {
-  background: rgb(220, 60, 50);
-}
- 
-.piece-tag.is-yellow::before {
-  background: rgb(230, 200, 60);
 }
  
 .piece-tag.is-sloth::before {
@@ -1101,7 +1097,7 @@ textarea {
   
 .mode-nav {
   position: absolute;
-  top: 23.875rem;
+  top: 22.375rem;
   left: -7.5rem;
   z-index: 3;
   display: flex;
