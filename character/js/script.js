@@ -457,7 +457,6 @@
         '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
         '<div class="head-banner is-sin" style="' + sinVars(curEgo.sin) + '">' + esc(curEgo.name) + '</div>' +
         '</div>' +
-        (curEgo.sp != null ? '<div class="head-sp"><span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>' : '') +
         '</div></header>';
     } else {
       headHtml = '<header class="head">' +
@@ -503,7 +502,11 @@
       '</section>' +
       '<main class="main">' +
       headHtml +
-      '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs + '<a class="persona-btn" href="#">人格一覧</a></div>' +
+      '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs +
+      '<div class="head-actions">' +
+      (isEgoTab && curEgo && curEgo.sp != null ? '<div class="head-sp">' + img('image/icon/sanity.png', 'head-sp-icon', '') + '<span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>' : '') +
+      '<a class="persona-btn" href="#">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>' +
+      '</div></div>' +
       modeNav +
 
       '<section class="content">' + tabContent + '</section>' +
