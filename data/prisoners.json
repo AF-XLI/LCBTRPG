@@ -4,11 +4,37 @@
     "portrait": "image/character/gray/portrait.png",
     "icon": "image/character/gray/icon.png",
     "background": "image/character/gray/bg.png",
-    "identities": ["lcb"],
-    "egos": ["end-of-spring"],
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "end-of-spring"
+    ],
     "default": {
       "identity": "lcb",
-      "egos": { "ZAYIN": "end-of-spring" }
+      "egos": {
+        "ZAYIN": "end-of-spring"
+      }
     }
+  },
+  "alice": {
+    "name": "アリス",
+    "portrait": "image/character/alice/portrait.png",
+    "icon": "image/character/alice/icon.png",
+    "background": "image/character/alice/bg.png",
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "jabberwock"
+    ],
+    "default": {
+      "identity": "lcb",
+      "egos": {
+        "ZAYIN": "jabberwock"
+      }
+    },
+    "portraitTop": -9.867,
+    "portraitWidth": 59.8
   }
 }
