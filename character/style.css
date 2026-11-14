@@ -521,7 +521,7 @@ textarea {
 .tab[aria-pressed="true"]::after {
   content: "";
   position: absolute;
-  top: calc(100% + 0.25rem);
+  top: calc(100% + 0.5rem);
   left: 50%;
   width: 0;
   height: 0;
