@@ -114,7 +114,7 @@
       img(dir + 's' + o.tier + '.png', 'piece-orn');
     if (o.tag != null) {
       var text = '+' + o.tag;
-      h += '<span class="piece-tag is-' + o.color + ' is-' + o.sin + '">' + esc(text) + '</span>';
+      h += '<span class="piece-tag is-' + o.sin + '" style="' + sinVars(o.sin) + '">' + esc(text) + '</span>';
     }
     return h + '</div>';
   }
@@ -482,7 +482,7 @@
     appEl.innerHTML =
       '<div class="sheet">' +
       '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + p.background) + '\')">' +
-      img(p.portrait, 'stage-portrait', p.name + 'の立ち絵') +
+      img(p.portrait, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + (p.portraitTop != null ? 'style="top: ' + p.portraitTop + 'rem;' + (p.portraitWidth != null ? ' width: ' + p.portraitWidth + 'rem;' : '') + '" ' : '')) +
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
       '<nav class="side-nav" aria-label="補助機能">' +
