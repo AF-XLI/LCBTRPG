@@ -545,26 +545,8 @@ textarea {
  
 .rank {
   position: relative;
-  display: flex;
-  align-items: center;
-  height: 1.5rem;
-  margin-block-start: -0.75rem;
-  padding: 0 1.125rem;
-  background: rgb(96, 74, 38);
-  color: var(--cream);
-  font-size: 0.938rem;
-  font-weight: 700;
-  letter-spacing: 0.063rem;
-  line-height: 1;
-}
- 
-.rank.is-aleph {
-  background: rgb(120, 36, 32);
-}
- 
-.ego-unit.is-on .rank {
-  background: var(--gold-banner);
-  color: var(--ink);
+  width: 4.117rem;
+  margin-block: -1.105rem 0.297rem;
 }
  
 .ego-name {
