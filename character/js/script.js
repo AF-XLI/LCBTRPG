@@ -370,7 +370,7 @@
     } else {
       h += '<div class="piece is-empty">' + img('image/skill/empty-action.png', 'piece-empty') + '</div>';
     }
-    h += '<div class="rank is-' + rank.toLowerCase() + '">' + esc(rank) + '</div>';
+    h += img('image/icon/rank/' + rank.toLowerCase() + '.png', 'rank', rank);
     h += '<div class="ego-name' + (ego ? '' : ' is-none') + '">' + esc(ego ? ego.name : '-') + '</div>';
     return h + '</div>';
   }
