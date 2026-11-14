@@ -480,10 +480,17 @@ textarea {
   border-color: rgb(170, 50, 44);
 }
  
-.persona-btn {
+.head-actions {
   position: absolute;
   top: -4.25rem;
   right: 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+ 
+.persona-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1260,20 +1267,29 @@ textarea {
  
 .head-sp {
   display: flex;
-  align-items: baseline;
-  gap: 0.875rem;
-  margin-block-start: 0.5rem;
-  margin-inline-end: 0.875rem;
+  align-items: center;
+  gap: 1.25rem;
+  margin-block: -1rem;
+}
+ 
+.head-sp-icon {
+  display: block;
+  height: 4rem;
+  margin-inline-end: -0.625rem;
 }
  
 .head-sp span {
-  font-size: 1rem;
+  color: rgb(149, 179, 212);
+  font-size: 1.625rem;
   font-weight: 700;
 }
  
 .head-sp b {
+  position: relative;
+  top: -0.625rem;
+  color: var(--cream);
   font-family: var(--font-num);
-  font-size: 1.75rem;
+  font-size: 4.15rem;
   font-weight: 700;
   line-height: 1;
 } 
