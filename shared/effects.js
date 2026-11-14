@@ -118,8 +118,37 @@
     return [{ status: e.status, power: e.power, count: e.count }];
   }
 
+  var CMP_TEXT = { gte: '以上', lte: '以下', gt: '超', lt: '未満' };
+
+  function whenSegs(e) {
+    var s = new Segs();
+    if (e.ifStatus) {
+      var w = e.ifStatus;
+      s.text('自分の').status(w.status).text('回数が' + w.value + CMP_TEXT[w.op] + 'なら、');
+    }
+    if (e.ifSpent) {
+      s.text('スキル使用時に充電回数を' + e.ifSpent.value + CMP_TEXT[e.ifSpent.op] + '消耗したなら、');
+    }
+    return s;
+  }
+
+  function whenCond(e) {
+    var c = {};
+    var any = false;
+    if (e.ifStatus) {
+      c.status = { of: 'self', status: e.ifStatus.status, field: 'c', op: BATTLE_OPS[e.ifStatus.op], v: e.ifStatus.value };
+      any = true;
+    }
+    if (e.ifSpent) {
+      c.spent = { op: BATTLE_OPS[e.ifSpent.op], v: e.ifSpent.value };
+      any = true;
+    }
+    return any ? c : null;
+  }
+
   function head(e, mid) {
     var s = new Segs();
+    s.add(whenSegs(e));
     if (e['if']) { s.text(IF[e['if']]); }
     if (e.delay) { s.text(DELAY[e.delay]); }
     return s.add(mid);
@@ -200,6 +229,78 @@
         if (e.scope === 'allies') { s.text('味方全員が、'); }
         if (e.when && e.when.targetSp === 'lowerThanSelf') { s.text('自分より精神力が低い敵を攻撃時に'); }
         return head(e, s.text('ダメージ量' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    spend: {
+      required: ['status', 'max'],
+      statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        return [{ spend: { status: e.status, max: e.max }, to: 'self' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().status(e.status).text('回数を最大' + e.max + '消耗'));
+      }
+    },
+    spentDmg: {
+      required: ['status', 'per', 'percent'],
+      statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        return [{ dmgPctPerSpent: { per: e.per, pct: e.percent, status: e.status }, to: 'self', scope: 'skill' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('消耗した').status(e.status).text('回数' + e.per + 'につきダメージ量+' + e.percent + '%'));
+      }
+    },
+    spentCoin: {
+      required: ['status', 'per', 'amount'],
+      statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        return [{ coinPowerPerSpent: { per: e.per, amount: e.amount, status: e.status }, to: 'self', scope: 'skill' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('消耗した').status(e.status).text('回数' + e.per + 'につき、全てのコイン威力+' + e.amount));
+      }
+    },
+    spendReward: {
+      required: ['status', 'every', 'reward'],
+      statuses: function (e) { return [e.status, e.reward && e.reward.status]; },
+      grants: function (e) {
+        var g = { status: e.reward.status };
+        g[amountKey(e.reward.status)] = e.reward.power;
+        return [{ spendReward: { status: e.status, every: e.every, give: g }, to: 'self', scope: 'battle' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('戦闘中、累計で自分の').status(e.status).text('回数を' + e.every + '消費する度に').status(e.reward.status).text(e.reward.power + 'を得る'));
+      }
+    },
+    matchBonus: {
+      required: ['percentPer', 'max'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ dmgPctPerMatch: e.percentPer, dmgPctMax: e.max, to: 'self', scope: 'battle' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('マッチ回数により自分の与ダメージ最大+' + e.max + '%(マッチ毎に+' + e.percentPer + '%)'));
+      }
+    },
+    hpHeal: {
+      required: ['amount'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ hp: e.amount, to: 'lowestHpAlly' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('体力が最も低い味方1名の体力を' + e.amount + '回復'));
+      }
+    },
+    advanceThreshold: {
+      required: ['amount', 'skillType'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ thresholdAdvance: e.amount, to: 'target', when: 'hit', 'if': { skillType: e.skillType } }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text((PHYS[e.skillType] || e.skillType) + '属性スキルで攻撃的中時、攻撃対象の混乱区画を' + e.amount + '前進'));
       }
     },
     spHeal: {
@@ -307,8 +408,15 @@
           return g;
         }));
       });
+      var wc = whenCond(e);
       list.forEach(function (g) {
         Object.keys(base).forEach(function (k) { if (g[k] === undefined) { g[k] = base[k]; } });
+        if (wc) {
+          var m2 = {};
+          Object.keys(g['if'] || {}).forEach(function (k) { m2[k] = g['if'][k]; });
+          Object.keys(wc).forEach(function (k) { m2[k] = wc[k]; });
+          g['if'] = m2;
+        }
         if (cond) {
           var merged = {};
           Object.keys(cond).forEach(function (k) { merged[k] = cond[k]; });
@@ -375,6 +483,8 @@
       }
     }
     if (e.coin !== undefined && ctx && ctx.coins && (e.coin < 1 || e.coin > ctx.coins)) { err('coin ' + e.coin + ' がコイン枚数(' + ctx.coins + ')を超えています'); }
+    if (e.ifStatus && (!statusInfo(e.ifStatus.status).known || !CMP_TEXT[e.ifStatus.op] || e.ifStatus.value === undefined)) { err('ifStatus(status/op/value)が不正です'); }
+    if (e.ifSpent && (!CMP_TEXT[e.ifSpent.op] || e.ifSpent.value === undefined)) { err('ifSpent(op/value)が不正です'); }
     if (e.target && !TARGETS[e.target]) { err('未登録の target "' + e.target + '"'); }
     if (e['if'] && !IF[e['if']]) { err('未登録の if "' + e['if'] + '"'); }
     if (e.delay && !DELAY[e.delay]) { err('未登録の delay "' + e.delay + '"'); }
