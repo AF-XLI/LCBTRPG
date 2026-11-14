@@ -7,8 +7,8 @@
   --ink: rgb(24, 16, 6);
   --cream: rgb(237, 205, 164);
   --sub: rgb(159, 106, 58);
-  --stage-dark: rgb(10, 9, 8);
-  --main-bg: rgb(22, 18, 15);
+  --stage-dark: rgb(0, 0, 0);
+  --main-bg: rgb(0, 0, 0);
 }
  
 * {
@@ -53,7 +53,7 @@ textarea {
 .stage {
   position: relative;
   min-width: 0;
-  background: rgb(10, 9, 8) center top / cover no-repeat;
+  background: rgb(0, 0, 0) center top / cover no-repeat;
   flex: 1 1 37.5rem;
   overflow: hidden;
 }
@@ -85,7 +85,7 @@ textarea {
   right: 0;
   z-index: 1;
   width: 6.875rem;
-  background: linear-gradient(to right, rgba(22, 18, 15, 0) 0, rgb(22, 18, 15) 96%);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgb(0, 0, 0) 96%);
 }
  
 .side-nav {
@@ -339,22 +339,28 @@ textarea {
   min-width: 0;
   min-height: 0;
   margin-inline-start: -0.125rem;
-  padding: 1.75rem 2.25rem 2.25rem;
+  padding: 1.625rem 2.25rem 2.25rem;
   background: var(--main-bg);
   flex: 999 1 37.5rem;
 }
  
 .head {
   position: relative;
-  height: 9.5rem;
-  padding-block-end: 1.375rem;
+  isolation: isolate;
+  height: 10.875rem;
+  margin-block-end: -2.25rem;
+  padding-inline: 1.5rem 1.75rem;
+  background: var(--brown);
+  border: 0.5rem solid transparent;
+  border-inline-start: 0;
+  clip-path: polygon(-100vw 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, -100vw 100%);
   flex: none;
 }
  
 .head-ghost {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 1.5rem;
   color: rgba(238, 228, 210, 0.09);
   font-family: var(--font-display);
   font-size: 4rem;
@@ -495,25 +501,43 @@ textarea {
   position: relative;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
   min-height: 0;
-  margin-block-start: -1.5rem;
-  padding: 3.125rem 1.25rem 1.625rem 0;
-  background: rgb(30, 25, 20);
-  border: 0.125rem solid var(--brown);
+  margin-block-start: -0.5rem;
+  padding: 1.75rem 1.25rem 1.625rem 0;
+  background: var(--brown);
+  border: 0.5rem solid transparent;
   border-inline-start: 0;
+  clip-path: polygon(-100vw 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, -100vw 100%);
   flex: 1 1 0;
 }
  
-.content::before {
+.content::before,
+.head::before {
   content: "";
   position: absolute;
-  top: -0.125rem;
+  top: -0.5rem;
   right: 100%;
-  bottom: -0.125rem;
-  width: 2.25rem;
-  background: linear-gradient(to left, rgb(30, 25, 20), rgba(30, 25, 20, 0));
-  border-block: 0.125rem solid;
+  bottom: -0.5rem;
+  width: 2rem;
+  border-block: 0.5rem solid;
   border-image: linear-gradient(to left, rgb(122, 88, 40), rgba(122, 88, 40, 0)) 1;
+  pointer-events: none;
+}
+ 
+.content::after,
+.head::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: -2rem;
+  z-index: -1;
+  background: url("../image/bg/panel.png") 0 0 / 58.875rem auto rgb(30, 25, 20);
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
+  clip-path: polygon(0 0, calc(100% - 0.707rem) 0, 100% 0.707rem, 100% calc(100% - 0.707rem), calc(100% - 0.707rem) 100%, 0 100%);
   pointer-events: none;
 }
  
