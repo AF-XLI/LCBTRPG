@@ -262,7 +262,7 @@
     var cur = items[state.sub];
     var subs = '';
     items.forEach(function (it, i) {
-      subs += '<button class="subtab" type="button" aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
+      subs += '<button class="subtab is-' + it.sin + '" style="' + sinVars(it.sin) + '" type="button" aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
     });
     if (state.passive) { return passiveTabHtml(identity, subs); }
     return '<div class="skill-tab">' +
@@ -314,7 +314,8 @@
     var subs = '';
     RANKS.forEach(function (rk, i) {
       var on = !!eq.egos[rk];
-      subs += '<button class="subtab is-rank is-' + rk.toLowerCase() + '" type="button" aria-pressed="' + (on && i === state.sub && state.egoMode !== 'passive') + '"' +
+      var rsin = on ? eq.egos[rk].sin : '';
+      subs += '<button class="subtab is-rank is-' + rsin + '" style="' + sinVars(rsin) + '" type="button" aria-pressed="' + (on && i === state.sub && state.egoMode !== 'passive') + '"' +
         (on ? ' data-act="sub" data-sub="' + i + '"' : ' disabled') + ' aria-label="' + rk + '">' + RANK_LETTERS[rk] + '</button>';
     });
     var head = '<div class="subtabs is-rank" role="group" aria-label="E.G.Oの等級">' + subs + '</div>';
