@@ -503,7 +503,7 @@
       '</section>' +
       '<main class="main">' +
       headHtml +
-      '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs + '</div>' +
+      '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs + '<a class="persona-btn" href="#">人格一覧</a></div>' +
       modeNav +
 
       '<section class="content">' + tabContent + '</section>' +
