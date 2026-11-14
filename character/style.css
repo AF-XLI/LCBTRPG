@@ -751,17 +751,6 @@ textarea {
   clip-path: polygon(0 0.47rem, 2.667rem 0, 2.964rem 1.688rem, 0.215rem 1.688rem);
 }
  
-.piece-tag.is-wide {
-  top: -1.813rem;
-  left: calc(50% - 1.681rem);
-  width: 3.361rem;
-  height: 1.875rem;
-}
- 
-.piece-tag.is-wide::before {
-  clip-path: polygon(0 0.534rem, 3.031rem 0, 3.361rem 1.875rem, 0.236rem 1.875rem);
-}
- 
 .piece-tag.is-blue::before {
   background: rgb(70, 120, 230);
 }
@@ -916,11 +905,6 @@ textarea {
   flex: none;
 }
  
-.detail:has(.piece-tag.is-wide) {
-  --tag-h: 1.875rem;
-  --tag-top: -1.813rem;
-}
- 
 .detail-info {
   display: flex;
   flex-direction: column;
@@ -980,6 +964,7 @@ textarea {
   font-family: var(--font-num);
   font-size: 1.5rem;
   font-weight: 700;
+  line-height: 1;
 }
  
 .detail-weight {
