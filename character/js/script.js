@@ -287,14 +287,9 @@
     var plain = cur.effects.filter(function (e) { return e.coin === undefined; });
     FX.sortByTiming(plain).forEach(function (e) { rows += effectHtml(e); });
     for (var c = 1; c <= (cur.coins || 0); c++) {
-      var own = cur.effects.filter(function (e) { return e.coin === c; });
-      if (own.length) {
-        FX.sortByTiming(own).forEach(function (e) { rows += effectHtml(e); });
-      } else {
-        rows += '<div class="effect">' + img('image/icon/coin/' + c + '.png', 'effect-coin', 'コイン' + c) + '</div>';
-      }
+      FX.sortByTiming(cur.effects.filter(function (e) { return e.coin === c; })).forEach(function (e) { rows += effectHtml(e); });
     }
-    var effects = rows ? '<div class="effects">' + rows + '</div>' : '<div class="effects-none">コイン効果はありません。</div>';
+    var effects = rows ? '<div class="effects">' + rows + '</div>' : '';
     return detail + effects;
   }
 
