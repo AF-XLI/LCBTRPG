@@ -235,20 +235,14 @@
       required: ['status', 'max'],
       statuses: function (e) { return [e.status]; },
       grants: function (e) {
-        return [{ spend: { status: e.status, max: e.max }, to: 'self' }];
+        var list = [{ spend: { status: e.status, max: e.max }, to: 'self' }];
+        if (e.dmgPercent) {
+          list.push({ dmgPctPerSpent: { per: 1, pct: e.dmgPercent, status: e.status }, to: 'self', scope: 'skill' });
+        }
+        return list;
       },
       render: function (e) {
         return head(e, new Segs().status(e.status).text('回数を最大' + e.max + '消耗'));
-      }
-    },
-    spentDmg: {
-      required: ['status', 'per', 'percent'],
-      statuses: function (e) { return [e.status]; },
-      grants: function (e) {
-        return [{ dmgPctPerSpent: { per: e.per, pct: e.percent, status: e.status }, to: 'self', scope: 'skill' }];
-      },
-      render: function (e) {
-        return head(e, new Segs().text('消耗した').status(e.status).text('回数' + e.per + 'につきダメージ量+' + e.percent + '%'));
       }
     },
     spentCoin: {
@@ -300,7 +294,7 @@
         return [{ thresholdAdvance: e.amount, to: 'target', when: 'hit', 'if': { skillType: e.skillType } }];
       },
       render: function (e) {
-        return head(e, new Segs().text((PHYS[e.skillType] || e.skillType) + '属性スキルで攻撃的中時、攻撃対象の混乱区画を' + e.amount + '前進'));
+        return head(e, new Segs().text((PHYS[e.skillType] || e.skillType) + '属性スキルで攻撃的中時、攻撃対象の混乱区間を' + e.amount + '前進'));
       }
     },
     spHeal: {
@@ -341,7 +335,11 @@
     var type = TYPES[e.type];
     var segs;
     if (e.text !== undefined) {
-      segs = new Segs().text(e.text);
+      segs = new Segs();
+      String(e.text).split(/(\{[A-Za-z0-9_@]+\})/).forEach(function (part) {
+        var m = /^\{([A-Za-z0-9_@]+)\}$/.exec(part);
+        if (m) { segs.status(m[1]); } else { segs.text(part); }
+      });
     } else {
       segs = type ? type.render(e) : new Segs().text('(未実装: ' + e.type + ')');
     }
@@ -350,8 +348,8 @@
     });
     return {
       coin: e.coin,
-      timing: e.timing ? timingLabel(e) : null,
-      timingColor: e.timing ? timingColor(e) : null,
+      timing: e.timing && e.timingLabel !== false ? timingLabel(e) : null,
+      timingColor: e.timing && e.timingLabel !== false ? timingColor(e) : null,
       segs: segs
     };
   }
