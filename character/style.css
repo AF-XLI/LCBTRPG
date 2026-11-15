@@ -467,26 +467,43 @@ textarea {
   flex: none;
 }
  
-.tab {
+.tab,
+.mode-btn {
+  --tab-fill: rgb(24, 20, 16);
+  --tab-line: rgb(108, 70, 39);
   position: relative;
   min-width: 8.5rem;
   min-height: 3rem;
   padding: 0 1.375rem;
-  background: rgb(24, 20, 16);
-  border: 0.188rem solid var(--brown-light);
+  background: none;
+  border: 0;
   color: var(--cream);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
+  isolation: isolate;
 }
  
-.tab.is-overview {
-  border-color: var(--gold);
+.tab::before,
+.mode-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: -1;
+  background:
+    linear-gradient(135deg, var(--tab-line) calc(0.177rem + 0.188rem), transparent calc(0.177rem + 0.188rem)),
+    linear-gradient(225deg, var(--tab-line) calc(0.177rem + 0.188rem), transparent calc(0.177rem + 0.188rem)),
+    var(--tab-fill);
+  box-shadow: inset 0 0 0 0.188rem var(--tab-line);
+  clip-path: polygon(0 0.25rem, 0.25rem 0, calc(100% - 0.25rem) 0, 100% 0.25rem, 100% 100%, 0 100%);
 }
  
 .tab.is-ego {
-  border-color: rgb(170, 50, 44);
+  --tab-line: rgb(102, 1, 0);
 }
  
 .head-actions {
@@ -529,9 +546,18 @@ textarea {
   clip-path: polygon(0 0.177rem, 0.177rem 0, calc(100% - 0.177rem) 0, 100% 0.177rem, 100% calc(100% - 0.177rem), calc(100% - 0.177rem) 100%, 0.177rem 100%, 0 calc(100% - 0.177rem));
 }
  
-.tab[aria-pressed="true"] {
-  background: rgb(52, 40, 24);
-  box-shadow: 0 0 0.875rem rgba(232, 178, 56, 0.35);
+.tab[aria-pressed="true"],
+.mode-btn[aria-pressed="true"] {
+  --tab-fill: rgb(52, 40, 24);
+  --tab-line: var(--gold);
+  filter: drop-shadow(0 0 0.125rem rgb(251, 124, 0)) drop-shadow(0 0 0.188rem rgb(251, 124, 0));
+}
+ 
+.tab[aria-pressed="true"]::before,
+.mode-btn[aria-pressed="true"]::before {
+  box-shadow:
+    inset 0 0 0 0.188rem var(--tab-line),
+    inset 0 0 0.25rem 0.125rem rgb(251, 124, 0);
 }
  
 .tab[aria-pressed="true"]::after {
@@ -1172,23 +1198,13 @@ textarea {
 }
  
 .mode-btn {
-  position: relative;
+  --tab-line: rgb(156, 125, 26);
   width: 8.5rem;
-  height: 3.5rem;
-  background: rgb(24, 20, 16);
-  border: 0.125rem solid var(--brown-light);
-  color: var(--cream);
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 700;
-  cursor: pointer;
+  padding: 0;
 }
  
-.mode-btn[aria-pressed="true"] {
-  background: rgb(52, 40, 24);
-  border-color: var(--gold);
-  color: var(--gold-text);
-  box-shadow: 0 0 0.875rem rgba(232, 178, 56, 0.45);
+.mode-btn[data-mode="corrosion"]:not([aria-pressed="true"]) {
+  --tab-line: rgb(102, 1, 0);
 }
  
 .mode-btn[aria-pressed="true"]::after {
