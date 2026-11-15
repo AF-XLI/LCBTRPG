@@ -854,6 +854,22 @@ textarea {
 .piece-tag.is-pride::before {
   background: rgb(3, 80, 214);
 }
+ 
+.piece-tag.is-lust::before {
+  background: rgb(254, 109, 1);
+}
+ 
+.piece-tag.is-gluttony::before {
+  background: rgb(164, 254, 1);
+}
+ 
+.piece-tag.is-gloom::before {
+  background: rgb(27, 198, 240);
+}
+ 
+.piece-tag.is-envy::before {
+  background: rgb(151, 3, 222);
+}
   
 .scroll-wrap {
   position: relative;
@@ -955,6 +971,22 @@ textarea {
   background: rgba(3, 80, 214, 0.7);
 }
  
+.subtab.is-lust[aria-pressed="true"] {
+  background: rgba(254, 109, 1, 0.7);
+}
+ 
+.subtab.is-gluttony[aria-pressed="true"] {
+  background: rgba(164, 254, 1, 0.7);
+}
+ 
+.subtab.is-gloom[aria-pressed="true"] {
+  background: rgba(27, 198, 240, 0.7);
+}
+ 
+.subtab.is-envy[aria-pressed="true"] {
+  background: rgba(151, 3, 222, 0.7);
+}
+ 
 .detail {
   --tag-h: 1.688rem;
   --tag-top: -1.625rem;
@@ -1029,6 +1061,22 @@ textarea {
  
 .ribbon.is-pride {
   background: linear-gradient(to right, rgb(3, 80, 214), rgb(2, 25, 69));
+}
+ 
+.ribbon.is-lust {
+  background: linear-gradient(to right, rgb(254, 109, 1), rgb(83, 33, 1));
+}
+ 
+.ribbon.is-gluttony {
+  background: linear-gradient(to right, rgb(164, 254, 1), rgb(51, 84, 0));
+}
+ 
+.ribbon.is-gloom {
+  background: linear-gradient(to right, rgb(27, 198, 240), rgb(8, 62, 75));
+}
+ 
+.ribbon.is-envy {
+  background: linear-gradient(to right, rgb(151, 3, 222), rgb(48, 1, 69));
 }
  
 .mult-x {
