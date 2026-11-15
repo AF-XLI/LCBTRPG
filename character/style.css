@@ -1135,7 +1135,6 @@ textarea {
 .effect-body {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
   min-width: 0;
   flex: 1 1 0;
 }
@@ -1158,11 +1157,9 @@ textarea {
 .kw img {
   width: 1.125rem;
   height: 1.125rem;
-  margin-inline-end: 0.25rem;
   object-fit: contain;
   vertical-align: -0.25rem;
 }
- 
  
 .mode-nav {
   position: absolute;
