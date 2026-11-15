@@ -25,7 +25,8 @@
         "type": "gain",
         "status": "charge",
         "count": 6,
-        "target": "self"
+        "target": "self",
+        "text": "自分の{charge}回数が6増加"
       },
       {
         "coin": 1,
@@ -39,7 +40,8 @@
           "status": "charge",
           "op": "gte",
           "value": 10
-        }
+        },
+        "text": "自分の{charge}回数が10以上なら、次ターンに{bind}2を得る"
       },
       {
         "coin": 1,
@@ -53,15 +55,19 @@
           "status": "charge",
           "op": "gte",
           "value": 10
-        }
+        },
+        "text": "自分の{charge}回数が10以上なら、次ターンに{dmgUp}3を得る"
       }
     ],
     "passive": {
+      "name": "自由奔放",
+      "sin": "gluttony",
       "effects": [
         {
           "type": "advanceThreshold",
           "skillType": "blunt",
-          "amount": 3
+          "amount": 3,
+          "text": "打撃属性スキルで攻撃的中時、混乱区間を3前進"
         }
       ]
     }
