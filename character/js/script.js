@@ -217,15 +217,21 @@
     return body;
   }
 
-  function effectHtml(e) {
-    if (e.hidden) { return ''; }
-    var r = FX.render(e);
+  function effectHtml(list) {
+    var shown = list.filter(function (e) { return !e.hidden; });
+    if (!shown.length) { return ''; }
+    var first = FX.render(shown[0]);
+    var lines = '';
+    shown.forEach(function (e) {
+      var r = FX.render(e);
+      lines += '<span class="effect-text">' +
+        (r.timing ? '<span class="effect-timing" style="--timing: ' + r.timingColor + ';">[' + esc(r.timing) + ']</span>' : '') +
+        segsHtml(r.segs) +
+        '</span>';
+    });
     return '<div class="effect">' +
-      (r.coin ? img('image/icon/coin/' + r.coin + '.png', 'effect-coin', 'コイン' + r.coin) : '') +
-      '<span class="effect-text">' +
-      (r.timing ? '<span class="effect-timing" style="--timing: ' + r.timingColor + ';">[' + esc(r.timing) + ']</span>' : '') +
-      segsHtml(r.segs) +
-      '</span></div>';
+      (first.coin ? img('image/icon/coin/' + first.coin + '.png', 'effect-coin', 'コイン' + first.coin) : '') +
+      '<div class="effect-body">' + lines + '</div></div>';
   }
 
   function passiveTextHtml(p) {
@@ -286,9 +292,9 @@
       '</div></div>';
     var rows = '';
     var plain = cur.effects.filter(function (e) { return e.coin === undefined; });
-    FX.sortByTiming(plain).forEach(function (e) { rows += effectHtml(e); });
+    FX.sortByTiming(plain).forEach(function (e) { rows += effectHtml([e]); });
     for (var c = 1; c <= (cur.coins || 0); c++) {
-      FX.sortByTiming(cur.effects.filter(function (e) { return e.coin === c; })).forEach(function (e) { rows += effectHtml(e); });
+      rows += effectHtml(FX.sortByTiming(cur.effects.filter(function (e) { return e.coin === c; })));
     }
     var effects = rows ? '<div class="effects">' + rows + '</div>' : '';
     return detail + effects;
