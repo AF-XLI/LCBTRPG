@@ -249,7 +249,7 @@
       required: ['status', 'per', 'amount'],
       statuses: function (e) { return [e.status]; },
       grants: function (e) {
-        return [{ coinPowerPerSpent: { per: e.per, amount: e.amount, status: e.status }, to: 'self', scope: 'skill' }];
+        return [{ coinPowerPerSpent: { per: e.per, amount: e.amount, status: e.status }, to: 'self', scope: 'skill', when: 'use' }];
       },
       render: function (e) {
         return head(e, new Segs().text('消耗した').status(e.status).text('回数' + e.per + 'につき、全てのコイン威力+' + e.amount));
@@ -271,7 +271,7 @@
       required: ['percentPer', 'max'],
       statuses: function () { return []; },
       grants: function (e) {
-        return [{ dmgPctPerMatch: e.percentPer, dmgPctMax: e.max, to: 'self', scope: 'battle' }];
+        return [{ perMatch: e.percentPer, max: e.max, to: 'self', scope: 'skill', when: 'matchWin' }];
       },
       render: function (e) {
         return head(e, new Segs().text('マッチ回数により自分の与ダメージ最大+' + e.max + '%(マッチ毎に+' + e.percentPer + '%)'));
@@ -281,7 +281,7 @@
       required: ['amount'],
       statuses: function () { return []; },
       grants: function (e) {
-        return [{ hp: e.amount, to: 'lowestHpAlly' }];
+        return [{ heal: e.amount, to: 'allies', pick: 'lowestHp' }];
       },
       render: function (e) {
         return head(e, new Segs().text('体力が最も低い味方1名の体力を' + e.amount + '回復'));
