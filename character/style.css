@@ -611,7 +611,7 @@ textarea {
   flex-wrap: wrap;
   gap: 1.25rem 0.75rem;
   justify-content: center;
-  padding-block-start: 0.625rem;
+  padding-block-start: 1.125rem;
 }
  
 .ego-unit {
