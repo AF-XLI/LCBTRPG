@@ -1,3 +1,10 @@
+document.addEventListener('contextmenu', function (ev) {
+  if (ev.target && ev.target.tagName === 'IMG') { ev.preventDefault(); }
+});
+document.addEventListener('dragstart', function (ev) {
+  if (ev.target && ev.target.tagName === 'IMG') { ev.preventDefault(); }
+});
+
 (function () {
   'use strict';
 
