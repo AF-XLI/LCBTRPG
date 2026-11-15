@@ -229,7 +229,7 @@
         segsHtml(r.segs) +
         '</span>';
     });
-    return '<div class="effect">' +
+    return '<div class="effect' + (first.coin ? ' has-coin' : '') + '">' +
       (first.coin ? img('image/icon/coin/' + first.coin + '.png', 'effect-coin', 'コイン' + first.coin) : '') +
       '<div class="effect-body">' + lines + '</div></div>';
   }
