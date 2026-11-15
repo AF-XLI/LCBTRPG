@@ -33,7 +33,8 @@
             "type": "gain",
             "status": "charge",
             "count": 2,
-            "target": "self"
+            "target": "self",
+            "text": "自分の{charge}回数が2増加"
           }
         ]
       },
@@ -52,7 +53,8 @@
             "type": "gain",
             "status": "charge",
             "count": 2,
-            "target": "self"
+            "target": "self",
+            "text": "自分の{charge}回数が2増加"
           },
           {
             "coin": 1,
@@ -64,7 +66,8 @@
               "status": "charge",
               "op": "gte",
               "value": 8
-            }
+            },
+            "text": "自分の{charge}回数が8以上なら、{bind}2を付与"
           }
         ]
       },
@@ -81,21 +84,16 @@
             "timing": "use",
             "type": "spend",
             "status": "charge",
-            "max": 15
+            "max": 15,
+            "dmgPercent": 2,
+            "text": "{charge}回数を最大15まで消耗\n- 消耗量3につき、コイン威力 +1\n- 消耗量1につき、このスキルのダメージ量 +2%"
           },
           {
-            "timing": "use",
-            "type": "spentDmg",
-            "status": "charge",
-            "per": 1,
-            "percent": 2
-          },
-          {
-            "timing": "use",
             "type": "spentCoin",
             "status": "charge",
             "per": 3,
-            "amount": 1
+            "amount": 1,
+            "hidden": true
           },
           {
             "coin": 1,
@@ -108,7 +106,8 @@
             "ifSpent": {
               "op": "gte",
               "value": 10
-            }
+            },
+            "text": "このスキル使用時、{charge}回数を10以上消耗したなら次ターンに{protect}2を得る"
           }
         ]
       }
@@ -119,18 +118,12 @@
       "count": 3,
       "effects": [
         {
-          "type": "spendReward",
-          "status": "charge",
-          "every": 10,
-          "reward": {
-            "status": "charge",
-            "power": 1
-          }
-        },
-        {
+          "timing": "matchWin",
           "type": "matchBonus",
           "percentPer": 3,
-          "max": 15
+          "max": 15,
+          "timingLabel": false,
+          "text": "マッチ勝利時、マッチ回数に比例してダメージ量が増加 (マッチ回数1回につき+3%. 最大15%)"
         }
       ]
     },
@@ -142,7 +135,9 @@
         {
           "timing": "battleStart",
           "type": "hpHeal",
-          "amount": 5
+          "amount": 5,
+          "timingLabel": false,
+          "text": "戦闘開始時、現在の体力が最も低い味方1名の体力が5回復"
         }
       ]
     },
@@ -161,7 +156,8 @@
           "type": "gain",
           "status": "charge",
           "count": 4,
-          "target": "self"
+          "target": "self",
+          "text": "自分の{charge}回数が4増加"
         }
       ]
     }
