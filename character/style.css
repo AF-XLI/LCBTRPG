@@ -1063,6 +1063,10 @@ textarea {
   gap: 0.875rem;
 }
  
+.effect.has-coin:first-child {
+  margin-block-start: 0.55rem;
+}
+ 
 .effect-coin {
   width: 2.25rem;
   height: 2.25rem;
