@@ -983,7 +983,8 @@
     ch.egoUsed = true;
     u.lastEgo = ch.ego.i;
     applyEgo(state, u.id, ch.ego.i);
-    activateEgoPassive(state, u, ch.ego.i, ch.forced ? state.round : state.round + 1);
+    activateEgoPassive(state, u, ch.ego.i, state.round);
+    O(state.pasv)[passiveKey(u.id, 'egoPas', ch.ego.i)] = true;
     if (ec.ego.passive === undefined) { return; }
   }
   function forceErosion(state, u, rng) {
@@ -1032,7 +1033,9 @@
   }
 
   function coinAdd(b, c) {
-    return Math.max(0, num(c, 0) + vOf(b, 'coinStrong') - vOf(b, 'coinWeak'));
+    var pow = 0;
+    A(b.mods).forEach(function (m) { if (m.k === 'coinPow') { pow += num(m.n, 0); } });
+    return Math.max(0, num(c, 0) + pow + vOf(b, 'coinStrong') - vOf(b, 'coinWeak'));
   }
   function powerAdj(b, skill, clash, extra) {
     var a = vOf(b, 'powerUp') - vOf(b, 'powerDown') + num(extra, 0);
@@ -1145,6 +1148,15 @@
   function condOkG(cnd, selfG, otherG) {
     if (!cnd) { return true; }
     var ok = true;
+    if (cnd.status) {
+      var sg = cnd.status.of === 'target' ? otherG : selfG;
+      var sv = sg ? num(O(sg.b.st)[cnd.status.status] && O(sg.b.st)[cnd.status.status][cnd.status.field || 'c'], 0) : 0;
+      if (!cmpOp(sv, cnd.status.op, num(cnd.status.v, 0))) { ok = false; }
+    }
+    if (cnd.spent) {
+      var sp = selfG && selfG.b.spent ? num(selfG.b.spent.n, 0) : 0;
+      if (!cmpOp(sp, cnd.spent.op, num(cnd.spent.v, 0))) { ok = false; }
+    }
     if (cnd.noDebuff) {
       var dg = cnd.noDebuff === 'self' ? selfG : otherG;
       if (!dg || debuffKeys(dg.b).length) { ok = false; }
@@ -1200,6 +1212,7 @@
       if (tm.side && (tm.side === 'heads') !== !!ctx.heads) { return; }
       var okc = ctx.pre && ctx.pre[gi] !== undefined ? ctx.pre[gi] : grantCondOk(state, gr, atkRef, defRef);
       if (!okc) { return; }
+      if (gr.if && gr.if.skillType && gr.if.skillType !== O(ctx.skill || skill).phys) { return; }
       if (gr.ifDispelled && !dispelledNow) { return; }
       var onceKey = null;
       if (gr.once) {
@@ -1240,6 +1253,34 @@
           tg.b.mods.push(dm);
           if (trefs.length === 1) { log(state, nameOf(state, tref) + ' の与えるダメージ +' + (gr.perMatch !== undefined ? 'マッチ毎' + gr.perMatch : pct) + '%' + (gr.scope === 'finalCoin' ? ' (最終コイン)' : '')); }
         }
+        if (gr.spend) {
+          var have = num(O(tg.b.st)[gr.spend.status] && tg.b.st[gr.spend.status].c, 0);
+          var used = Math.min(num(gr.spend.max, 0), have);
+          tg.b.spent = { status: gr.spend.status, n: used };
+          if (used > 0) {
+            consumeBranch(state, tg, { status: gr.spend.status, amount: used });
+            log(state, nameOf(state, tref) + ' は ' + (STATUS[statusParts(gr.spend.status).base] || { label: gr.spend.status }).label + '回数を ' + used + ' 消耗');
+          }
+        }
+        if (gr.dmgPctPerSpent) {
+          var sn = tg.b.spent ? num(tg.b.spent.n, 0) : 0;
+          var sp2 = Math.floor(sn / Math.max(1, num(gr.dmgPctPerSpent.per, 1))) * num(gr.dmgPctPerSpent.pct, 0);
+          if (sp2 > 0) {
+            tg.b.mods = A(tg.b.mods);
+            tg.b.mods.push({ k: 'dmg', pct: sp2, scope: 'skill' });
+            log(state, nameOf(state, tref) + ' の与えるダメージ +' + sp2 + '%(消耗分)');
+          }
+        }
+        if (gr.coinPowerPerSpent) {
+          var cn = tg.b.spent ? num(tg.b.spent.n, 0) : 0;
+          var cp = Math.floor(cn / Math.max(1, num(gr.coinPowerPerSpent.per, 1))) * num(gr.coinPowerPerSpent.amount, 0);
+          if (cp > 0) {
+            tg.b.mods = A(tg.b.mods);
+            tg.b.mods.push({ k: 'coinPow', n: cp, scope: 'skill' });
+            log(state, nameOf(state, tref) + ' のコイン威力 +' + cp);
+          }
+        }
+        if (gr.thresholdAdvance !== undefined) { advanceLines(state, tref, num(gr.thresholdAdvance, 0)); }
         if (gr.critPct !== undefined) {
           tg.b.mods = A(tg.b.mods);
           tg.b.mods.push({ k: 'crit', pct: num(gr.critPct, 0), scope: ctx.passive ? gr.scope || 'round' : 'skill' });
@@ -1326,7 +1367,11 @@
     eachPassive(state, function (u, p, key) {
       if (onlyUnitId && u.id !== onlyUnitId) { return; }
       if (!A(p.grants).length || !O(state.pasv)[key]) { return; }
-      var has = A(p.grants).some(function (gr) { return grantTiming(gr).when === when; });
+      var psk = ctxExtra && ctxExtra.skill;
+      var has = A(p.grants).some(function (gr) {
+        if (grantTiming(gr).when !== when) { return false; }
+        return !(gr.if && gr.if.skillType && psk && gr.if.skillType !== psk.phys);
+      });
       if (!has) { return; }
       var ref = { u: u.id, p: null };
       var sk = chosenSkill(state, u);
@@ -1489,6 +1534,7 @@
           }
         }
         applyGrants(state, atk.ref, defRef, skill, 'hit', num(atk.lost, 0) + i + 1, { heads: r.heads, pre: pre });
+        if (ag.unit.side === 'ally' && !isOut(getB(state, atk.ref))) { firePassives(state, 'hit', ag.unit.id, { defRef: defRef, skill: skill }); }
         if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
           changeSp(state, atk.ref, 10);
           log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
@@ -1500,6 +1546,8 @@
     }
     clearSkillMods(state, atk.ref);
     tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit', undefined, { pre: pre0[ti] }); } });
+    var gsp = getB(state, atk.ref);
+    if (gsp && gsp.b.spent) { delete gsp.b.spent; }
     return hits;
   }
 
@@ -1757,6 +1805,7 @@
     }
     clearSkillMods(state, X.ref);
     clearSkillMods(state, Y.ref);
+    [X.ref, Y.ref].forEach(function (r) { var sg = getB(state, r); if (sg && sg.b.spent) { delete sg.b.spent; } });
     return { winner: winner, matches: matches };
   }
 
@@ -2381,6 +2430,16 @@
     lines[0] = Math.min(max, lines[0] + num(vi.p, 0));
     g.b.lines = lines;
     log(state, nameOf(state, ref) + ' の混乱線が ' + num(vi.p, 0) + ' 前進');
+    checkStagger(state, ref);
+  }
+  function advanceLines(state, ref, amount) {
+    var g = getB(state, ref);
+    if (!g || isOut(g) || amount <= 0) { return; }
+    var lines = A(g.b.lines).slice().sort(function (a, b) { return b - a; });
+    if (!lines.length) { log(state, nameOf(state, ref) + ' には前進できる混乱区間がない'); return; }
+    lines[0] = Math.min(hpInfo(g.unit, g.part).max, lines[0] + amount);
+    g.b.lines = lines;
+    log(state, nameOf(state, ref) + ' の混乱区間が ' + amount + ' 前進');
     checkStagger(state, ref);
   }
   function convertVibration(state, ref, kind) {
