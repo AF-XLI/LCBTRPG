@@ -218,6 +218,7 @@
   }
 
   function effectHtml(e) {
+    if (e.hidden) { return ''; }
     var r = FX.render(e);
     return '<div class="effect">' +
       (r.coin ? img('image/icon/coin/' + r.coin + '.png', 'effect-coin', 'コイン' + r.coin) : '') +
@@ -231,7 +232,7 @@
     var lines = [];
     (p.effects || []).forEach(function (e) {
       var r = FX.render(e);
-      var head = e.timing ? '<span>' + esc(r.timing) + '、</span>' : '';
+      var head = r.timing ? '<span>' + esc(r.timing) + '、</span>' : '';
       lines.push(head + segsHtml(r.segs));
     });
     return '<p class="passive-text">' + lines.join('<br>') + '</p>';
@@ -241,7 +242,7 @@
     return '<section class="passive" aria-label="' + label + '">' +
       '<div class="passive-kind">' + label + '</div>' +
       (p.name ? '<div class="passive-name"><span class="ribbon is-' + p.sin + '" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
-      (p.name ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
+      (p.name && p.count !== undefined ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
       passiveTextHtml(p) +
       '</section>';
   }
