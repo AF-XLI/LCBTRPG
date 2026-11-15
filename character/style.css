@@ -21,9 +21,9 @@
  
 img {
   pointer-events: none;
-  user-select: none;
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
+  user-select: none;
   -webkit-user-select: none;
 }
  
@@ -133,8 +133,8 @@ textarea {
 .panel {
   position: absolute;
   top: 1.25rem;
-  bottom: 1.25rem;
   left: 7.438rem;
+  bottom: 1.25rem;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -212,10 +212,10 @@ textarea {
   background: transparent;
   border: 0.125rem solid var(--brown);
   color: var(--cream);
-  cursor: pointer;
   font-family: var(--font-display);
   font-size: 0.938rem;
   font-weight: 700;
+  cursor: pointer;
 }
  
 .panel-btn[data-act="edit"] {
@@ -242,9 +242,9 @@ textarea {
  
 .stage-info {
   position: absolute;
-  right: 1.5rem;
-  bottom: 1.625rem;
   left: 1.5rem;
+  bottom: 1.625rem;
+  right: 1.5rem;
   z-index: 2;
   display: grid;
   align-items: end;
@@ -354,7 +354,6 @@ textarea {
  
 .head {
   position: relative;
-  isolation: isolate;
   height: 15.75rem;
   margin-block-start: -1.625rem;
   margin-block-end: -2.25rem;
@@ -365,6 +364,7 @@ textarea {
   border-inline-start: 0;
   clip-path: polygon(-100vw 0, 100% 0, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, -100vw 100%);
   flex: none;
+  isolation: isolate;
 }
  
 .head-ghost {
@@ -475,10 +475,10 @@ textarea {
   background: rgb(24, 20, 16);
   border: 0.188rem solid var(--brown-light);
   color: var(--cream);
-  cursor: pointer;
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
+  cursor: pointer;
 }
  
 .tab.is-overview {
@@ -503,16 +503,16 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  isolation: isolate;
   min-width: 9.5rem;
   min-height: 3rem;
   padding: 0 1.5rem;
   background: rgb(72, 41, 13);
-  clip-path: polygon(0 0.25rem, 0.25rem 0, calc(100% - 0.25rem) 0, 100% 0.25rem, 100% calc(100% - 0.25rem), calc(100% - 0.25rem) 100%, 0.25rem 100%, 0 calc(100% - 0.25rem));
   color: var(--ink);
   font-family: var(--font-display);
   font-size: 1.75rem;
   font-weight: 700;
+  clip-path: polygon(0 0.25rem, 0.25rem 0, calc(100% - 0.25rem) 0, 100% 0.25rem, 100% calc(100% - 0.25rem), calc(100% - 0.25rem) 100%, 0.25rem 100%, 0 calc(100% - 0.25rem));
+  isolation: isolate;
   text-decoration: none;
 }
  
@@ -520,9 +520,9 @@ textarea {
   content: "";
   position: absolute;
   top: 0.125rem;
-  right: 0.125rem;
-  bottom: 0.125rem;
   left: 0.125rem;
+  bottom: 0.125rem;
+  right: 0.125rem;
   z-index: -1;
   background: linear-gradient(to bottom, rgb(252, 198, 0), rgb(222, 164, 48));
   box-shadow: inset 0 0 0.625rem 0.125rem rgb(251, 124, 0);
@@ -552,7 +552,6 @@ textarea {
   position: relative;
   display: flex;
   flex-direction: column;
-  isolation: isolate;
   min-height: 0;
   margin-block-start: -0.5rem;
   margin-inline-end: 1rem;
@@ -562,6 +561,7 @@ textarea {
   border-inline-start: 0;
   clip-path: polygon(-100vw 0, calc(100% - 1rem) 0, 100% 1rem, 100% calc(100% - 1rem), calc(100% - 1rem) 100%, -100vw 100%);
   flex: 1 1 0;
+  isolation: isolate;
 }
  
 .content::before,
@@ -569,8 +569,8 @@ textarea {
   content: "";
   position: absolute;
   top: -0.5rem;
-  right: 100%;
   bottom: -0.5rem;
+  right: 100%;
   width: 2rem;
   border-block: 0.5rem solid;
   border-image: linear-gradient(to left, rgb(72, 41, 13), rgba(72, 41, 13, 0)) 1;
@@ -582,14 +582,14 @@ textarea {
   content: "";
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: 0;
   left: -2rem;
+  bottom: 0;
+  right: 0;
   z-index: -1;
   background: linear-gradient(rgba(33, 26, 18, 0.5), rgba(33, 26, 18, 0.5)), url("../image/bg/panel.png") 0 0 / 58.875rem auto rgb(33, 26, 18);
+  clip-path: polygon(0 0, calc(100% - 0.707rem) 0, 100% 0.707rem, 100% calc(100% - 0.707rem), calc(100% - 0.707rem) 100%, 0 100%);
   mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
   -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
-  clip-path: polygon(0 0, calc(100% - 0.707rem) 0, 100% 0.707rem, 100% calc(100% - 0.707rem), calc(100% - 0.707rem) 100%, 0 100%);
   pointer-events: none;
 }
  
@@ -683,6 +683,7 @@ textarea {
   position: relative;
   top: -0.375rem;
   left: -0.063rem;
+  align-self: flex-start;
   min-width: 1.75rem;
   margin-block-start: 0.725rem;
   font-family: var(--font-num);
@@ -690,12 +691,12 @@ textarea {
   font-weight: 700;
   line-height: 1;
   text-align: end;
-  align-self: flex-start;
 }
  
 .skill-mult {
   display: flex;
   align-items: center;
+  align-self: flex-end;
   gap: 0.125rem;
   min-width: 1.5rem;
   margin-inline-start: -0.625rem;
@@ -704,7 +705,6 @@ textarea {
   font-size: 2.25rem;
   font-weight: 700;
   line-height: 1;
-  align-self: flex-end;
 }
  
 .skill-mult .mult-x {
@@ -835,9 +835,9 @@ textarea {
   content: "";
   position: absolute;
   top: 0;
-  right: 0;
-  bottom: 0;
   left: 0;
+  bottom: 0;
+  right: 0;
   z-index: -1;
   background: var(--sin);
   clip-path: polygon(0 0.47rem, 2.667rem 0, 2.964rem 1.688rem, 0.215rem 1.688rem);
@@ -870,7 +870,7 @@ textarea {
 .piece-tag.is-envy::before {
   background: rgb(151, 3, 222);
 }
-  
+ 
 .scroll-wrap {
   position: relative;
   display: flex;
@@ -921,10 +921,10 @@ textarea {
   background: transparent;
   border: 0;
   color: var(--cream);
-  cursor: pointer;
   font-family: var(--font-display);
   font-size: 1.063rem;
   font-weight: 700;
+  cursor: pointer;
   flex: 1 1 0;
 }
  
@@ -942,18 +942,18 @@ textarea {
   content: "";
   position: absolute;
   top: 0.625rem;
-  bottom: 0.625rem;
   left: 0;
+  bottom: 0.625rem;
   border-inline-start: 0.063rem solid var(--brown);
 }
  
 .subtab[aria-pressed="true"] {
   background: color-mix(in srgb, var(--sin, rgb(232, 178, 56)) 70%, transparent);
+  color: var(--gold-text);
   box-shadow:
     inset 0.25rem 0 0.375rem 0 rgb(14, 12, 10),
     inset -0.25rem 0 0.375rem 0 rgb(14, 12, 10),
     inset 0 0 0.375rem 0.125rem rgb(14, 12, 10);
-  color: var(--gold-text);
   paint-order: stroke fill;
   text-shadow: 0 0 0.625rem rgb(251, 124, 0), 0 0 0.25rem rgb(251, 124, 0);
   -webkit-text-stroke: 0.063rem rgb(251, 124, 0);
@@ -1042,12 +1042,12 @@ textarea {
   height: var(--tag-h, auto);
   padding: 0.125rem 1.375rem 0.125rem 0.75rem;
   background: var(--sin, var(--gold-banner));
-  clip-path: polygon(0 0, calc(100% - 0.625rem) 0, 100% 100%, 0 100%);
   color: var(--cream);
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
+  clip-path: polygon(0 0, calc(100% - 0.625rem) 0, 100% 100%, 0 100%);
   text-shadow: 0.125rem 0.125rem 0 rgb(0, 0, 0);
 }
  
@@ -1133,10 +1133,10 @@ textarea {
  
 .effect-body {
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
   gap: 0.375rem;
   min-width: 0;
+  flex: 1 1 0;
 }
  
 .effect-text {
@@ -1162,7 +1162,7 @@ textarea {
   vertical-align: -0.25rem;
 }
  
-  
+ 
 .mode-nav {
   position: absolute;
   top: 22.375rem;
@@ -1180,17 +1180,17 @@ textarea {
   background: rgb(24, 20, 16);
   border: 0.125rem solid var(--brown-light);
   color: var(--cream);
-  cursor: pointer;
   font-family: var(--font-display);
   font-size: 1.125rem;
   font-weight: 700;
+  cursor: pointer;
 }
  
 .mode-btn[aria-pressed="true"] {
   background: rgb(52, 40, 24);
   border-color: var(--gold);
-  box-shadow: 0 0 0.875rem rgba(232, 178, 56, 0.45);
   color: var(--gold-text);
+  box-shadow: 0 0 0.875rem rgba(232, 178, 56, 0.45);
 }
  
 .mode-btn[aria-pressed="true"]::after {
@@ -1254,8 +1254,8 @@ textarea {
 .costs {
   position: absolute;
   top: 5.875rem;
-  right: 0;
   bottom: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
@@ -1268,8 +1268,8 @@ textarea {
   content: "";
   position: absolute;
   top: calc(12.5% - 0.797rem);
-  bottom: calc(12.5% - 0.797rem);
   left: 0;
+  bottom: calc(12.5% - 0.797rem);
   width: 0.063rem;
   background: linear-gradient(to bottom, rgba(122, 88, 40, 0), var(--brown) 15%, var(--brown) 85%, rgba(122, 88, 40, 0));
 }
@@ -1308,9 +1308,9 @@ textarea {
  
 .sin-resists {
   position: absolute;
-  right: 1.5rem;
-  bottom: 1.25rem;
   left: 1.5rem;
+  bottom: 1.25rem;
+  right: 1.5rem;
   z-index: 2;
   display: flex;
   gap: 0.375rem;
