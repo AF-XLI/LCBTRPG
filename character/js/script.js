@@ -22,10 +22,24 @@ document.addEventListener('dragstart', function (ev) {
   var TAB_NAMES = { overview: '概要', skill: 'スキル', ego: 'E.G.O' };
   var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
   var PANEL_NAMES = { desc: '説明', memo: 'メモ' };
-  var ICON_BACK = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>';
-  var ICON_DESC = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13"/></svg>';
-  var ICON_MEMO = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 20l1-4 10.5-10.5a2 2 0 012.8 0l.2.2a2 2 0 010 2.8L9 19z"/><path d="M14.5 7.5l3 3"/></svg>';
-  var ICON_CLOSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>';
+  var ICON_BACK =
+    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
+    '<path d="M20 12H5M11 5l-7 7 7 7"/>' +
+    '</svg>';
+  var ICON_DESC =
+    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/>' +
+    '<path d="M12 6v13"/>' +
+    '</svg>';
+  var ICON_MEMO =
+    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 20l1-4 10.5-10.5a2 2 0 012.8 0l.2.2a2 2 0 010 2.8L9 19z"/>' +
+    '<path d="M14.5 7.5l3 3"/>' +
+    '</svg>';
+  var ICON_CLOSE =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
+    '<path d="M5 5l14 14M19 5L5 19"/>' +
+    '</svg>';
 
   var body = document.body;
   var charId = body.getAttribute('data-prisoner');
@@ -62,8 +76,22 @@ document.addEventListener('dragstart', function (ev) {
     return '<img class="' + cls + '" alt="' + esc(alt || '') + '" src="' + esc(base + path) + '">';
   }
 
-  function sinLabel(id) {
-    return SIN_BY_ID[id] ? SIN_BY_ID[id].label : id;
+  function sideBtn(label, panel, icon) {
+    return '<button class="side-btn" type="button" aria-label="' + label + '"' +
+      ' aria-pressed="' + (state.panel === panel) + '" data-act="panel" data-panel="' + panel + '">' + icon + '</button>';
+  }
+
+  function vitalHtml(label, icon, value) {
+    return '<div class="status" role="group" aria-label="' + label + ' ' + esc(value) + '">' +
+      img('image/icon/' + icon + '.png', 'status-icon') + '<span class="status-num">' + esc(value) + '</span></div>';
+  }
+
+  function portraitHtml(p) {
+    var style = '';
+    if (p.portraitTop != null) {
+      style = 'style="top: ' + p.portraitTop + 'rem;' + (p.portraitWidth != null ? ' width: ' + p.portraitWidth + 'rem;' : '') + '" ';
+    }
+    return img(p.portrait, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + style);
   }
 
   function sinVars(id) {
@@ -255,7 +283,9 @@ document.addEventListener('dragstart', function (ev) {
     return '<section class="passive" aria-label="' + label + '">' +
       '<div class="passive-kind">' + label + '</div>' +
       (p.name ? '<div class="passive-name"><span class="ribbon is-' + p.sin + '" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
-      (p.name && p.count !== undefined ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>' : '') +
+      (p.name && p.count !== undefined
+        ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>'
+        : '') +
       passiveTextHtml(p) +
       '</section>';
   }
@@ -276,7 +306,8 @@ document.addEventListener('dragstart', function (ev) {
     var cur = items[state.sub];
     var subs = '';
     items.forEach(function (it, i) {
-      subs += '<button class="subtab is-' + it.sin + '" style="' + sinVars(it.sin) + '" type="button" aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
+      subs += '<button class="subtab is-' + it.sin + '" style="' + sinVars(it.sin) + '" type="button"' +
+        ' aria-pressed="' + (!state.passive && i === state.sub) + '" data-act="sub" data-sub="' + i + '">' + esc(it.tab) + '</button>';
     });
     if (state.passive) { return passiveTabHtml(identity, subs); }
     return '<div class="skill-tab">' +
@@ -372,7 +403,8 @@ document.addEventListener('dragstart', function (ev) {
   function modeNavHtml(items) {
     var h = '<div class="mode-nav">';
     items.forEach(function (it) {
-      h += '<button class="mode-btn" type="button" aria-pressed="' + it.on + '" data-act="' + it.act + '"' + (it.mode ? ' data-mode="' + it.mode + '"' : '') + '>' + it.label + '</button>';
+      h += '<button class="mode-btn" type="button" aria-pressed="' + it.on + '" data-act="' + it.act + '"' +
+        (it.mode ? ' data-mode="' + it.mode + '"' : '') + '>' + it.label + '</button>';
     });
     return h + '</div>';
   }
@@ -496,19 +528,19 @@ document.addEventListener('dragstart', function (ev) {
     appEl.innerHTML =
       '<div class="sheet">' +
       '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + p.background) + '\')">' +
-      img(p.portrait, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + (p.portraitTop != null ? 'style="top: ' + p.portraitTop + 'rem;' + (p.portraitWidth != null ? ' width: ' + p.portraitWidth + 'rem;' : '') + '" ' : '')) +
+      portraitHtml(p) +
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
       '<nav class="side-nav" aria-label="補助機能">' +
       '<a class="side-btn is-back" href="' + esc(base + 'character/') + '" aria-label="ハブへ戻る">' + ICON_BACK + '</a>' +
-      '<button class="side-btn" type="button" aria-label="説明" aria-pressed="' + (state.panel === 'desc') + '" data-act="panel" data-panel="desc">' + ICON_DESC + '</button>' +
-      '<button class="side-btn" type="button" aria-label="メモ" aria-pressed="' + (state.panel === 'memo') + '" data-act="panel" data-panel="memo">' + ICON_MEMO + '</button>' +
+      sideBtn('説明', 'desc', ICON_DESC) +
+      sideBtn('メモ', 'memo', ICON_MEMO) +
       '</nav>' +
       panelHtml() +
       '<div class="stage-info">' +
       '<div><div class="info-chip">ステータス</div><div class="status-row">' +
-      '<div class="status" role="group" aria-label="体力 ' + esc(identity.hp) + '">' + img('image/icon/hp.png', 'status-icon') + '<span class="status-num">' + esc(identity.hp) + '</span></div>' +
-      '<div class="status" role="group" aria-label="速度 ' + esc(speedText(identity)) + '">' + img('image/icon/speed.png', 'status-icon') + '<span class="status-num">' + esc(speedText(identity)) + '</span></div>' +
+      vitalHtml('体力', 'hp', identity.hp) +
+      vitalHtml('速度', 'speed', speedText(identity)) +
       '</div></div>' +
       '<div><div class="info-chip">耐性情報</div><div class="resist-row">' + resistHtml(identity) + '</div></div>' +
       '</div>' +
@@ -518,7 +550,9 @@ document.addEventListener('dragstart', function (ev) {
       headHtml +
       '<div class="tabs" role="group" aria-label="表示切り替え">' + tabs +
       '<div class="head-actions">' +
-      (isEgoTab && curEgo && curEgo.sp != null ? '<div class="head-sp">' + img('image/icon/sanity.png', 'head-sp-icon', '') + '<span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>' : '') +
+      (isEgoTab && curEgo && curEgo.sp != null
+        ? '<div class="head-sp">' + img('image/icon/sanity.png', 'head-sp-icon', '') + '<span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>'
+        : '') +
       '<a class="persona-btn" href="#">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>' +
       '</div></div>' +
       modeNav +
