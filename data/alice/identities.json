@@ -1,8 +1,13 @@
 {
   "lcb": {
     "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
     "affiliation": "ルナリスカンパニー",
     "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
     "hp": 270,
     "speed": [
       2,
