@@ -584,6 +584,7 @@ document.addEventListener('dragstart', function (ev) {
       });
     }
     return '<div class="pl">' +
+      img(p.icon, 'pl-logo', '') +
       '<div class="pl-bar"></div>' +
       '<a class="pl-back" href="#" aria-label="囚人ページへ戻る">' + ICON_BACK + '</a>' +
       '<h1 class="pl-title">' + (isEgo ? 'E.G.O' : '人格') + ': ' + esc(p.name) + '</h1>' +
