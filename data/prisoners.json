@@ -1,6 +1,7 @@
 {
   "gray": {
     "name": "グレイ",
+    "themeColor": "rgb(249, 208, 36)",
     "portrait": "image/character/gray/portrait.png",
     "icon": "image/character/gray/icon.png",
     "background": "image/character/gray/bg.png",
@@ -19,6 +20,7 @@
   },
   "alice": {
     "name": "アリス",
+    "themeColor": "rgb(105, 176, 118)",
     "portrait": "image/character/alice/portrait.png",
     "icon": "image/character/alice/icon.png",
     "background": "image/character/alice/bg.png",
