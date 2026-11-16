@@ -102,6 +102,10 @@ document.addEventListener('dragstart', function (ev) {
     return img(p.portrait, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + style);
   }
 
+  function headColorVar(color) {
+    return color ? '--head-color: ' + color + ';' : '';
+  }
+
   function sinVars(id) {
     var d = SIN_BY_ID[id];
     return d ? '--sin: ' + d.color + '; --sin-text: ' + d.text + ';' : '';
@@ -672,17 +676,17 @@ document.addEventListener('dragstart', function (ev) {
     }
     var headHtml;
     if (isEgoTab && curEgo) {
-      headHtml = '<header class="head">' +
+      headHtml = '<header class="head" style="' + headColorVar(SIN_BY_ID[curEgo.sin] && SIN_BY_ID[curEgo.sin].color) + '">' +
         '<div class="head-ghost" aria-hidden="true">' + esc(curEgo.source || '') + '</div>' +
         '<div class="head-body">' +
         '<div class="head-rank">' + esc(curEgo.rank) + '</div>' +
         '<div class="head-identity">' +
         '<div class="head-icon">' + img(p.icon, 'head-icon-img', p.name + 'のアイコン') + '</div>' +
-        '<div class="head-banner is-sin" style="' + sinVars(curEgo.sin) + '">' + esc(curEgo.name) + '</div>' +
+        '<div class="head-banner">' + esc(curEgo.name) + '</div>' +
         '</div>' +
         '</div></header>';
     } else {
-      headHtml = '<header class="head">' +
+      headHtml = '<header class="head" style="' + headColorVar(p.themeColor) + '">' +
       '<div class="head-ghost" aria-hidden="true">' + esc(p.name) + '</div>' +
       '<div class="head-body">' +
       '<div class="head-top">' +
