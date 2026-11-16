@@ -1879,6 +1879,16 @@ textarea {
   color: rgb(150, 140, 128);
 }
  
+.pl-logo {
+  position: absolute;
+  right: 18rem;
+  bottom: 1.5rem;
+  width: 24rem;
+  height: 24rem;
+  opacity: 0.15;
+  pointer-events: none;
+}
+ 
 .pl-side {
   position: absolute;
   top: 6.5rem;
