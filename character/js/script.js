@@ -36,6 +36,10 @@ document.addEventListener('dragstart', function (ev) {
     '<path d="M5 20l1-4 10.5-10.5a2 2 0 012.8 0l.2.2a2 2 0 010 2.8L9 19z"/>' +
     '<path d="M14.5 7.5l3 3"/>' +
     '</svg>';
+  var ICON_CLOSE_ALL =
+    '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true">' +
+    '<path d="M4 5l7 7-7 7M12 5l7 7-7 7"/>' +
+    '</svg>';
   var ICON_CLOSE =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
     '<path d="M5 5l14 14M19 5L5 19"/>' +
@@ -54,6 +58,10 @@ document.addEventListener('dragstart', function (ev) {
     egos: {},
     remote: {},
     roles: { admin: false, gm: false, player: false },
+    view: 'sheet',
+    personaId: '',
+    detail: '',
+    confirm: '',
     tab: 'overview',
     sub: 0,
     passive: false,
@@ -137,7 +145,31 @@ document.addEventListener('dragstart', function (ev) {
       if (!ok) { rid = def.egos && def.egos[rank]; }
       egos[rank] = rid && state.egos[rid] ? state.egos[rid] : null;
     });
-    return { identity: state.identities[identityId], egos: egos };
+    return { identityId: identityId, identity: state.identities[identityId], egos: egos };
+  }
+
+  function canEquip() {
+    return state.roles.admin || state.roles.gm || state.roles.player;
+  }
+
+  function route() {
+    var parts = (location.hash || '').replace(/^#\/?/, '').split('/');
+    var p = state.prisoner;
+    state.detail = '';
+    state.confirm = '';
+    if (parts[0] === 'identities' && parts[1] && p && p.identities.indexOf(parts[1]) >= 0 && state.identities[parts[1]]) {
+      state.view = 'persona';
+      state.personaId = parts[1];
+      state.sub = 0;
+      state.passive = false;
+      state.panel = '';
+    } else if (parts[0] === 'identities') {
+      state.view = 'list';
+    } else if (parts[0] === 'egos') {
+      state.view = 'egolist';
+    } else {
+      state.view = 'sheet';
+    }
   }
 
   function piece(o) {
@@ -465,27 +497,171 @@ document.addEventListener('dragstart', function (ev) {
     return h + '</div>';
   }
 
-  function render() {
+  function nameLines(identity) {
+    return (identity.nameParts || [identity.name]).map(esc).join('<br>');
+  }
+
+  function miniPiece(sin, type, tier) {
+    var dir = 'image/skill/' + sin + '/';
+    return '<span class="pl-piece">' +
+      img(dir + 's' + tier + '-bg.png', 'pl-piece-img') +
+      img('image/skill/skill-base.png', 'pl-piece-img') +
+      img('image/icon/' + type + '.png', 'pl-piece-img is-icon') +
+      img(dir + 's' + tier + '.png', 'pl-piece-img') +
+      '</span>';
+  }
+
+  function cardSkillsHtml(identity) {
+    var h = '<span class="pl-sk">';
+    identity.skills.forEach(function (s) {
+      h += '<span class="pl-sk-row"><span>' + (ROMAN[s.tier] || s.tier) + '</span>' + miniPiece(s.sin, s.type, s.tier) + '</span>';
+    });
+    var d = identity.defense;
+    if (d) { h += '<span class="pl-sk-row"><span>DEF</span>' + miniPiece(d.sin, d.type, 1) + '</span>'; }
+    return h + '</span>';
+  }
+
+  function cardStatHtml(identity) {
+    var h = '<span class="pl-st">' +
+      '<span class="pl-st-line">' + img('image/icon/hp.png', 'pl-st-icon') + esc(identity.hp) + '</span>' +
+      '<span class="pl-st-line">' + img('image/icon/speed.png', 'pl-st-icon') + esc(speedText(identity)) + '</span>' +
+      '<span class="pl-rs">';
+    RESIST_TYPES.forEach(function (t) {
+      var m = identity.resist && identity.resist[t] != null ? identity.resist[t] : 1;
+      var kind = m > 1 ? 'weak' : (m < 1 ? 'strong' : 'normal');
+      var label = m > 1 ? '脆弱' : (m < 1 ? '耐性' : '普通');
+      h += '<span class="pl-rs-item is-' + kind + '">' + img('image/icon/' + t + '.png', 'pl-rs-icon') +
+        '<b>' + label + '</b><b>[x' + m + ']</b></span>';
+    });
+    return h + '</span></span>';
+  }
+
+  function cardHtml(id, identity, selected) {
+    var det = state.detail;
+    return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + '" href="#identities/' + esc(id) + '" aria-label="' + esc(identity.name) + '">' +
+      '<span class="pl-card-bg"></span>' +
+      (identity.orgIcon ? img(identity.orgIcon, 'pl-card-org') : '') +
+      img('image/frame/' + (identity.rarity || 1) + '.png', 'pl-card-frame') +
+      (selected ? '<span class="pl-card-tag">SELECTED</span>' : '') +
+      '<span class="pl-card-name">' + nameLines(identity) + '</span>' +
+      (det === 'skill' ? cardSkillsHtml(identity) : (det === 'stat' ? cardStatHtml(identity) : '')) +
+      '</a>';
+  }
+
+  function detailCtlHtml() {
+    if (!state.detail) {
+      return '<button class="pl-bev pl-detail" type="button" data-act="detail-open"><span>«</span><span>詳細</span></button>';
+    }
+    return '<div class="pl-dctl" role="group" aria-label="詳細表示">' +
+      '<button class="pl-dctl-close" type="button" aria-label="通常表示へ戻る" data-act="detail-close">' + ICON_CLOSE_ALL + '</button>' +
+      '<button class="pl-dctl-op" type="button" aria-pressed="' + (state.detail === 'skill') + '" data-act="detail-mode" data-mode="skill">スキル</button>' +
+      '<button class="pl-dctl-op" type="button" aria-pressed="' + (state.detail === 'stat') + '" data-act="detail-mode" data-mode="stat">人格</button>' +
+      '</div>';
+  }
+
+  function listSideHtml(eq) {
+    var identity = eq.identity;
+    var h = '<aside class="pl-side"><h2 class="pl-side-title">現在選択中の人格</h2>' +
+      '<div class="pl-side-banner">' + (identity && identity.orgIcon ? img(identity.orgIcon, 'pl-side-org') : '') + '</div>';
+    RANKS.forEach(function (rank) {
+      var ego = eq.egos[rank];
+      h += '<div class="pl-ego' + (ego ? '' : ' is-none') + '"><span class="pl-ego-rank">' + RANK_LETTERS[rank] + '</span>' +
+        '<span class="pl-ego-name">' + esc(ego ? ego.name : rank) + '</span></div>';
+    });
+    return h + '</aside>';
+  }
+
+  function listHtml() {
     var p = state.prisoner;
     var eq = equipment();
-    var identity = eq.identity;
+    var isEgo = state.view === 'egolist';
+    var cards = '';
+    if (isEgo) {
+      cards = '<p class="pl-note">E.G.O一覧は準備中です。</p>';
+    } else {
+      p.identities.forEach(function (id) {
+        if (state.identities[id]) { cards += cardHtml(id, state.identities[id], id === eq.identityId); }
+      });
+    }
+    return '<div class="pl">' +
+      '<div class="pl-bar"></div>' +
+      '<a class="pl-back" href="#" aria-label="囚人ページへ戻る">' + ICON_BACK + '</a>' +
+      '<h1 class="pl-title">' + (isEgo ? 'E.G.O' : '人格') + ': ' + esc(p.name) + '</h1>' +
+      '<div class="pl-tabs">' +
+      '<a class="pl-bev pl-tab" href="#identities" aria-current="' + (!isEgo) + '">人格</a>' +
+      '<a class="pl-bev pl-tab" href="#egos" aria-current="' + isEgo + '">E.G.O</a>' +
+      '</div>' +
+      '<div class="pl-ctl">' + (isEgo ? '' : detailCtlHtml()) + '</div>' +
+      '<div class="pl-grid">' + cards + '</div>' +
+      listSideHtml(eq) +
+      '</div>';
+  }
+
+  function confirmHtml() {
+    if (!state.confirm) { return ''; }
+    var identity = state.identities[state.personaId];
+    return '<div class="confirm" role="dialog" aria-label="装備の確認"><div class="confirm-box">' +
+      '<p class="confirm-text">「' + esc(identity.name) + '」を装備しますか？</p>' +
+      '<div class="confirm-actions">' +
+      '<button class="panel-btn" type="button" data-act="equip-no"' + (state.saving ? ' disabled' : '') + '>キャンセル</button>' +
+      '<button class="panel-btn is-primary" type="button" data-act="equip-yes"' + (state.saving ? ' disabled' : '') + '>装備する</button>' +
+      '</div>' + (state.status ? '<p class="panel-status">' + esc(state.status) + '</p>' : '') + '</div></div>';
+  }
+
+  function equipBtnHtml(eq) {
+    if (state.personaId === eq.identityId) { return '<span class="persona-btn is-on">装備中</span>'; }
+    if (!canEquip()) { return ''; }
+    return '<button class="persona-btn" type="button" data-act="equip">装備</button>';
+  }
+
+  function equip() {
+    if (!state.db || state.saving) {
+      state.status = '保存できません。ログイン状態と接続を確認してください。';
+      render();
+      return;
+    }
+    state.saving = true;
+    state.status = '保存しています…';
+    render();
+    state.db.ref('characters/' + charId + '/identity').set(state.personaId).then(function () {
+      state.saving = false;
+      state.status = '';
+      state.confirm = '';
+      location.hash = '';
+    }, function (e) {
+      state.saving = false;
+      state.status = '保存できませんでした。' + (e && e.message ? e.message : '');
+      render();
+    });
+  }
+
+  function render() {
+    if (state.view === 'list' || state.view === 'egolist') {
+      appEl.innerHTML = listHtml();
+      return;
+    }
+    var p = state.prisoner;
+    var eq = equipment();
+    var isPersona = state.view === 'persona';
+    var tabNow = isPersona ? 'skill' : state.tab;
+    var identity = isPersona ? state.identities[state.personaId] : eq.identity;
     var egoRow = '';
     RANKS.forEach(function (rank) { egoRow += egoUnit(rank, eq.egos[rank]); });
 
     var tabContent;
-    if (state.tab === 'overview') {
+    if (tabNow === 'overview') {
       tabContent = scrollWrap('<div class="ego-row">' + egoRow + '</div>' +
         '<div class="divider" aria-hidden="true"></div>' +
         '<div class="skill-row">' + skillsHtml(identity) + '</div>');
-    } else if (state.tab === 'skill') {
+    } else if (tabNow === 'skill') {
       tabContent = skillTabHtml(identity);
     } else {
       tabContent = egoTabHtml(eq);
     }
-    var isEgoTab = state.tab === 'ego';
+    var isEgoTab = tabNow === 'ego';
     var curEgo = isEgoTab ? eq.egos[RANKS[state.sub] || RANKS[0]] : null;
     var modeNav = '';
-    if (state.tab === 'skill' && (identity.passive || identity.support)) {
+    if (tabNow === 'skill' && (identity.passive || identity.support)) {
       modeNav = modeNavHtml([{ label: 'パッシブ', on: state.passive, act: 'passive' }]);
     } else if (isEgoTab && curEgo) {
       var items = [{ label: '覚醒', on: state.egoMode === 'awaken', act: 'mode', mode: 'awaken' }];
@@ -521,8 +697,8 @@ document.addEventListener('dragstart', function (ev) {
     }
 
     var tabs = '';
-    ['overview', 'skill', 'ego'].forEach(function (t) {
-      tabs += '<button class="tab is-' + t + '" type="button" aria-pressed="' + (state.tab === t) + '" data-act="tab" data-tab="' + t + '">' + TAB_NAMES[t] + '</button>';
+    (isPersona ? ['skill'] : ['overview', 'skill', 'ego']).forEach(function (t) {
+      tabs += '<button class="tab is-' + t + '" type="button" aria-pressed="' + (tabNow === t) + '" data-act="tab" data-tab="' + t + '">' + TAB_NAMES[t] + '</button>';
     });
 
     appEl.innerHTML =
@@ -532,7 +708,7 @@ document.addEventListener('dragstart', function (ev) {
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
       '<nav class="side-nav" aria-label="補助機能">' +
-      '<a class="side-btn is-back" href="' + esc(base + 'character/') + '" aria-label="ハブへ戻る">' + ICON_BACK + '</a>' +
+      '<a class="side-btn is-back" href="' + (isPersona ? '#identities' : esc(base + 'character/')) + '" aria-label="' + (isPersona ? '人格一覧へ戻る' : 'ハブへ戻る') + '">' + ICON_BACK + '</a>' +
       sideBtn('説明', 'desc', ICON_DESC) +
       sideBtn('メモ', 'memo', ICON_MEMO) +
       '</nav>' +
@@ -553,13 +729,14 @@ document.addEventListener('dragstart', function (ev) {
       (isEgoTab && curEgo && curEgo.sp != null
         ? '<div class="head-sp">' + img('image/icon/sanity.png', 'head-sp-icon', '') + '<span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>'
         : '') +
-      '<a class="persona-btn" href="#">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>' +
+      (isPersona ? equipBtnHtml(eq) : '<a class="persona-btn" href="' + (isEgoTab ? '#egos' : '#identities') + '">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>') +
       '</div></div>' +
       modeNav +
 
       '<section class="content">' + tabContent + '</section>' +
       '</main>' +
-      '</div>';
+      '</div>' +
+      confirmHtml();
   }
 
   function showError(message) {
@@ -594,6 +771,7 @@ document.addEventListener('dragstart', function (ev) {
     if (!el || !appEl.contains(el)) { return; }
     var act = el.getAttribute('data-act');
     if (act === 'tab') {
+      if (state.view === 'persona') { return; }
       state.tab = el.getAttribute('data-tab');
       state.sub = 0;
       state.passive = false;
@@ -623,6 +801,21 @@ document.addEventListener('dragstart', function (ev) {
       state.status = '';
     } else if (act === 'save') {
       save();
+      return;
+    } else if (act === 'detail-open') {
+      state.detail = 'skill';
+    } else if (act === 'detail-close') {
+      state.detail = '';
+    } else if (act === 'detail-mode') {
+      state.detail = el.getAttribute('data-mode') === 'stat' ? 'stat' : 'skill';
+    } else if (act === 'equip') {
+      state.confirm = state.personaId;
+      state.status = '';
+    } else if (act === 'equip-no') {
+      state.confirm = '';
+      state.status = '';
+    } else if (act === 'equip-yes') {
+      equip();
       return;
     }
     render();
@@ -680,6 +873,12 @@ document.addEventListener('dragstart', function (ev) {
         if (!state.prisoner) { throw new Error('囚人「' + charId + '」のデータがありません。'); }
         document.title = state.prisoner.name + ' | キャラクターシート | LCBTRPG';
         appEl.addEventListener('click', onClick);
+        window.addEventListener('hashchange', function () {
+          route();
+          render();
+          window.scrollTo(0, 0);
+        });
+        route();
         render();
         initFirebase();
       })
