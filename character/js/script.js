@@ -550,7 +550,7 @@ document.addEventListener('dragstart', function (ev) {
 
   function detailCtlHtml() {
     if (!state.detail) {
-      return '<button class="pl-bev pl-detail" type="button" data-act="detail-open"><span>«</span><span>詳細</span></button>';
+      return '<button class="pl-bev pl-detail" type="button" data-act="detail-open"><span class="pl-flip">' + ICON_CLOSE_ALL + '</span><span>詳細</span></button>';
     }
     return '<div class="pl-dctl" role="group" aria-label="詳細表示">' +
       '<button class="pl-dctl-close" type="button" aria-label="通常表示へ戻る" data-act="detail-close">' + ICON_CLOSE_ALL + '</button>' +
