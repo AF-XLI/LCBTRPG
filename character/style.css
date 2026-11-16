@@ -1526,9 +1526,8 @@ textarea {
   left: 0;
   right: 0;
   height: 3.375rem;
-  background: linear-gradient(rgb(140, 102, 68), rgb(122, 86, 54));
-  border-bottom: 0.125rem solid rgb(78, 52, 30);
-  border-top: 0.125rem solid rgb(168, 128, 92);
+  background: rgb(102, 69, 42);
+  isolation: isolate;
 }
  
 .pl-bar::before {
@@ -1539,7 +1538,7 @@ textarea {
   bottom: 0;
   right: 0;
   background: url("../image/bg/panel.png") 0 0 / 44rem auto;
-  opacity: 0.7;
+  mix-blend-mode: plus-lighter;
 }
  
 .pl-bev {
