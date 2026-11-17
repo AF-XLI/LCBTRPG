@@ -1723,11 +1723,11 @@ textarea {
  
 .pl-card-art {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  border-radius: 0.375rem;
+  top: 6.5%;
+  left: 5.7%;
+  bottom: 5.4%;
+  right: 9%;
+  border-radius: 0.5rem;
   overflow: hidden;
 }
  
@@ -1748,14 +1748,16 @@ textarea {
   transform-origin: var(--pos);
 }
  
-.pl-card-img.is-knee {
+.pl-card-img.is-fit {
+  --fit: 0.42;
+  --shift: 0%;
   position: absolute;
   top: 0;
   left: 50%;
   width: auto;
-  height: calc(100% / 0.7);
+  height: calc(100% / var(--fit));
   max-width: none;
-  transform: translateX(-50%);
+  transform: translate(-50%, calc(var(--shift) * -1));
 }
  
 .pl-card-img.is-ph {
