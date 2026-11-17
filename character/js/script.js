@@ -16,6 +16,7 @@ document.addEventListener('dragstart', function (ev) {
   var FX = root.LCEffects;
   var SINS = FX.SINS;
   var SIN_BY_ID = FX.SIN_BY_ID;
+  var PLACEHOLDER = 'image/placeholder/portrait.webp';
   var PHYS = FX.PHYS;
   var RESIST_TYPES = Object.keys(PHYS);
 
@@ -94,13 +95,42 @@ document.addEventListener('dragstart', function (ev) {
       img('image/icon/' + icon + '.png', 'status-icon') + '<span class="status-num">' + esc(value) + '</span></div>';
   }
 
-  function portraitHtml(p) {
-    var style = '';
-    if (p.portraitTop != null) {
-      style = 'style="top: ' + p.portraitTop + 'rem;' + (p.portraitWidth != null ? ' width: ' + p.portraitWidth + 'rem;' : '') + '" ';
+  // 人格の立ち絵: stageImage=立ち絵と背景が1枚 / portrait=立ち絵のみ(背景は囚人の背景) / 囚人の既定人格は囚人の立ち絵 / それ以外はプレースホルダー
+  function identityArt(p, id, identity) {
+    if (identity && identity.stageImage) {
+      return { kind: 'stage', src: identity.stageImage, layout: identity };
     }
-    return img(p.portrait, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + style);
+    if (identity && identity.portrait) {
+      return { kind: 'portrait', src: identity.portrait, layout: identity };
+    }
+    if (p.default && p.default.identity === id) {
+      return { kind: 'portrait', src: p.portrait, layout: p, knee: true };
+    }
+    return { kind: 'portrait', src: PLACEHOLDER, layout: {}, placeholder: true };
   }
+
+  function portraitHtml(art, p) {
+    if (art.kind === 'stage') { return ''; }
+    var lay = art.layout;
+    var style = '';
+    if (lay.portraitTop != null) {
+      style = 'style="top: ' + lay.portraitTop + 'rem;' + (lay.portraitWidth != null ? ' width: ' + lay.portraitWidth + 'rem;' : '') + '" ';
+    }
+    return img(art.src, 'stage-portrait', p.name + 'の立ち絵').replace('<img ', '<img ' + style);
+  }
+
+  function artBgAttr(art, cls) {
+    if (art.kind !== 'portrait' || art.placeholder) { return 'class="' + cls + '"'; }
+    return 'class="' + cls + ' has-bg" style="background-image: url(\'' + esc(base + state.prisoner.background) + '\')"';
+  }
+
+  function artImgHtml(art, identity, cls) {
+    var vars = '';
+    if (identity && identity.cardPos) { vars += '--pos: ' + identity.cardPos + ';'; }
+    if (identity && identity.cardZoom) { vars += '--zoom: ' + identity.cardZoom + ';'; }
+    return img(art.src, cls + (art.placeholder ? ' is-ph' : '') + (art.knee ? ' is-knee' : ''), '').replace('<img ', '<img ' + (vars ? 'style="' + vars + '" ' : ''));
+  }
+
 
   function headColorVar(color) {
     return color ? '--head-color: ' + color + ';' : '';
@@ -542,9 +572,10 @@ document.addEventListener('dragstart', function (ev) {
 
   function cardHtml(id, identity, selected) {
     var det = state.detail;
+    var art = identityArt(state.prisoner, id, identity);
     return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + '" href="#identities/' + esc(id) + '" aria-label="' + esc(identity.name) + '">' +
       '<span class="pl-card-bg"></span>' +
-      (identity.orgIcon ? img(identity.orgIcon, 'pl-card-org') : '') +
+      '<span ' + artBgAttr(art, 'pl-card-art') + '>' + artImgHtml(art, identity, 'pl-card-img') + '</span>' +
       img('image/frame/' + (identity.rarity || 1) + '.png', 'pl-card-frame') +
       (selected ? '<span class="pl-card-tag">SELECTED</span>' : '') +
       '<span class="pl-card-name">' + nameLines(identity) + '</span>' +
@@ -563,10 +594,16 @@ document.addEventListener('dragstart', function (ev) {
       '</div>';
   }
 
+  function bannerHtml(identity, id) {
+    if (!identity) { return '<div class="pl-side-banner"></div>'; }
+    var art = identityArt(state.prisoner, id, identity);
+    return '<div ' + artBgAttr(art, 'pl-side-banner') + '>' + artImgHtml(art, identity, 'pl-card-img') + '</div>';
+  }
+
   function listSideHtml(eq) {
     var identity = eq.identity;
     var h = '<aside class="pl-side"><h2 class="pl-side-title">現在選択中の人格</h2>' +
-      '<div class="pl-side-banner">' + (identity && identity.orgIcon ? img(identity.orgIcon, 'pl-side-org') : '') + '</div>';
+      bannerHtml(identity, eq.identityId);
     RANKS.forEach(function (rank) {
       var ego = eq.egos[rank];
       h += '<div class="pl-ego' + (ego ? '' : ' is-none') + '"><span class="pl-ego-rank">' + RANK_LETTERS[rank] + '</span>' +
@@ -650,6 +687,7 @@ document.addEventListener('dragstart', function (ev) {
     var isPersona = state.view === 'persona';
     var tabNow = isPersona ? 'skill' : state.tab;
     var identity = isPersona ? state.identities[state.personaId] : eq.identity;
+    var art = identityArt(p, isPersona ? state.personaId : eq.identityId, identity);
     var egoRow = '';
     RANKS.forEach(function (rank) { egoRow += egoUnit(rank, eq.egos[rank]); });
 
@@ -708,8 +746,8 @@ document.addEventListener('dragstart', function (ev) {
 
     appEl.innerHTML =
       '<div class="sheet">' +
-      '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + p.background) + '\')">' +
-      portraitHtml(p) +
+      '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + (art.kind === 'stage' ? art.src : p.background)) + '\')">' +
+      portraitHtml(art, p) +
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
       '<nav class="side-nav" aria-label="補助機能">' +
