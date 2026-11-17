@@ -120,6 +120,23 @@ textarea {
   cursor: pointer;
 }
  
+.side-btn svg,
+.pl-back svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+ 
+.pl-dctl-close svg,
+.pl-flip svg {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+ 
+.panel-close svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+ 
 .side-btn.is-back {
   width: 5.063rem;
 }
