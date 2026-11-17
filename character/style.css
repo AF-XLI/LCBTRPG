@@ -1749,15 +1749,16 @@ textarea {
 }
  
 .pl-card-img.is-fit {
-  --fit: 0.42;
+  --fit: 0.36;
   --shift: 0%;
+  --x: 0%;
   position: absolute;
   top: 0;
   left: 50%;
   width: auto;
   height: calc(100% / var(--fit));
   max-width: none;
-  transform: translate(-50%, calc(var(--shift) * -1));
+  transform: translate(calc(-50% + var(--x)), calc(var(--shift) * -1));
 }
  
 .pl-card-img.is-ph {
