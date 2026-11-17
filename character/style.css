@@ -1761,6 +1761,10 @@ textarea {
   transform: translate(calc(-50% + var(--x)), calc(var(--shift) * -1));
 }
  
+.pl-side-banner .pl-card-img.is-fit {
+  --fit: 0.15;
+}
+ 
 .pl-card-img.is-ph {
   object-fit: contain;
   object-position: center;
@@ -2024,4 +2028,25 @@ textarea {
   display: grid;
   place-items: center;
   transform: scaleX(-1);
+}
+ 
+@media only screen and (max-width: 1279px) {
+  html:has(.sheet, .pl) {
+    font-size: min(calc(100vw / 80), calc(100vh / 50.625));
+    font-size: min(calc(100vw / 80), calc(100dvh / 50.625));
+  }
+ 
+  html:has(.sheet, .pl) body {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: url("../image/bg/letterbox.png") center / cover no-repeat rgb(0, 0, 0);
+    overflow: hidden;
+  }
+ 
+  .sheet,
+  .pl {
+    width: 80rem;
+  }
 }
