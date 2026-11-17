@@ -307,6 +307,8 @@ textarea {
 }
  
 .resist-row {
+  position: relative;
+  top: 0.313rem;
   display: grid;
   align-items: center;
   gap: 0.5rem;
@@ -327,17 +329,18 @@ textarea {
 }
  
 .resist-text {
-  line-height: 1.3;
+  line-height: 1.05;
+  text-align: center;
 }
  
 .resist-label {
-  font-size: 0.938rem;
+  font-size: 1.25rem;
   font-weight: 700;
 }
  
 .resist-mult {
   font-family: var(--font-num);
-  font-size: 0.75rem;
+  font-size: 1.313rem;
 }
  
 .resist.is-weak {
@@ -1342,10 +1345,31 @@ textarea {
   right: 1.5rem;
   z-index: 2;
   display: flex;
-  gap: 0.375rem;
+  gap: 0;
   justify-content: space-between;
   padding-block-start: 0.75rem;
   border-block-start: 0.063rem solid var(--brown);
+}
+ 
+.sin-resists .resist {
+  gap: 0;
+}
+ 
+.sin-resists .resist-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+ 
+.sin-resists .resist-text {
+  white-space: nowrap;
+}
+ 
+.sin-resists .resist-label {
+  font-size: 1.063rem;
+}
+ 
+.sin-resists .resist-mult {
+  font-size: 1.125rem;
 }
  
 .head-rank {
