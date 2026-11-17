@@ -2059,7 +2059,6 @@ textarea {
     min-height: 100vh;
     min-height: 100dvh;
     background: url("../image/bg/letterbox.png") center / cover no-repeat rgb(0, 0, 0);
-    overflow: hidden;
   }
  
   .sheet,
