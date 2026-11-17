@@ -2,6 +2,8 @@
   "gray": {
     "name": "グレイ",
     "themeColor": "rgb(249, 208, 36)",
+    "bannerShift": 2.5,
+    "bannerX": 1.6,
     "cardShift": -2.3,
     "cardX": 4,
     "portrait": "image/character/gray/portrait.png",
@@ -38,6 +40,8 @@
         "ZAYIN": "jabberwock"
       }
     },
+    "bannerShift": 20.5,
+    "bannerX": -3,
     "cardShift": 13.6,
     "portraitTop": -9.867,
     "portraitWidth": 59.8
