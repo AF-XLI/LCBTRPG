@@ -129,6 +129,7 @@ document.addEventListener('dragstart', function (ev) {
     if (identity && identity.cardPos) { vars += '--pos: ' + identity.cardPos + ';'; }
     if (identity && identity.cardZoom) { vars += '--zoom: ' + identity.cardZoom + ';'; }
     if (art.fit && art.layout.cardFit) { vars += '--fit: ' + art.layout.cardFit + ';'; }
+    if (art.fit && art.layout.cardX) { vars += '--x: ' + art.layout.cardX + '%;'; }
     if (art.fit && art.layout.cardShift) { vars += '--shift: ' + art.layout.cardShift + '%;'; }
     return img(art.src, cls + (art.placeholder ? ' is-ph' : '') + (art.fit ? ' is-fit' : ''), '').replace('<img ', '<img ' + (vars ? 'style="' + vars + '" ' : ''));
   }
