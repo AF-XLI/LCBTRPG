@@ -24,25 +24,25 @@ document.addEventListener('dragstart', function (ev) {
   var RANK_LETTERS = { ZAYIN: 'ז', TETH: 'ט', HE: 'ה', WAW: 'ו', ALEPH: 'א' };
   var PANEL_NAMES = { desc: '説明', memo: 'メモ' };
   var ICON_BACK =
-    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
     '<path d="M20 12H5M11 5l-7 7 7 7"/>' +
     '</svg>';
   var ICON_DESC =
-    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/>' +
     '<path d="M12 6v13"/>' +
     '</svg>';
   var ICON_MEMO =
-    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M5 20l1-4 10.5-10.5a2 2 0 012.8 0l.2.2a2 2 0 010 2.8L9 19z"/>' +
     '<path d="M14.5 7.5l3 3"/>' +
     '</svg>';
   var ICON_CLOSE_ALL =
-    '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" aria-hidden="true">' +
     '<path d="M4 5l7 7-7 7M12 5l7 7-7 7"/>' +
     '</svg>';
   var ICON_CLOSE =
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">' +
     '<path d="M5 5l14 14M19 5L5 19"/>' +
     '</svg>';
 
@@ -124,13 +124,15 @@ document.addEventListener('dragstart', function (ev) {
     return 'class="' + cls + ' has-bg" style="background-image: url(\'' + esc(base + state.prisoner.background) + '\')"';
   }
 
-  function artImgHtml(art, identity, cls) {
+  function artImgHtml(art, identity, cls, prefix) {
+    prefix = prefix || 'card';
     var vars = '';
     if (identity && identity.cardPos) { vars += '--pos: ' + identity.cardPos + ';'; }
     if (identity && identity.cardZoom) { vars += '--zoom: ' + identity.cardZoom + ';'; }
-    if (art.fit && art.layout.cardFit) { vars += '--fit: ' + art.layout.cardFit + ';'; }
-    if (art.fit && art.layout.cardX) { vars += '--x: ' + art.layout.cardX + '%;'; }
-    if (art.fit && art.layout.cardShift) { vars += '--shift: ' + art.layout.cardShift + '%;'; }
+    var lay = art.layout;
+    if (art.fit && lay[prefix + 'Fit']) { vars += '--fit: ' + lay[prefix + 'Fit'] + ';'; }
+    if (art.fit && (lay[prefix + 'X'] || lay.cardX)) { vars += '--x: ' + (lay[prefix + 'X'] || lay.cardX) + '%;'; }
+    if (art.fit && lay[prefix + 'Shift']) { vars += '--shift: ' + lay[prefix + 'Shift'] + '%;'; }
     return img(art.src, cls + (art.placeholder ? ' is-ph' : '') + (art.fit ? ' is-fit' : ''), '').replace('<img ', '<img ' + (vars ? 'style="' + vars + '" ' : ''));
   }
 
@@ -600,7 +602,7 @@ document.addEventListener('dragstart', function (ev) {
   function bannerHtml(identity, id) {
     if (!identity) { return '<div class="pl-side-banner"></div>'; }
     var art = identityArt(state.prisoner, id, identity);
-    return '<div ' + artBgAttr(art, 'pl-side-banner') + '>' + artImgHtml(art, identity, 'pl-card-img') + '</div>';
+    return '<div ' + artBgAttr(art, 'pl-side-banner') + '>' + artImgHtml(art, identity, 'pl-card-img', 'banner') + '</div>';
   }
 
   function listSideHtml(eq) {
