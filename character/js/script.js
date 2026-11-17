@@ -101,10 +101,10 @@ document.addEventListener('dragstart', function (ev) {
       return { kind: 'stage', src: identity.stageImage, layout: identity };
     }
     if (identity && identity.portrait) {
-      return { kind: 'portrait', src: identity.portrait, layout: identity };
+      return { kind: 'portrait', src: identity.portrait, layout: identity, fit: true };
     }
     if (p.default && p.default.identity === id) {
-      return { kind: 'portrait', src: p.portrait, layout: p, knee: true };
+      return { kind: 'portrait', src: p.portrait, layout: p, fit: true };
     }
     return { kind: 'portrait', src: PLACEHOLDER, layout: {}, placeholder: true };
   }
@@ -128,7 +128,9 @@ document.addEventListener('dragstart', function (ev) {
     var vars = '';
     if (identity && identity.cardPos) { vars += '--pos: ' + identity.cardPos + ';'; }
     if (identity && identity.cardZoom) { vars += '--zoom: ' + identity.cardZoom + ';'; }
-    return img(art.src, cls + (art.placeholder ? ' is-ph' : '') + (art.knee ? ' is-knee' : ''), '').replace('<img ', '<img ' + (vars ? 'style="' + vars + '" ' : ''));
+    if (art.fit && art.layout.cardFit) { vars += '--fit: ' + art.layout.cardFit + ';'; }
+    if (art.fit && art.layout.cardShift) { vars += '--shift: ' + art.layout.cardShift + '%;'; }
+    return img(art.src, cls + (art.placeholder ? ' is-ph' : '') + (art.fit ? ' is-fit' : ''), '').replace('<img ', '<img ' + (vars ? 'style="' + vars + '" ' : ''));
   }
 
 
