@@ -805,6 +805,12 @@ textarea {
   transform: translate(-49.75%, -57.3%);
 }
  
+.piece-base,
+.piece-icon,
+.piece-orn {
+  z-index: 2;
+}
+ 
 .piece-base {
   top: 48.8%;
   width: 113%;
@@ -862,7 +868,6 @@ textarea {
   position: absolute;
   top: -1.625rem;
   left: calc(50% - 1.482rem);
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -886,9 +891,14 @@ textarea {
   left: 0;
   bottom: 0;
   right: 0;
-  z-index: -1;
+  z-index: 1;
   background: var(--sin);
-  clip-path: polygon(0 0.685rem, 2.452rem 0.253rem, 2.749rem 1.688rem, 0.215rem 1.688rem);
+  clip-path: polygon(0 0.56rem, 2.452rem 0.128rem, 2.749rem 1.688rem, 0.215rem 1.688rem);
+}
+ 
+.piece-num {
+  position: relative;
+  z-index: 3;
 }
  
 .piece-tag.is-sloth::before {
