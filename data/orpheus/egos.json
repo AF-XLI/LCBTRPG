@@ -1,0 +1,49 @@
+{
+  "lyre": {
+    "rank": "ZAYIN",
+    "name": "撥弦楽器 (リラ)",
+    "sin": "lust",
+    "type": "slash",
+    "base": 10,
+    "coin": 12,
+    "coins": 1,
+    "weight": 1,
+    "sp": 15,
+    "cost": {
+      "lust": 4,
+      "envy": 2
+    },
+    "resist": {
+      "sloth": 2,
+      "pride": 2,
+      "envy": 0.75
+    },
+    "effects": [
+      {
+        "coin": 1,
+        "timing": "headsHit",
+        "type": "hpHeal",
+        "count": 2,
+        "percent": 5
+      },
+      {
+        "coin": 1,
+        "timing": "tailsHit",
+        "type": "spHealLowest",
+        "count": 4,
+        "amount": 10
+      }
+    ],
+    "passive": {
+      "name": "カデンツァ",
+      "effects": [
+        {
+          "timing": "battleStart",
+          "type": "spHealLowest",
+          "count": 1,
+          "perFullReso": 2
+        }
+      ]
+    }
+  }
+}
