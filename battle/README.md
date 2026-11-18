@@ -16,6 +16,7 @@ GitHub Pages(静的ホスティング)+ Firebase Realtime Database(無料のSpar
 | `js/app.js` | 操作・同期・矢印/演出の制御 |
 | `sample/party.json`, `sample/enemies.json` | サンプルデータ |
 | `test/sim.js` | 自動対戦試験(`node test/sim.js`) |
+| `test/run.js`, `test/lib/` | キャラシートのデータ(囚人・人格・E.G.O)を読み取って効果が戦闘で正しく動くかを確かめる試験(`node test/run.js`) |
 
 ## まず動かす(Firebase なし)
 
@@ -74,7 +75,7 @@ Firebase の設定、ログインと役職の登録、GitHub Pages での公開�
 - パッシブ・サポートパッシブは `passive: {name, sin, count, effects[]}` と `support: {…}` です(`sin` と `count` は「罪悪属性×n保有」の条件で、`resonance:true` を付けると「×n共鳴」になります)。
   - バトルパッシブ(`passive`)は人格に付随する自己効果で、サポートパッシブ(`support`)は味方全体への効果です(サポートパッシブはパーティ全体で最大4つ。選択の画面は今後、キャラクターシート完成後に考えます)。
   - 画面左の金枠に並びます(パッシブが上、サポートパッシブが下)。`need` と `reso` がないバトルパッシブは常時発動で、左の欄には出しません。
-  - `need` は「資源×n保有」の条件で、`{"pride": 3}` のように書きます。足りない間はアイコンが暗くなります(省略すると常に明るい)。
+  - `need` は「資源×n保有」条件で、`{"pride": 3}` のように書きます。足りない間はアイコンが暗くなります(省略すると常に明るい)。
   - `reso` は「罪悪名×n共鳴」の条件で、`{"wrath": 3}` のように書きます。同ラウンドに味方が使う同罪悪のスキルがn個以上で発動し、位置は問わず、戦闘開始時に判定します。`need` と併記すると両方が必要です。
   - `icon` は画像のパスで、省略するとキャラ名の頭文字を表示します。アイコンを押すと説明が出ます。
   - `grants` は戦闘開始時(`combatStart`)などに自動で発動します。条件(`need` / `reso`)は戦闘開始時に判定し、そのラウンド中は固定です。資源は消費しません。発動するとログに「(キャラ名)のパッシブ「(名前)」が発動」と出ます。
@@ -246,4 +247,5 @@ Firebase の設定、ログインと役職の登録、GitHub Pages での公開�
 ## 開発メモ
 
 - ルール計算は `js/logic.js` に分離しており、DOM・通信に依存しません。`node test/sim.js` で乱数対戦を400回流して例外が出ないことを確認できます(`node test/sim.js one 7` でシード7の戦闘ログを表示)。
+- `node test/run.js` は `data/` の囚人・人格・E.G.Oを全部読み、効果ごとに確認を自動で作って実行します。絞り込みは `node test/run.js アリスのID 人格ID skill3`(囚人ID・人格ID・E.G.O ID・`skill1`〜`skill3`・`def`・`passive`・`support`・`ego`・`egopassive`・`stats`を空白区切りで指定)や `--type 効果の種類`、ランダム対戦だけを足す `--random`、省くための `--no-random`、一覧表示の `--list` が使えます。効果の種類を新しく作ったときは `test/lib/checks.js` の `CHECKERS` に確認部品を足してください(足していないと「未確認」と表示されます)。
 - 共有データは `rooms/<ルームID>/state` に1つのJSONとして保存されます。GMの操作は差分だけを書き込み、プレイヤーは自分の `units/<id>/choice` だけを書き込みます。
