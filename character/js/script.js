@@ -397,7 +397,7 @@ document.addEventListener('dragstart', function (ev) {
       coinsHtml(cur.coins) +
       '<div class="detail-line"><span class="ribbon is-' + cur.sin + '" style="' + sinVars(cur.sin) + '">' + esc(cur.name) + '</span>' +
       (cur.defense || cur.ego ? '' : '<span class="detail-deck" aria-label="山札の枚数"><span class="mult-x">×</span>' + cur.deck + '</span>') + '</div>' +
-      (cur.defense ? '' : '<span class="detail-weight">攻撃加重値' + weight + '</span>') +
+      '<span class="detail-weight">攻撃加重値' + weight + '</span>' +
       '</div></div>';
     var rows = '';
     var plain = cur.effects.filter(function (e) { return e.coin === undefined; });
