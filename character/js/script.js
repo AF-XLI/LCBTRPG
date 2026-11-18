@@ -220,7 +220,7 @@ document.addEventListener('dragstart', function (ev) {
       img(dir + 's' + o.tier + '.png', 'piece-orn');
     if (o.tag != null) {
       var text = '+' + o.tag;
-      h += '<span class="piece-tag is-' + o.sin + '" style="' + sinVars(o.sin) + '">' + esc(text) + '</span>';
+      h += '<span class="piece-tag is-' + o.sin + '" style="' + sinVars(o.sin) + '"><span class="piece-num">' + esc(text) + '</span></span>';
     }
     return h + '</div>';
   }
@@ -431,7 +431,7 @@ document.addEventListener('dragstart', function (ev) {
     RANKS.forEach(function (rk, i) {
       var on = !!eq.egos[rk];
       var rsin = on ? eq.egos[rk].sin : '';
-      subs += '<button class="subtab is-rank is-' + rsin + '" style="' + sinVars(rsin) + '" type="button" aria-pressed="' + (on && i === state.sub && state.egoMode !== 'passive') + '"' +
+      subs += '<button class="subtab is-rank is-' + rsin + '" style="' + sinVars(rsin) + '" type="button" aria-pressed="' + (on && i === state.sub) + '"' +
         (on ? ' data-act="sub" data-sub="' + i + '"' : ' disabled') + ' aria-label="' + rk + '">' + RANK_LETTERS[rk] + '</button>';
     });
     var head = '<div class="subtabs is-rank" role="group" aria-label="E.G.Oの等級">' + subs + '</div>';
