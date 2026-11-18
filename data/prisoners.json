@@ -70,5 +70,31 @@
     "bannerShift": 4.6,
     "portraitTop": 3.159,
     "portraitWidth": 51.563
+  },
+  "giovanni": {
+    "name": "ジョバンニ",
+    "themeColor": "rgb(1, 22, 139)",
+    "portrait": "image/character/giovanni/portrait.png",
+    "icon": "image/character/giovanni/icon.png",
+    "background": "image/character/giovanni/bg.png",
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "starlight"
+    ],
+    "default": {
+      "identity": "lcb",
+      "egos": {
+        "ZAYIN": "starlight"
+      }
+    },
+    "cardX": 2.2,
+    "cardShift": -2.3,
+    "bannerX": 2.2,
+    "bannerFit": 0.173,
+    "bannerShift": 2,
+    "portraitTop": 4.919,
+    "portraitWidth": 51.563
   }
 }
