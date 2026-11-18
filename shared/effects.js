@@ -143,7 +143,18 @@
       c.spent = { op: BATTLE_OPS[e.ifSpent.op], v: e.ifSpent.value };
       any = true;
     }
+    if (e.ifSelfHp) { c.hp = hpCond('self', e.ifSelfHp); any = true; }
+    if (e.ifTargetHp && e.type !== 'dmgBonus') { c.hp = hpCond('target', e.ifTargetHp); any = true; }
     return any ? c : null;
+  }
+
+  // 体力の条件。vs:'self' なら対象と自分の現体力を比べ、unit:'percent' なら最大体力に対する割合で見る
+  function hpCond(of, h) {
+    var one = { of: of, op: BATTLE_OPS[h.op] };
+    if (h.vs) { one.vs = h.vs; }
+    else { one.v = h.value; }
+    if (h.unit === 'percent') { one.pct = true; }
+    return one;
   }
 
   function head(e, mid) {
@@ -221,14 +232,17 @@
       statuses: function () { return []; },
       grants: function (e) {
         var win = e.timing === 'matchWin';
-        var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: win ? 'skill' : 'round', when: win ? 'matchWin' : 'combatStart' };
+        var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: win ? 'skill' : 'round' };
         if (e.when && e.when.targetSp === 'lowerThanSelf') { g.dmgIf = { sp: { of: 'target', vs: 'self', op: '<' } }; }
+        if (e.ifTargetHp) { g.dmgIf = { hp: hpCond('target', e.ifTargetHp) }; }
         return [g];
       },
       render: function (e) {
         var s = new Segs();
         if (e.scope === 'allies') { s.text('味方全員が、'); }
         if (e.when && e.when.targetSp === 'lowerThanSelf') { s.text('自分より精神力が低い敵を攻撃時に'); }
+        if (e.ifTargetHp && e.ifTargetHp.vs === 'self') { s.text('対象が自分より現体力が高ければ、'); }
+        else if (e.ifTargetHp) { s.text('対象の体力が' + e.ifTargetHp.value + '%' + (e.ifTargetHp.op === 'gte' ? '以上' : e.ifTargetHp.op === 'lt' ? '未満' : '') + 'のとき、'); }
         return head(e, s.text('ダメージ量' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
       }
     },
@@ -442,6 +456,7 @@
           g['if'] = merged;
         }
         if (e['if'] === 'dispelled') { g.ifDispelled = true; }
+        if (e.once && g.once === undefined) { g.once = true; }
         out.push(g);
       });
       out = out.concat(follow);
