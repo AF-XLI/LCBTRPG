@@ -1,0 +1,68 @@
+{
+  "starlight": {
+    "rank": "ZAYIN",
+    "name": "スターライト",
+    "sin": "envy",
+    "type": "pierce",
+    "base": 8,
+    "coin": 15,
+    "coins": 1,
+    "weight": 1,
+    "sp": 15,
+    "cost": {
+      "gloom": 3,
+      "envy": 3
+    },
+    "resist": {
+      "wrath": 2,
+      "pride": 2,
+      "lust": 0.75
+    },
+    "effects": [
+      {
+        "type": "dmgBonus",
+        "percent": 50,
+        "ifTargetHp": {
+          "op": "gte",
+          "value": 50,
+          "unit": "percent"
+        },
+        "text": "対象の体力が50％以上のとき、ダメージ量 +50％"
+      },
+      {
+        "coin": 1,
+        "timing": "hit",
+        "type": "grant",
+        "status": "rupture",
+        "power": 5
+      }
+    ],
+    "passive": {
+      "name": "星屑の光",
+      "effects": [
+        {
+          "timing": "battleStart",
+          "timingLabel": false,
+          "type": "grant",
+          "target": "self",
+          "items": [
+            {
+              "status": "atkPowerUp",
+              "power": 1
+            },
+            {
+              "status": "dmgUp",
+              "power": 1
+            }
+          ],
+          "ifSelfHp": {
+            "op": "lt",
+            "value": 50,
+            "unit": "percent"
+          },
+          "text": "戦闘開始時、自分の体力が50％未満なら、{atkPowerUp}1、{dmgUp}1を得る"
+        }
+      ]
+    }
+  }
+}
