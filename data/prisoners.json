@@ -63,6 +63,12 @@
       "egos": {
         "ZAYIN": "lyre"
       }
-    }
+    },
+    "cardX": 4,
+    "bannerX": 4,
+    "bannerFit": 0.176,
+    "bannerShift": 4.6,
+    "portraitTop": 3.159,
+    "portraitWidth": 51.563
   }
 }
