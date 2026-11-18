@@ -24,14 +24,16 @@
         "timing": "headsHit",
         "type": "hpHeal",
         "count": 2,
-        "percent": 5
+        "percent": 5,
+        "text": "現在の体力が最も低い味方2名の体力を、体力最大値の5%だけ回復"
       },
       {
         "coin": 1,
         "timing": "tailsHit",
         "type": "spHealLowest",
         "count": 4,
-        "amount": 10
+        "amount": 10,
+        "text": "現在の精神力が最も低い味方4名の精神力を10回復"
       }
     ],
     "passive": {
@@ -41,7 +43,9 @@
           "timing": "battleStart",
           "type": "spHealLowest",
           "count": 1,
-          "perFullReso": 2
+          "perFullReso": 2,
+          "timingLabel": false,
+          "text": "戦闘開始時に精神力が最も低い味方の精神力を(操作パネルで一番多い自分の完全共鳴数×2)だけ回復\nパニック状態の味方を除く"
         }
       ]
     }
