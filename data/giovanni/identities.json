@@ -1,0 +1,162 @@
+{
+  "lcb": {
+    "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 200,
+    "speed": [
+      4,
+      8
+    ],
+    "thr": [
+      75,
+      50
+    ],
+    "resist": {
+      "slash": 1,
+      "pierce": 0.5,
+      "blunt": 2
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "envy",
+        "type": "pierce",
+        "name": "天文学",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "gloom",
+        "type": "pierce",
+        "name": "プレシャスクロス",
+        "base": 3,
+        "coin": 3,
+        "coins": 3,
+        "effects": [
+          {
+            "timing": "matchWin",
+            "type": "gain",
+            "status": "rupture",
+            "count": 2
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 1
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "lust",
+        "type": "pierce",
+        "name": "サウザンクロス",
+        "base": 6,
+        "coin": 5,
+        "coins": 2,
+        "effects": [
+          {
+            "timing": "matchWin",
+            "type": "grant",
+            "target": "self",
+            "status": "quick",
+            "power": 2,
+            "delay": "nextTurn",
+            "text": "次のターンに{quick}2を得る"
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 5
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "三次元からの来訪者",
+      "sin": "lust",
+      "count": 3,
+      "resonance": true,
+      "effects": [
+        {
+          "timing": "matchWin",
+          "timingLabel": false,
+          "type": "grant",
+          "target": "target",
+          "status": "fragile",
+          "power": 1,
+          "once": true,
+          "text": "マッチ勝利時、{fragile}を1付与 (1ターンにつき1回)"
+        }
+      ]
+    },
+    "support": {
+      "name": "切符",
+      "sin": "envy",
+      "count": 4,
+      "effects": [
+        {
+          "type": "dmgBonus",
+          "scope": "allies",
+          "percent": 10,
+          "ifTargetHp": {
+            "vs": "self",
+            "op": "gt"
+          },
+          "text": "対象が自分より現体力が高ければ、ダメージ量 +10%"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "gloom",
+      "type": "guard",
+      "name": "ガード",
+      "base": 7,
+      "coin": 3,
+      "coins": 1,
+      "effects": []
+    }
+  }
+}
