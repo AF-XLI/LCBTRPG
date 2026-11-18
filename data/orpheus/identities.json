@@ -108,7 +108,9 @@
         {
           "timing": "matchWin",
           "type": "dmgBonus",
-          "percent": 10
+          "percent": 10,
+          "timingLabel": false,
+          "text": "マッチ勝利時、ダメージ量 +10%"
         }
       ]
     },
