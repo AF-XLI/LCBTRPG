@@ -463,7 +463,7 @@
   function passiveText(effects) {
     return (effects || []).map(function (e) {
       var r = render(e);
-      return (e.timing ? r.timing + '、' : '') + toPlain({ timing: null, segs: r.segs });
+      return (e.timing && r.timing ? r.timing + '、' : '') + toPlain({ timing: null, segs: r.segs });
     }).join('\n');
   }
 
