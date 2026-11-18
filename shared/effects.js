@@ -220,7 +220,8 @@
       required: ['percent'],
       statuses: function () { return []; },
       grants: function (e) {
-        var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: 'round', when: 'combatStart' };
+        var win = e.timing === 'matchWin';
+        var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: win ? 'skill' : 'round', when: win ? 'matchWin' : 'combatStart' };
         if (e.when && e.when.targetSp === 'lowerThanSelf') { g.dmgIf = { sp: { of: 'target', vs: 'self', op: '<' } }; }
         return [g];
       },
@@ -278,13 +279,32 @@
       }
     },
     hpHeal: {
-      required: ['amount'],
+      required: ['amount|percent'],
       statuses: function () { return []; },
       grants: function (e) {
-        return [{ heal: e.amount, to: 'allies', pick: 'lowestHp' }];
+        var g = { to: 'allies', pick: 'lowestHp' };
+        if (e.percent !== undefined) { g.healPct = e.percent; } else { g.heal = e.amount; }
+        if (e.count !== undefined) { g.n = e.count; }
+        return [g];
       },
       render: function (e) {
-        return head(e, new Segs().text('体力が最も低い味方1名の体力を' + e.amount + '回復'));
+        var who = '現在の体力が最も低い味方' + (e.count !== undefined ? e.count : 1) + '名';
+        var val = e.percent !== undefined ? '体力最大値の' + e.percent + '%' : String(e.amount);
+        return head(e, new Segs().text(who + 'の体力を、' + val + 'だけ回復'));
+      }
+    },
+    spHealLowest: {
+      required: ['count', 'amount|perFullReso'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        var g = { to: 'allies', pick: 'lowestSp', n: e.count, skipPanic: true };
+        if (e.perFullReso !== undefined) { g.spPerChain = e.perFullReso; g.needFullReso = true; } else { g.sp = e.amount; }
+        return [g];
+      },
+      render: function (e) {
+        var who = '現在の精神力が最も低い味方' + (e.count > 1 ? e.count + '名' : '');
+        var val = e.perFullReso !== undefined ? '(自分の完全共鳴数×' + e.perFullReso + ')' : String(e.amount);
+        return head(e, new Segs().text(who + 'の精神力を' + val + 'だけ回復(パニック状態の味方を除く)'));
       }
     },
     advanceThreshold: {
