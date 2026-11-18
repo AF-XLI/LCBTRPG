@@ -1,0 +1,140 @@
+{
+  "lcb": {
+    "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 225,
+    "speed": [
+      3,
+      6
+    ],
+    "thr": [
+      70,
+      40
+    ],
+    "resist": {
+      "slash": 0.5,
+      "pierce": 1,
+      "blunt": 2
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "gloom",
+        "type": "slash",
+        "name": "斬り下ろし",
+        "base": 4,
+        "coin": 6,
+        "coins": 1,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "bleed",
+            "power": 2
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "lust",
+        "type": "pierce",
+        "name": "入り突き",
+        "base": 4,
+        "coin": 4,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "gain",
+            "status": "bleed",
+            "count": 2
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "paralysis",
+            "power": 1,
+            "delay": "nextTurn"
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "envy",
+        "type": "slash",
+        "name": "流斬り",
+        "base": 3,
+        "coin": 3,
+        "coins": 3,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "bleed",
+            "power": 2
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "bleed",
+            "power": 2
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "gain",
+            "status": "bleed",
+            "count": 3
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "伴走",
+      "sin": "envy",
+      "count": 3,
+      "effects": [
+        {
+          "timing": "matchWin",
+          "type": "dmgBonus",
+          "percent": 10
+        }
+      ]
+    },
+    "support": {
+      "name": "安否確認",
+      "sin": "lust",
+      "count": 2,
+      "resonance": true,
+      "effects": [
+        {
+          "type": "grant",
+          "target": "allAllies",
+          "status": "defPowerUp",
+          "power": 1,
+          "text": "全員の、守備スキルの最終威力 +1"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "envy",
+      "type": "guard",
+      "name": "ガード",
+      "base": 7,
+      "coin": 3,
+      "coins": 1,
+      "effects": []
+    }
+  }
+}
