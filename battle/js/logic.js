@@ -51,7 +51,6 @@
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', glyph: '合威↑', color: 'rgb(240, 170, 90)', text: 'マッチ時の最終威力を増やす' },
     coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', glyph: '幣↑', color: 'rgb(240, 170, 90)', text: 'コインの加算分を増やす' }
   };
-  var VARIANT_BASES = { dmgUp: 1, dmgDown: 1, fragile: 1, protect: 1 };
 
   function A(x) { return Array.isArray(x) ? x : []; }
   function O(x) { return x && typeof x === 'object' ? x : {}; }
@@ -352,7 +351,7 @@
       if (!e.sin) { return; }
       var amt = resoPartial(nth[e.id]);
       var kind = count[e.sin] >= 2 ? 'sin' : '';
-      by[e.id] = { sin: e.sin, amt: amt, kind: kind };
+      by[e.id] = { sin: e.sin, amt: amt, kind: kind, chain: 0 };
     });
     var i = 0;
     while (i < list.length) {
@@ -363,6 +362,7 @@
         var fa = resoFull(len);
         for (var k = i; k <= j; k += 1) {
           var cur = by[list[k].id];
+          cur.chain = len;
           if (fa >= cur.amt) { cur.amt = fa; cur.kind = 'full'; }
         }
       }
@@ -375,6 +375,11 @@
     if (state && state.reso && (state.phase === 'process' || state.phase === 'roundEnd' || state.phase === 'over')) { return state.reso; }
     if (state && state.phase === 'player') { return calcReso(state); }
     return { count: {}, by: {} };
+  }
+
+  function resoChain(state, id) {
+    var e = O(O(resoOf(state)).by)[id];
+    return e ? num(e.chain, 0) : 0;
   }
 
   function resoAmt(state, g) {
@@ -1220,6 +1225,7 @@
         state.once = O(state.once);
         if (state.once[onceKey]) { return; }
       }
+      if (gr.needFullReso && resoChain(state, atkRef.u) < 3) { return; }
       var trefs = [];
       if (gr.to === 'allies') {
         Object.keys(state.units).forEach(function (id) {
@@ -1230,6 +1236,7 @@
       if (gr.pick && gr.to === 'allies') {
         var pool = trefs.map(function (r) { return getB(state, r); }).filter(function (g) {
           if (!g || isOut(g)) { return false; }
+          if (gr.skipPanic && (g.b.panic || g.b.panicNext || g.b.erosion || g.b.erosionNext)) { return false; }
           if (gr.pick === 'lowestHp') { return g.unit.hp < g.unit.maxHp; }
           return !g.b.noSp;
         });
@@ -1237,7 +1244,7 @@
           var d = gr.pick === 'lowestHp' ? a.unit.hp - b.unit.hp : num(a.b.sp, 0) - num(b.b.sp, 0);
           return d || allyRank(state, a.unit) - allyRank(state, b.unit);
         });
-        trefs = pool.length ? [pool[0].ref] : [];
+        trefs = pool.slice(0, Math.max(1, Math.floor(num(gr.n, 1)))).map(function (g) { return g.ref; });
       }
       if (onceKey && trefs.length) { state.once[onceKey] = true; }
       var coinCount = ctx.coinCount !== undefined ? ctx.coinCount : A(skill.coins).length;
@@ -1295,15 +1302,17 @@
           if (gr.winProbMax !== undefined) { mp.winProbMax = gr.winProbMax; }
           tg.b.mods.push(mp);
         }
-        if (gr.heal !== undefined && tg.unit.side === 'ally') {
-          var hv = Math.max(0, Math.min(num(gr.heal, 0), tg.unit.maxHp - tg.unit.hp));
+        if ((gr.heal !== undefined || gr.healPct !== undefined) && tg.unit.side === 'ally') {
+          var hraw = gr.healPct !== undefined ? Math.floor(tg.unit.maxHp * num(gr.healPct, 0) / 100) : num(gr.heal, 0);
+          var hv = Math.max(0, Math.min(hraw, tg.unit.maxHp - tg.unit.hp));
           tg.unit.hp += hv;
           log(state, nameOf(state, tref) + ' の体力が ' + hv + ' 回復');
           fx(state, tref, '+' + hv, 'heal');
         }
-        if (gr.sp !== undefined) {
-          changeSp(state, tref, num(gr.sp, 0));
-          log(state, nameOf(state, tref) + ' の精神力 ' + (num(gr.sp, 0) >= 0 ? '+' : '') + num(gr.sp, 0));
+        if (gr.sp !== undefined || gr.spPerChain !== undefined) {
+          var spv = gr.spPerChain !== undefined ? resoChain(state, atkRef.u) * num(gr.spPerChain, 0) : num(gr.sp, 0);
+          changeSp(state, tref, spv);
+          log(state, nameOf(state, tref) + ' の精神力 ' + (spv >= 0 ? '+' : '') + spv);
         }
         if (gr.takenPct !== undefined) {
           tg.b.mods = A(tg.b.mods);
