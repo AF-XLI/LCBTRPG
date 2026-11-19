@@ -41,7 +41,7 @@
       "name": "星屑の光",
       "effects": [
         {
-          "timing": "battleStart",
+          "timing": "turnStart",
           "timingLabel": false,
           "type": "grant",
           "target": "self",
@@ -60,7 +60,7 @@
             "value": 50,
             "unit": "percent"
           },
-          "text": "戦闘開始時、自分の体力が50％未満なら、{atkPowerUp}1、{dmgUp}1を得る"
+          "text": "ターン開始時、自分の体力が50％未満なら、{atkPowerUp}1、{dmgUp}1を得る"
         }
       ]
     }
