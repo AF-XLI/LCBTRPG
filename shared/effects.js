@@ -507,7 +507,7 @@
   }
 
   function passiveText(effects) {
-    return (effects || []).map(function (e) {
+    return (effects || []).filter(function (e) { return !e.hidden; }).map(function (e) {
       var r = render(e);
       return (e.timing && r.timing ? r.timing + '、' : '') + toPlain({ timing: null, segs: r.segs });
     }).join('\n');
