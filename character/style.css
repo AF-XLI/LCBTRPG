@@ -392,7 +392,7 @@ textarea {
   position: absolute;
   top: -1.313rem;
   left: 1.5rem;
-  color: color-mix(in srgb, var(--head-color, rgb(238, 228, 210)) 12%, transparent);
+  color: color-mix(in srgb, var(--head-color, rgb(238, 228, 210)) var(--ghost-opacity, 12%), transparent);
   font-family: var(--font-display);
   font-size: 4rem;
   font-weight: 700;
@@ -454,8 +454,8 @@ textarea {
   top: 50%;
   left: 50%;
   display: block;
-  width: 6.125rem;
-  height: 6.125rem;
+  width: 4.9rem;
+  height: 4.9rem;
   max-width: none;
   transform: translate(-50%, -50%);
 }
@@ -1488,8 +1488,8 @@ textarea {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 4.375rem;
-  height: 4.375rem;
+  width: 3.5rem;
+  height: 3.5rem;
   max-width: none;
   transform: translate(-50%, -50%);
 }
@@ -1991,8 +1991,8 @@ textarea {
   position: absolute;
   bottom: 1.5rem;
   right: 18rem;
-  width: 24rem;
-  height: 24rem;
+  width: 19.2rem;
+  height: 19.2rem;
   opacity: 0.15;
   pointer-events: none;
 }
