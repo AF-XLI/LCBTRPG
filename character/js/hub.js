@@ -25,7 +25,11 @@ document.addEventListener('dragstart', function (ev) {
     })
     .then(function (all) {
       var h = '';
-      Object.keys(all).forEach(function (id) {
+      Object.keys(all).sort(function (a, b) {
+        var na = typeof all[a].no === 'number' ? all[a].no : Infinity;
+        var nb = typeof all[b].no === 'number' ? all[b].no : Infinity;
+        return na - nb;
+      }).forEach(function (id) {
         var p = all[id];
         h += '<li><a class="hub-card" href="' + esc(id) + '/">' +
           '<span class="hub-card-icon"><img alt="" src="../' + esc(p.icon) + '"></span>' +
