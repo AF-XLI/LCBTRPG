@@ -1669,6 +1669,7 @@ textarea {
  
 .pl-tab[href="#egos"] {
   font-family: var(--font-label);
+  font-size: 1.875rem;
 }
  
 .pl-ctl {
@@ -1864,19 +1865,20 @@ textarea {
  
 .pl-card-tag {
   position: absolute;
-  top: 48%;
-  left: -0.25rem;
-  right: -0.25rem;
+  top: 50%;
+  left: 5.2%;
+  right: 6.2%;
   padding: 0.125rem 0;
   background: linear-gradient(rgb(200, 34, 22), rgb(150, 18, 12));
   color: rgb(252, 198, 0);
   font-family: var(--font-label);
-  font-size: 1.25rem;
+  font-size: 1.625rem;
   font-weight: 700;
   letter-spacing: 0.063rem;
   text-align: center;
   box-shadow: 0 0 0.5rem rgba(255, 50, 20, 0.55);
   text-shadow: 0 0 0.5rem rgb(255, 120, 40), 0 0 0.188rem rgb(255, 90, 30);
+  transform: translateY(-50%);
 }
  
 .pl-card.is-det .pl-card-art,
