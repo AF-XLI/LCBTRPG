@@ -137,8 +137,8 @@ document.addEventListener('dragstart', function (ev) {
   }
 
 
-  function headColorVar(color) {
-    return color ? '--head-color: ' + color + ';' : '';
+  function headColorVar(color, ghost) {
+    return (color ? '--head-color: ' + color + ';' : '') + (ghost != null ? ' --ghost-opacity: ' + ghost + '%;' : '');
   }
 
   function sinVars(id) {
@@ -729,7 +729,7 @@ document.addEventListener('dragstart', function (ev) {
         '</div>' +
         '</div></header>';
     } else {
-      headHtml = '<header class="head" style="' + headColorVar(p.themeColor) + '">' +
+      headHtml = '<header class="head" style="' + headColorVar(p.themeColor, p.ghostOpacity) + '">' +
       '<div class="head-ghost" aria-hidden="true">' + esc(p.name) + '</div>' +
       '<div class="head-body">' +
       '<div class="head-top">' +
