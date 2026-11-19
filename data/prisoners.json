@@ -1,28 +1,34 @@
 {
-  "gray": {
-    "name": "グレイ",
-    "themeColor": "rgb(249, 208, 36)",
-    "bannerShift": 2.5,
-    "bannerX": 1.6,
-    "cardShift": -2.3,
-    "cardX": 4,
-    "portrait": "image/character/gray/portrait.png",
-    "icon": "image/character/gray/icon.png",
-    "background": "image/character/gray/bg.png",
+  "giovanni": {
+    "no": 2,
+    "name": "ジョバンニ",
+    "themeColor": "rgb(1, 22, 139)",
+    "ghostOpacity": 40,
+    "portrait": "image/character/giovanni/portrait.png",
+    "icon": "image/character/giovanni/icon.png",
+    "background": "image/character/giovanni/bg.png",
     "identities": [
       "lcb"
     ],
     "egos": [
-      "end-of-spring"
+      "starlight"
     ],
     "default": {
       "identity": "lcb",
       "egos": {
-        "ZAYIN": "end-of-spring"
+        "ZAYIN": "starlight"
       }
-    }
+    },
+    "cardX": 2.2,
+    "cardShift": -2.3,
+    "bannerX": 2.2,
+    "bannerFit": 0.173,
+    "bannerShift": 2,
+    "portraitTop": 4.919,
+    "portraitWidth": 51.563
   },
   "alice": {
+    "no": 3,
     "name": "アリス",
     "themeColor": "rgb(105, 176, 118)",
     "portrait": "image/character/alice/portrait.png",
@@ -46,7 +52,32 @@
     "portraitTop": -9.867,
     "portraitWidth": 59.8
   },
+  "gray": {
+    "no": 5,
+    "name": "グレイ",
+    "themeColor": "rgb(249, 208, 36)",
+    "bannerShift": 2.5,
+    "bannerX": 1.6,
+    "cardShift": -2.3,
+    "cardX": 4,
+    "portrait": "image/character/gray/portrait.png",
+    "icon": "image/character/gray/icon.png",
+    "background": "image/character/gray/bg.png",
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "end-of-spring"
+    ],
+    "default": {
+      "identity": "lcb",
+      "egos": {
+        "ZAYIN": "end-of-spring"
+      }
+    }
+  },
   "orpheus": {
+    "no": 6,
     "name": "オルフェウス",
     "themeColor": "rgb(75, 103, 131)",
     "portrait": "image/character/orpheus/portrait.png",
@@ -71,30 +102,30 @@
     "portraitTop": 3.159,
     "portraitWidth": 51.563
   },
-  "giovanni": {
-    "name": "ジョバンニ",
-    "themeColor": "rgb(1, 22, 139)",
-    "portrait": "image/character/giovanni/portrait.png",
-    "icon": "image/character/giovanni/icon.png",
-    "background": "image/character/giovanni/bg.png",
+  "daniel": {
+    "no": 7,
+    "name": "ダニエル",
+    "themeColor": "rgb(193, 193, 193)",
+    "portrait": "image/character/daniel/portrait.png",
+    "icon": "image/character/daniel/icon.png",
+    "background": "image/character/daniel/bg.png",
     "identities": [
       "lcb"
     ],
     "egos": [
-      "starlight"
+      "red-notebook"
     ],
     "default": {
       "identity": "lcb",
       "egos": {
-        "ZAYIN": "starlight"
+        "ZAYIN": "red-notebook"
       }
     },
-    "cardX": 2.2,
-    "cardShift": -2.3,
-    "bannerX": 2.2,
+    "portraitTop": 4.92,
+    "portraitWidth": 40,
     "bannerFit": 0.173,
     "bannerShift": 2,
-    "portraitTop": 4.919,
-    "portraitWidth": 51.563
+    "cardX": 3,
+    "cardShift": -2.3
   }
 }
