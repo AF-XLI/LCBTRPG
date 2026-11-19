@@ -17,8 +17,15 @@
   src: url("ExcelsiorSans.woff2") format("woff2");
 }
  
+@font-face {
+  font-family: "Bebas Kai";
+  font-display: swap;
+  src: url("BebasKai.woff2") format("woff2");
+}
+ 
 :root {
   --font-body: "HigashiOme Gothic C", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
   --font-display: "Corporate Logo", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --font-label: "Bebas Kai", "Corporate Logo", "Noto Sans JP", sans-serif;
   --font-num: "Excelsior Sans", "Corporate Logo", "Noto Sans JP", sans-serif;
 }
