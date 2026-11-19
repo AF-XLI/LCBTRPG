@@ -355,7 +355,7 @@ document.addEventListener('dragstart', function (ev) {
       '<div class="passive-kind">' + label + '</div>' +
       (p.name ? '<div class="passive-name"><span class="ribbon is-' + p.sin + '" style="' + sinVars(p.sin) + '">' + esc(p.name) + '</span></div>' : '') +
       (p.name && p.count !== undefined
-        ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + ' 保有</span></div>'
+        ? '<div class="passive-have">' + img('image/icon/sin/' + p.sin + '.png', 'passive-sin') + '<span>×' + esc(p.count) + (p.resonance ? ' 共鳴' : ' 保有') + '</span></div>'
         : '') +
       passiveTextHtml(p) +
       '</section>';
