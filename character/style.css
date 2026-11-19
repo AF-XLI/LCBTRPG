@@ -1667,7 +1667,7 @@ textarea {
   text-shadow: 0 0 0.375rem rgb(255, 120, 0);
 }
  
-.pl-tab.is-en {
+.pl-tab[href="#egos"] {
   font-family: var(--font-label);
 }
  
