@@ -29,7 +29,6 @@
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', icon: 'sinking.png' },
     breath: { label: '呼吸', type: 'pc', kind: 'buff', icon: 'poise.png' },
     charge: { label: '充電', type: 'pc', kind: 'buff', icon: 'charge.png' },
-    trance: { label: '夢現', type: 'pc', kind: 'buff', icon: 'trance.png' },
     paralysis: { label: '麻痺', type: 'val', kind: 'debuff', icon: 'paralyze.png' },
     bind: { label: '束縛', type: 'val', kind: 'debuff', icon: 'bind.png' },
     dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', icon: 'damage-down.png' },
@@ -46,7 +45,10 @@
     atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', icon: 'attack-power-up.png' },
     defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', icon: 'defense-power-up.png' },
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', icon: 'clash-power-up.png' },
-    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png' }
+    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png' },
+    weakDmg: { label: '弱点攻撃時ダメージ量増加', type: 'val', kind: 'buff', icon: 'weak-resist-dmg-boost.png' },
+    egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', icon: 'e.g.o-resource-amp.png' },
+    tremorBurst: { label: '振動爆発', type: 'none', kind: 'neutral', icon: 'tremor-burst.png' }
   };
   var DEFAULT_STATUS_COLOR = 'rgb(237, 205, 164)';
   var KIND_COLOR = {
@@ -86,6 +88,10 @@
     var icon = def ? def.icon : parts[0] + '.png';
     if (suf && parts[0] === 'dmgUp') { icon = suf + '-dmg-up.png'; }
     if (suf && parts[0] === 'protect') { icon = suf + '-protection.png'; }
+    if (suf && parts[0] === 'dmgDown') { icon = suf + '-dmg-down.png'; }
+    if (suf && parts[0] === 'fragile') { icon = suf + '-fragility.png'; }
+    if (suf && parts[0] === 'powerUp') { icon = suf + '-power-up.png'; }
+    if (suf && parts[0] === 'powerDown') { icon = suf + '-power-down.png'; }
     return {
       known: !!def,
       label: (def ? def.label : parts[0]) + (sufLabel ? '(' + sufLabel + ')' : ''),
