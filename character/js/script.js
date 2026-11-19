@@ -342,7 +342,7 @@ document.addEventListener('dragstart', function (ev) {
 
   function passiveTextHtml(p) {
     var lines = [];
-    (p.effects || []).forEach(function (e) {
+    (p.effects || []).filter(function (e) { return !e.hidden; }).forEach(function (e) {
       var r = FX.render(e);
       var head = r.timing ? '<span>' + esc(r.timing) + '、</span>' : '';
       lines.push(head + segsHtml(r.segs));
