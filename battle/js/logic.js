@@ -32,7 +32,6 @@
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', glyph: '沈', color: 'rgb(80, 130, 210)', text: 'ダメージ時に威力分の精神力ダメージ' },
     breath: { label: '呼吸', type: 'pc', kind: 'buff', glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
     charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, charge: true, text: '消耗でスキルが強化される' },
-    trance: { label: '夢現', type: 'pc', kind: 'buff', glyph: '夢', color: 'rgb(240, 160, 70)', maxCount: 20, keepPotency: true, charge: true, text: '特殊充電の一種。充電と同じ仕様(消耗でスキルが強化される)' },
     paralysis: { label: '麻痺', type: 'val', kind: 'debuff', glyph: '麻', color: 'rgb(200, 190, 90)', text: 'コイン威力を0にする(トスごとに-1)' },
     bind: { label: '束縛', type: 'val', kind: 'debuff', glyph: '縛', color: 'rgb(160, 130, 100)', text: '速度が減少' },
     dmgDown: { label: 'ダメージ量減少', type: 'val', kind: 'debuff', glyph: '攻↓', color: 'rgb(170, 140, 140)', max: 10, text: '与えるダメージが数値×10%減少' },
@@ -49,7 +48,9 @@
     atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', glyph: '攻威↑', color: 'rgb(240, 170, 90)', text: '攻撃スキルの最終威力を増やす' },
     defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', glyph: '守威↑', color: 'rgb(240, 170, 90)', text: '守備スキルの最終威力を増やす' },
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', glyph: '合威↑', color: 'rgb(240, 170, 90)', text: 'マッチ時の最終威力を増やす' },
-    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', glyph: '幣↑', color: 'rgb(240, 170, 90)', text: 'コインの加算分を増やす' }
+    coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', glyph: '幣↑', color: 'rgb(240, 170, 90)', text: 'コインの加算分を増やす' },
+    weakDmg: { label: '弱点攻撃時ダメージ量増加', type: 'val', kind: 'buff', glyph: '弱↑', color: 'rgb(240, 170, 90)', text: '相手が脆弱な属性(物理・罪悪)を攻撃するとき、ダメージが数値%増加' },
+    egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', glyph: '資↑', color: 'rgb(240, 200, 90)', text: 'スキル使用時に獲得するE.G.O資源が数値分増加' }
   };
 
   function A(x) { return Array.isArray(x) ? x : []; }
@@ -281,8 +282,9 @@
       ch.resGot = true;
     }
     state.res = O(state.res);
-    state.res[sin] = resOf(state, sin) + 1;
-    log(state, '資源: ' + SINS[sin].label + ' +1(計' + state.res[sin] + ')');
+    var gain = 1 + Math.max(0, vOf(g.b, 'egoResUp'));
+    state.res[sin] = resOf(state, sin) + gain;
+    log(state, '資源: ' + SINS[sin].label + ' +' + gain + '(計' + state.res[sin] + ')');
   }
 
   function setRes(state, sin, value) {
@@ -1043,7 +1045,7 @@
     return Math.max(0, num(c, 0) + pow + vOf(b, 'coinStrong') - vOf(b, 'coinWeak'));
   }
   function powerAdj(b, skill, clash, extra) {
-    var a = vOf(b, 'powerUp') - vOf(b, 'powerDown') + num(extra, 0);
+    var a = sumVal(b, 'powerUp', skill) - sumVal(b, 'powerDown', skill) + num(extra, 0);
     if (skill.kind === 'attack') { a += vOf(b, 'atkPowerUp') - vOf(b, 'atkPowerDown'); }
     else { a += vOf(b, 'defPowerUp') - vOf(b, 'defPowerDown'); }
     if (clash) {
@@ -1100,6 +1102,8 @@
     opt = opt || {};
     var f = 1 + 0.1 * (sumVal(atkB, 'dmgUp', skill) - sumVal(atkB, 'dmgDown', skill) + sumVal(defB, 'fragile', skill) - sumVal(defB, 'protect', skill));
     f += num(skill.dmgBonus, 0) + num(atkUnit.dmgBonus, 0);
+    var wd = vOf(atkB, 'weakDmg');
+    if (wd > 0 && opt.dg && isWeakTo(opt.dg, skill)) { f += wd / 100; }
     A(atkB.mods).forEach(function (m) {
       if (m.k === 'dmg' && (m.scope !== 'finalCoin' || opt.final)) {
         if (m.dmgIf && !condOkG(m.dmgIf, opt.ag, opt.dg)) { return; }
@@ -1115,6 +1119,10 @@
     });
     if (opt.crit) { f += num(skill.critBonus, 0) / 100; }
     return Math.max(0, f);
+  }
+  function isWeakTo(defG, skill) {
+    var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
+    return physM >= 2 || resMultOf(defG.b.resist, skill.sin) >= 2;
   }
   function resFrame(defG, skill, matches, crit) {
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
@@ -2506,6 +2514,6 @@
     buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
     addStatus: addStatus, debuffKeys: debuffKeys, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
     egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoErodeMode: egoErodeMode, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
-    winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, resFrame: resFrame, headsProb: headsProb, log: log
+    winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, powerAdj: powerAdj, resFrame: resFrame, headsProb: headsProb, log: log
   };
 }));
