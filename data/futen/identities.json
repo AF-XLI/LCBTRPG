@@ -1,0 +1,186 @@
+{
+  "lcb": {
+    "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 190,
+    "speed": [
+      4,
+      7
+    ],
+    "thr": [
+      70,
+      40
+    ],
+    "resist": {
+      "slash": 0.5,
+      "pierce": 1,
+      "blunt": 2
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "gloom",
+        "type": "slash",
+        "name": "先陣",
+        "base": 2,
+        "coin": 4,
+        "coins": 2,
+        "effects": [
+          {
+            "timing": "use",
+            "type": "grant",
+            "status": "breath",
+            "power": 3,
+            "target": "self",
+            "delay": "nextTurn",
+            "text": "次のターンに{breath}3を得る"
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "burn",
+            "power": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "burn",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "lust",
+        "type": "slash",
+        "name": "連閃",
+        "base": 5,
+        "coin": 4,
+        "coins": 2,
+        "effects": [
+          {
+            "type": "critBonus",
+            "percent": 20
+          },
+          {
+            "timing": "use",
+            "type": "grant",
+            "status": "breath",
+            "power": 2,
+            "target": "self",
+            "delay": "nextTurn",
+            "text": "次のターンに{breath}2を得る"
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "burn",
+            "power": 1
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "burn",
+            "power": 1
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "wrath",
+        "type": "slash",
+        "name": "焼き斬る",
+        "base": 3,
+        "coin": 3,
+        "coins": 4,
+        "effects": [
+          {
+            "type": "critBonus",
+            "percent": 30
+          },
+          {
+            "coin": 1,
+            "timing": "headsHit",
+            "type": "finalCoinDmg",
+            "percent": 5
+          },
+          {
+            "coin": 2,
+            "timing": "headsHit",
+            "type": "finalCoinDmg",
+            "percent": 5
+          },
+          {
+            "coin": 3,
+            "timing": "headsHit",
+            "type": "finalCoinDmg",
+            "percent": 10
+          },
+          {
+            "coin": 4,
+            "timing": "hit",
+            "type": "grant",
+            "status": "burn",
+            "power": 3
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "連戦呼吸",
+      "sin": "wrath",
+      "count": 4,
+      "effects": [
+        {
+          "timing": "kill",
+          "timingLabel": false,
+          "type": "grant",
+          "status": "breath",
+          "power": 1,
+          "target": "self",
+          "text": "敵を討伐時、{breath}1を得て、自分の{breath}回数が1増加"
+        },
+        {
+          "timing": "kill",
+          "type": "gain",
+          "status": "breath",
+          "count": 1,
+          "target": "self",
+          "hidden": true
+        }
+      ]
+    },
+    "support": {
+      "name": "高揚指揮",
+      "sin": "wrath",
+      "count": 3,
+      "effects": [
+        {
+          "type": "dmgPerCoin",
+          "scope": "allies",
+          "percentPerCoin": 2,
+          "text": "全員の、ダメージ量を +(スキルのコイン枚数×2)%"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "wrath",
+      "type": "evade",
+      "name": "回避",
+      "base": 2,
+      "coin": 10,
+      "coins": 1,
+      "effects": []
+    }
+  }
+}
