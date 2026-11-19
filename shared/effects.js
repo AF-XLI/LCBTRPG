@@ -233,6 +233,31 @@
         return head(e, s);
       }
     },
+    burst: {
+      required: [],
+      statuses: function () { return ['tremorBurst']; },
+      grants: function (e) {
+        return [{ burst: true, to: battleTo(e) }];
+      },
+      render: function (e) {
+        return head(e, new Segs().status('tremorBurst'));
+      }
+    },
+    takenBonus: {
+      required: ['percent'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        var g = { takenPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self' };
+        if (e.skillKind) { g.takenKind = e.skillKind; }
+        return [g];
+      },
+      render: function (e) {
+        var s = new Segs();
+        if (e.scope === 'allies') { s.text('味方全員の、'); }
+        if (e.skillKind === 'attack') { s.text('攻撃スキルによる'); }
+        return head(e, s.text('被ダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
     dmgBonus: {
       required: ['percent'],
       statuses: function () { return []; },
@@ -302,13 +327,13 @@
       required: ['amount|percent'],
       statuses: function () { return []; },
       grants: function (e) {
-        var g = { to: 'allies', pick: 'lowestHp' };
+        var g = e.target === 'self' ? { to: 'self' } : { to: 'allies', pick: 'lowestHp' };
         if (e.percent !== undefined) { g.healPct = e.percent; } else { g.heal = e.amount; }
         if (e.count !== undefined) { g.n = e.count; }
         return [g];
       },
       render: function (e) {
-        var who = '現在の体力が最も低い味方' + (e.count !== undefined ? e.count : 1) + '名';
+        var who = e.target === 'self' ? '自分' : '現在の体力が最も低い味方' + (e.count !== undefined ? e.count : 1) + '名';
         var val = e.percent !== undefined ? '体力最大値の' + e.percent + '%' : String(e.amount);
         return head(e, new Segs().text(who + 'の体力を、' + val + 'だけ回復'));
       }
