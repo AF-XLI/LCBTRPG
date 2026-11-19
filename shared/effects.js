@@ -65,6 +65,8 @@
     beforeAttack: { label: '攻撃前', coin: false, when: 'beforeAttack' },
     matchWin: { label: 'マッチ勝利時', coin: false, when: 'matchWin', color: 'rgb(251, 124, 0)' },
     matchLose: { label: 'マッチ敗北', coin: false, when: 'matchLose', color: 'rgb(222, 0, 0)' },
+    kill: { label: '討伐時', coin: false, when: 'kill' },
+    damaged: { label: '被ダメージ時', coin: false, when: 'damaged' },
     hit: { label: '的中時', coin: true, when: 'hit' },
     headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads', color: 'rgb(199, 254, 149)' },
     tailsHit: { label: '裏面的中時', coin: true, when: 'hit', side: 'tails' },
@@ -72,7 +74,7 @@
     spCond: { label: null, coin: false, cond: true, when: 'hit' }
   };
   var TIMING_COLOR = 'rgb(147, 240, 64)';
-  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'hpCond', 'spCond'];
+  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'kill', 'damaged', 'hpCond', 'spCond'];
 
   var OPS = { lte: '以下', gte: '以上', lt: '未満', gt: '超' };
   var TARGETS = { self: '自分', target: '対象', ally: '味方', allAllies: '味方全員', enemy: '敵' };
@@ -256,6 +258,38 @@
         if (e.scope === 'allies') { s.text('味方全員の、'); }
         if (e.skillKind === 'attack') { s.text('攻撃スキルによる'); }
         return head(e, s.text('被ダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    critBonus: {
+      required: ['percent'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ critPct: e.percent, to: 'self' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('クリティカルダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    finalCoinDmg: {
+      required: ['percent'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ dmgPct: e.percent, to: 'self', scope: 'finalCoin' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('最終コインのダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    dmgPerCoin: {
+      required: ['percentPerCoin'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ perCoinLive: e.percentPerCoin, to: e.scope === 'allies' ? 'allies' : 'self', scope: 'round' }];
+      },
+      render: function (e) {
+        var s = new Segs();
+        if (e.scope === 'allies') { s.text('全員の、'); }
+        return head(e, s.text('ダメージ量を +(スキルのコイン枚数×' + e.percentPerCoin + ')%'));
       }
     },
     dmgBonus: {
@@ -488,6 +522,7 @@
         }
         if (e['if'] === 'dispelled') { g.ifDispelled = true; }
         if (e.once && g.once === undefined) { g.once = true; }
+          if (e.limit !== undefined && g.limit === undefined) { g.limit = e.limit; }
         out.push(g);
       });
       out = out.concat(follow);
