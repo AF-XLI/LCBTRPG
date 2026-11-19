@@ -1,0 +1,62 @@
+{
+  "three-kings-cauldron": {
+    "rank": "ZAYIN",
+    "name": "三王釜",
+    "sin": "wrath",
+    "type": "slash",
+    "base": 14,
+    "coin": 10,
+    "coins": 1,
+    "weight": 1,
+    "sp": 10,
+    "cost": {
+      "wrath": 2,
+      "gloom": 2
+    },
+    "resist": {
+      "gluttony": 2,
+      "pride": 2,
+      "wrath": 0.75
+    },
+    "effects": [
+      {
+        "coin": 1,
+        "timing": "hit",
+        "type": "grant",
+        "status": "burn",
+        "power": 6
+      },
+      {
+        "coin": 1,
+        "timing": "hit",
+        "type": "grant",
+        "status": "fragile",
+        "power": 2
+      },
+      {
+        "coin": 1,
+        "timing": "hit",
+        "type": "grant",
+        "status": "fragile",
+        "power": 2,
+        "target": "self"
+      }
+    ],
+    "passive": {
+      "name": "焼け爛れる覚悟",
+      "effects": [
+        {
+          "timing": "damaged",
+          "timingLabel": false,
+          "type": "grant",
+          "status": "dmgUp",
+          "power": 1,
+          "target": "self",
+          "delay": "nextTurn",
+          "limit": 3,
+          "text": "被ダメージ時、次のターンに{dmgUp}1を得る (1ターンにつき最大3回)"
+        }
+      ]
+    }
+  }
+}
