@@ -25,7 +25,6 @@
   var STATUS_ICON = {
     vibration: 'tremor.png',
     breath: 'poise.png',
-    trance: 'trance.png',
     paralysis: 'paralyze.png',
     dmgUp: 'damage-up.png',
     dmgDown: 'damage-down.png',
@@ -40,12 +39,18 @@
     matchPowerDown: 'clash-power-down.png',
     coinStrong: 'plus-coin-boost.png',
     coinWeak: 'plus-coin-drop.png',
-    quick: 'haste.png'
+    quick: 'haste.png',
+    weakDmg: 'weak-resist-dmg-boost.png',
+    egoResUp: 'e.g.o-resource-amp.png'
   };
 
   function statusIcon(base, suf) {
     if (suf && base === 'dmgUp') { return suf + '-dmg-up.png'; }
     if (suf && base === 'protect') { return suf + '-protection.png'; }
+    if (suf && base === 'dmgDown') { return suf + '-dmg-down.png'; }
+    if (suf && base === 'fragile') { return suf + '-fragility.png'; }
+    if (suf && base === 'powerUp') { return suf + '-power-up.png'; }
+    if (suf && base === 'powerDown') { return suf + '-power-down.png'; }
     return STATUS_ICON[base] || base + '.png';
   }
 
@@ -61,7 +66,7 @@
     if (!S) { return out; }
     A(b && b.egos).forEach(function (e, i) {
       if (!e.passive || !L.egoPassiveOn(S, b, i)) { return; }
-      out += '<span class="st ego" style="--c: rgb(240, 200, 90);" title="' + esc('E.G.Oパッシブ「' + (e.passive.name || e.name || '') + '」: ' + (e.passive.text || '')) + '"><span class="st-ic"><b>E.G.O</b></span></span>';
+      out += '<span class="st ego" style="--c: rgb(240, 200, 90);" title="' + esc('E.G.Oパッシブ「' + (e.passive.name || e.name || '') + '」: ' + (e.passive.text || '')) + '"><span class="st-ic"><b>E.G.O</b><img src="../image/icon/status/e.g.o-passives.png" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span></span>';
     });
     return out;
   }
