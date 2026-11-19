@@ -1,0 +1,140 @@
+{
+  "lcb": {
+    "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 300,
+    "speed": [
+      3,
+      5
+    ],
+    "thr": [
+      50,
+      25
+    ],
+    "resist": {
+      "slash": 1,
+      "pierce": 2,
+      "blunt": 0.5
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "envy",
+        "type": "blunt",
+        "name": "過去",
+        "base": 4,
+        "coin": 7,
+        "coins": 1,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "gain",
+            "status": "vibration",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "lust",
+        "type": "blunt",
+        "name": "肉体的感覚",
+        "base": 3,
+        "coin": 5,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "vibration",
+            "power": 2
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "vibration",
+            "power": 2
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "gloom",
+        "type": "blunt",
+        "name": "死後の生",
+        "base": 4,
+        "coin": 6,
+        "coins": 2,
+        "effects": [
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "vibration",
+            "power": 2
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "burst"
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "fragile",
+            "power": 1,
+            "delay": "nextTurn",
+            "text": "次のターンに{fragile}1を付与"
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "マックス・ワーク",
+      "sin": "gloom",
+      "count": 5,
+      "effects": [
+        {
+          "type": "takenBonus",
+          "percent": -10,
+          "skillKind": "attack",
+          "text": "攻撃スキルによる被ダメージ量 -10%"
+        }
+      ]
+    },
+    "support": {
+      "name": "尽きることのない空間",
+      "sin": "gloom",
+      "count": 3,
+      "resonance": true,
+      "effects": [
+        {
+          "type": "takenBonus",
+          "scope": "allies",
+          "percent": -10,
+          "skillKind": "attack",
+          "text": "味方全員の、攻撃スキルによる被ダメージ量 -10%"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "gloom",
+      "type": "guard",
+      "name": "ガード",
+      "base": 7,
+      "coin": 3,
+      "coins": 1,
+      "effects": []
+    }
+  }
+}
