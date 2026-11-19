@@ -1114,6 +1114,7 @@
     });
     A(defB.mods).forEach(function (m) {
       if (m.k !== 'taken') { return; }
+      if (m.skillKind && m.skillKind !== skill.kind) { return; }
       if (m.dmgIf && !condOkG(m.dmgIf, opt.dg, opt.ag)) { return; }
       f += num(m.pct, 0) / 100;
     });
@@ -1324,7 +1325,7 @@
         }
         if (gr.takenPct !== undefined) {
           tg.b.mods = A(tg.b.mods);
-          tg.b.mods.push({ k: 'taken', pct: num(gr.takenPct, 0), scope: 'round', dmgIf: gr.dmgIf });
+          tg.b.mods.push({ k: 'taken', pct: num(gr.takenPct, 0), scope: 'round', dmgIf: gr.dmgIf, skillKind: gr.takenKind });
           log(state, nameOf(state, tref) + ' の受けるダメージ ' + (num(gr.takenPct, 0) >= 0 ? '+' : '') + num(gr.takenPct, 0) + '%');
         }
         if (gr.dispel) {
