@@ -1153,19 +1153,24 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.125rem;
+  gap: round(0.125rem, 1px);
   color: var(--gold-text);
   font-size: 0.875rem;
+  line-height: 1;
 }
  
 .detail-weight i {
   display: block;
   width: 0.875rem;
+  width: round(0.875rem, 1px);
   height: 0.875rem;
+  height: round(0.875rem, 1px);
   background: rgb(230, 200, 60);
 }
  
 .detail-weight i:first-of-type {
   margin-inline-start: 0.875rem;
+  margin-inline-start: round(0.875rem, 1px);
 }
  
 .effects {
