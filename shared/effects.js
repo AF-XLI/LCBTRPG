@@ -48,6 +48,7 @@
     coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png' },
     weakDmg: { label: '弱点攻撃時ダメージ量増加', type: 'val', kind: 'buff', icon: 'weak-resist-dmg-boost.png' },
     egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', icon: 'e.g.o-resource-amp.png' },
+    critDmgUp: { label: 'クリティカルダメージ増加', type: 'val', kind: 'buff', icon: 'crit-dmg-up.png' },
     tremorBurst: { label: '振動爆発', type: 'none', kind: 'neutral', icon: 'tremor-burst.png' }
   };
   var DEFAULT_STATUS_COLOR = 'rgb(237, 205, 164)';
@@ -65,16 +66,17 @@
     beforeAttack: { label: '攻撃前', coin: false, when: 'beforeAttack' },
     matchWin: { label: 'マッチ勝利時', coin: false, when: 'matchWin', color: 'rgb(251, 124, 0)' },
     matchLose: { label: 'マッチ敗北', coin: false, when: 'matchLose', color: 'rgb(222, 0, 0)' },
-    kill: { label: '討伐時', coin: false, when: 'kill' },
+    kill: { label: '敵討伐時', coin: false, when: 'kill' },
     damaged: { label: '被ダメージ時', coin: false, when: 'damaged' },
     hit: { label: '的中時', coin: true, when: 'hit' },
     headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads', color: 'rgb(199, 254, 149)' },
     tailsHit: { label: '裏面的中時', coin: true, when: 'hit', side: 'tails' },
+    critHit: { label: 'クリティカル的中時', coin: true, when: 'hit', crit: true },
     hpCond: { label: null, coin: false, cond: true, checkAt: true, when: 'hit' },
     spCond: { label: null, coin: false, cond: true, when: 'hit' }
   };
   var TIMING_COLOR = 'rgb(147, 240, 64)';
-  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'kill', 'damaged', 'hpCond', 'spCond'];
+  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'critHit', 'kill', 'damaged', 'hpCond', 'spCond'];
 
   var OPS = { lte: '以下', gte: '以上', lt: '未満', gt: '超' };
   var TARGETS = { self: '自分', target: '対象', ally: '味方', allAllies: '味方全員', enemy: '敵' };
@@ -96,7 +98,7 @@
     if (suf && parts[0] === 'powerDown') { icon = suf + '-power-down.png'; }
     return {
       known: !!def,
-      label: (def ? def.label : parts[0]) + (sufLabel ? '(' + sufLabel + ')' : ''),
+      label: sufLabel + (def ? def.label : parts[0]),
       icon: 'image/icon/status/' + icon,
       color: def ? (KIND_COLOR[def.kind] || DEFAULT_STATUS_COLOR) : DEFAULT_STATUS_COLOR
     };
@@ -264,10 +266,43 @@
       required: ['percent'],
       statuses: function () { return []; },
       grants: function (e) {
-        return [{ critPct: e.percent, to: 'self' }];
+        return [{ critPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self' }];
       },
       render: function (e) {
-        return head(e, new Segs().text('クリティカルダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+        return head(e, new Segs().text((e.scope === 'allies' ? '全員の、' : '') + 'クリティカルダメージ量 ' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    breathKeep: {
+      required: ['percent'],
+      statuses: function () { return ['breath']; },
+      grants: function (e) {
+        return [{ breathKeep: e.percent, to: 'self' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('クリティカル的中時、' + e.percent + '%の確率で').status('breath').text('回数を消耗しない'));
+      }
+    },
+    resGain: {
+      required: ['kinds'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        var g = { resGain: { kinds: e.kinds, each: e.each || 1 }, to: 'self' };
+        if (e.needFullReso) { g.needFullReso = true; }
+        return [g];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('ランダムなE.G.O資源' + (e.kinds > 1 ? e.kinds + '種を' + (e.each || 1) + 'つずつ' : 'を' + (e.each || 1) + 'つ') + '獲得'));
+      }
+    },
+    resoGift: {
+      required: ['min', 'count', 'status', 'power'],
+      statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        return [{ resoGift: { min: e.min, n: e.count, status: e.status, power: e.power, fullExtra: e.fullExtra || 0 }, to: 'self' }];
+      },
+      render: function (e) {
+        var s = new Segs().text('最大共鳴数が' + e.min + '以上なら、ランダムな味方' + e.count + '名が次ターンに').status(e.status).text(e.power + 'を得る');
+        return head(e, s);
       }
     },
     finalCoinDmg: {
@@ -300,15 +335,31 @@
         var g = { dmgPct: e.percent, to: e.scope === 'allies' ? 'allies' : 'self', scope: win ? 'skill' : 'round' };
         if (e.when && e.when.targetSp === 'lowerThanSelf') { g.dmgIf = { sp: { of: 'target', vs: 'self', op: '<' } }; }
         if (e.ifTargetHp) { g.dmgIf = { hp: hpCond('target', e.ifTargetHp) }; }
+        if (e.ifTargetWeak) { g.weakOnly = true; }
         return [g];
       },
       render: function (e) {
         var s = new Segs();
         if (e.scope === 'allies') { s.text('味方全員が、'); }
         if (e.when && e.when.targetSp === 'lowerThanSelf') { s.text('自分より精神力が低い敵を攻撃時に'); }
+        if (e.ifTargetWeak) { s.text('対象を弱点・脆弱属性で攻撃時、'); }
         if (e.ifTargetHp && e.ifTargetHp.vs === 'self') { s.text('対象が自分より現体力が高ければ、'); }
         else if (e.ifTargetHp) { s.text('対象の体力が' + e.ifTargetHp.value + '%' + (e.ifTargetHp.op === 'gte' ? '以上' : e.ifTargetHp.op === 'lt' ? '未満' : '') + 'のとき、'); }
         return head(e, s.text('ダメージ量' + (e.percent >= 0 ? '+' : '') + e.percent + '%'));
+      }
+    },
+    matchPowerBonus: {
+      required: ['value'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        var g = { matchPower: e.value, to: 'self' };
+        if (e.winProbMax !== undefined) { g.winProbMax = e.winProbMax; }
+        return [g];
+      },
+      render: function (e) {
+        var s = new Segs();
+        if (e.winProbMax !== undefined) { s.text('マッチの勝率が' + e.winProbMax + '%以下のとき、'); }
+        return head(e, s.text('マッチ威力 ' + (e.value >= 0 ? '+' : '') + e.value));
       }
     },
     spend: {
@@ -480,6 +531,7 @@
       var when = t ? t.when : opts.defaultWhen;
       if (when) { base.when = when; }
       if (t && t.side) { base.side = t.side; }
+      if (t && t.crit) { base.crit = true; }
       if (e.coin !== undefined) { base.coin = e.coin; }
       var cond = null;
       if (t && t.cond) {
