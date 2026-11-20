@@ -1,0 +1,12 @@
+{
+  "gray": [
+    { "id": "test-g1", "name": "テスト人格A", "rarity": "1" },
+    { "id": "test-g2", "name": "テスト人格B", "rarity": "2", "season": "season-1" },
+    { "id": "test-g3", "name": "テスト人格C", "rarity": "3", "season": "season-1" },
+    { "id": "test-g4", "name": "未公開人格D", "rarity": "3", "season": "season-2" }
+  ],
+  "alice": [
+    { "id": "test-a1", "name": "テスト人格E", "rarity": "2" },
+    { "id": "test-a2", "name": "テスト人格F", "rarity": "3", "season": "season-1" }
+  ]
+}
