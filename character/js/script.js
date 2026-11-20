@@ -401,7 +401,7 @@ document.addEventListener('dragstart', function (ev) {
       '</div></div>';
     var rows = '';
     var plain = cur.effects.filter(function (e) { return e.coin === undefined; });
-    FX.sortByTiming(plain).forEach(function (e) { rows += effectHtml([e]); });
+    rows += effectHtml(FX.sortByTiming(plain));
     for (var c = 1; c <= (cur.coins || 0); c++) {
       rows += effectHtml(FX.sortByTiming(cur.effects.filter(function (e) { return e.coin === c; })));
     }
