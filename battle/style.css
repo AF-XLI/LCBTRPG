@@ -28,16 +28,16 @@ img {
   pointer-events: none;
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
-  -webkit-user-select: none;
   user-select: none;
+  -webkit-user-select: none;
 }
  
 .stage-wrap,
 .sidebar,
 .popup {
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
   user-select: none;
+  -webkit-user-select: none;
 }
  
 html,
@@ -120,8 +120,8 @@ h4 {
   border-radius: 0.25rem;
   color: var(--text);
   font-family: var(--font-display);
-  cursor: pointer;
   text-align: center;
+  cursor: pointer;
 }
  
 .btn:hover:not(:disabled) {
@@ -129,8 +129,8 @@ h4 {
 }
  
 .btn:disabled {
-  opacity: 0.4;
   cursor: default;
+  opacity: 0.4;
 }
  
 .btn.primary {
@@ -194,8 +194,8 @@ h4 {
  
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
   padding: 0.75rem;
 }
  
@@ -295,12 +295,12 @@ h4 {
 }
  
 .res-n {
+  min-width: 1.25rem;
   color: rgb(255, 244, 230);
   font-family: var(--font-num);
   font-size: 1.25rem;
   font-weight: bold;
   text-align: left;
-  min-width: 1.25rem;
   text-shadow: 0 0 0.25rem rgb(0, 0, 0);
 }
  
@@ -398,8 +398,8 @@ h4 {
 .badges {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 0.25rem 1rem;
+  justify-content: center;
   margin-block-start: 0.25rem;
 }
  
@@ -433,9 +433,9 @@ h4 {
 }
  
 .st.ego .st-ic {
+  background: rgba(0, 0, 0, 0.6);
   border: 0.063rem solid var(--c);
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
 }
  
 .st.ego .st-ic b {
@@ -462,7 +462,7 @@ h4 {
   font-weight: bold;
   line-height: 1;
   paint-order: stroke fill;
-  -webkit-text-stroke: 0.1875rem rgb(0, 0, 0);
+  -webkit-text-stroke: 0.188rem rgb(0, 0, 0);
 }
  
 .st-v {
@@ -477,8 +477,8 @@ h4 {
  
 .line {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.375rem;
   margin-block-start: 0.25rem;
 }
@@ -512,8 +512,8 @@ h4 {
  
 .hand {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 0.375rem;
+  grid-template-columns: repeat(3, 1fr);
 }
  
 .card {
@@ -524,14 +524,14 @@ h4 {
   border: var(--line) solid var(--c, var(--edge));
   border-radius: 0.375rem;
   color: var(--text);
-  cursor: pointer;
   font-size: 0.75rem;
   text-align: left;
+  cursor: pointer;
 }
  
 .card:disabled {
-  opacity: 0.4;
   cursor: default;
+  opacity: 0.4;
 }
  
 .card.picked {
@@ -549,8 +549,8 @@ h4 {
  
 .sk-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.375rem;
 }
  
@@ -572,13 +572,13 @@ h4 {
 }
  
 .grow > span {
-  flex: 1 1 7rem;
   font-size: 0.75rem;
+  flex: 1 1 7rem;
 }
  
 .grow > select {
-  flex: 1 1 7rem;
   width: auto;
+  flex: 1 1 7rem;
 }
  
 .grow input[type="number"] {
@@ -631,8 +631,8 @@ h4 {
  
 .log-body {
   max-height: 16rem;
-  overflow-y: auto;
   font-size: 0.75rem;
+  overflow-y: auto;
 }
  
 .reslist {
@@ -646,7 +646,11 @@ h4 {
   padding: 0 0.375rem;
   background: var(--panel-2);
   border-radius: 0.25rem;
-  font-size: 0.6875rem;
+  font-size: 0.688rem;
+}
+ 
+.res.weakpoint {
+  background: rgb(100, 60, 40);
 }
  
 .res.weak {
@@ -664,9 +668,9 @@ h4 {
 .popup {
   position: fixed;
   top: 0;
-  right: 0;
-  bottom: 0;
   left: 0;
+  bottom: 0;
+  right: 0;
   z-index: 50;
   display: grid;
   align-items: center;
@@ -693,10 +697,10 @@ h4 {
   color: rgb(255, 255, 255);
   font-size: 1.25rem;
   font-weight: bold;
+  animation: fx-rise 1.8s ease-out forwards;
   opacity: 0;
   pointer-events: none;
   text-shadow: 0 0 0.25rem rgb(0, 0, 0);
-  animation: fx-rise 1.8s ease-out forwards;
 }
  
 .fx.crit {
@@ -738,8 +742,8 @@ h4 {
   z-index: 20;
   display: grid;
   align-items: center;
-  grid-template-columns: 1fr auto 1fr;
   gap: 0.75rem;
+  grid-template-columns: 1fr auto 1fr;
   padding: 0.5rem 1rem;
   background: var(--header-bg);
   border-block-end: var(--line) solid rgb(150, 40, 40);
@@ -770,9 +774,9 @@ h4 {
 .head-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
 }
  
 .head-right .count {
@@ -809,7 +813,7 @@ h4 {
 .slots h4 {
   margin: 0.25rem 0;
   color: var(--muted);
-  font-size: 0.8125rem;
+  font-size: 0.813rem;
 }
  
 .slot {
@@ -835,9 +839,9 @@ h4 {
   position: relative;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 1.5rem;
+  justify-content: center;
 }
  
 .row.enemies {
@@ -850,8 +854,8 @@ h4 {
  
 .e-col {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  flex-direction: column;
   gap: 0.375rem;
   min-width: 7.375rem;
 }
@@ -871,8 +875,8 @@ h4 {
 .e-name {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.25rem;
+  justify-content: center;
   font-weight: bold;
   text-align: center;
 }
@@ -884,14 +888,13 @@ h4 {
 }
  
 .e-hp .bar-row {
-  flex: 1;
   min-width: 0;
+  flex: 1;
 }
  
 .e-sp {
   display: flex;
   align-items: center;
-  flex: none;
   justify-content: center;
   width: 1.625rem;
   height: 1.625rem;
@@ -899,6 +902,7 @@ h4 {
   border-radius: 50%;
   font-size: 0.688rem;
   font-weight: bold;
+  flex: none;
 }
  
 .bar-row {
@@ -933,9 +937,9 @@ h4 {
  
 .e-badges {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
+  justify-content: center;
   width: 0;
   min-width: 100%;
   min-height: 0.25rem;
@@ -944,7 +948,6 @@ h4 {
 .e-sil {
   display: flex;
   align-items: center;
-  flex: none;
   justify-content: center;
   width: 7.375rem;
   height: 8rem;
@@ -953,6 +956,7 @@ h4 {
   border-radius: 0.5rem;
   color: var(--muted);
   cursor: pointer;
+  flex: none;
   overflow: hidden;
 }
  
@@ -969,9 +973,9 @@ h4 {
  
 .pieces {
   display: flex;
-  justify-content: center;
   flex-wrap: nowrap;
   gap: 0.375rem;
+  justify-content: center;
 }
  
 .piece {
@@ -985,15 +989,15 @@ h4 {
   background: transparent;
   border: 0;
   color: var(--text);
-  cursor: pointer;
   font-size: 0.625rem;
   line-height: 1.2;
+  cursor: pointer;
 }
  
 .p-label {
   max-width: 100%;
-  overflow: hidden;
   text-align: center;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1029,12 +1033,12 @@ h4 {
   top: 0;
   left: -0.25rem;
   z-index: 2;
-  padding: 0.0625rem 0.375rem;
+  padding: 0.063rem 0.375rem;
   background: var(--reso, rgb(220, 60, 50));
-  border: 0.0625rem solid rgba(255, 255, 255, 0.35);
+  border: 0.063rem solid rgba(255, 255, 255, 0.35);
   border-radius: 0.125rem;
   color: rgb(255, 255, 255);
-  font-size: 0.5625rem;
+  font-size: 0.563rem;
   font-weight: bold;
   line-height: 1.2;
   pointer-events: none;
@@ -1244,8 +1248,8 @@ h4 {
   font-size: 0.875rem;
   font-weight: bold;
   paint-order: stroke fill;
-  transform: translateY(-50%);
   -webkit-text-stroke: 0.188rem rgb(0, 0, 0);
+  transform: translateY(-50%);
 }
  
 .a-ring,
@@ -1264,9 +1268,9 @@ h4 {
  
 .a-badges {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
+  justify-content: center;
   width: 100%;
 }
  
@@ -1278,11 +1282,11 @@ h4 {
 :is(.e-badges, .a-badges) .st {
   width: 0.875rem;
   height: 0.875rem;
-  margin-block-end: 0.0625rem;
+  margin-block-end: 0.063rem;
 }
  
 :is(.e-badges, .a-badges) .st-ic b {
-  font-size: 0.4375rem;
+  font-size: 0.438rem;
 }
  
 :is(.e-badges, .a-badges) .st.ego .st-ic b {
@@ -1348,8 +1352,8 @@ h4 {
   border: var(--line) solid var(--edge);
   border-radius: 62.438rem;
   color: var(--text);
-  cursor: pointer;
   font-size: 0.75rem;
+  cursor: pointer;
 }
  
 .seg-b.on {
@@ -1386,13 +1390,13 @@ h4 {
   border-inline-start: 0.25rem solid var(--c, var(--edge));
   border-radius: 0.375rem;
   color: var(--text);
-  cursor: pointer;
   text-align: left;
+  cursor: pointer;
 }
  
 .srow:disabled {
-  opacity: 0.4;
   cursor: default;
+  opacity: 0.4;
 }
  
 .srow.picked {
@@ -1489,14 +1493,14 @@ h4 {
  
 .dock {
   position: fixed;
-  bottom: 0;
   left: 0;
+  bottom: 0;
   right: 0;
   z-index: 25;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
+  justify-content: center;
   padding: 0.625rem 1rem;
   background: var(--header-bg);
   border-block-start: var(--line) solid rgb(150, 40, 40);
@@ -1514,8 +1518,8 @@ h4 {
  
 .logwin {
   position: fixed;
-  right: 1rem;
   bottom: 4.5rem;
+  right: 1rem;
   z-index: 30;
   width: 24rem;
   max-width: calc(100vw - 2rem);
@@ -1538,12 +1542,12 @@ h4 {
 }
  
 .spark {
+  animation: spark 0.8s ease-out infinite;
   fill: rgb(255, 236, 160);
   stroke: rgb(255, 214, 90);
   stroke-linecap: round;
   stroke-width: 2;
   transform-origin: 0 0;
-  animation: spark 0.8s ease-out infinite;
 }
  
 @keyframes spark {
@@ -1563,8 +1567,8 @@ h4 {
  
 @media only screen and (max-width: 900px) {
   .head {
-    grid-template-columns: minmax(0, 1fr);
     gap: 0.25rem;
+    grid-template-columns: minmax(0, 1fr);
     padding: 0.375rem 0.5rem;
   }
   .head-main .title {
@@ -1586,10 +1590,10 @@ h4 {
   }
   .row {
     flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding: 0.5rem 0.25rem;
     gap: 0.75rem;
+    justify-content: flex-start;
+    padding: 0.5rem 0.25rem;
+    overflow-x: auto;
   }
   .row > :first-child {
     margin-inline-start: auto;
@@ -1607,8 +1611,8 @@ h4 {
     flex: none;
   }
   .e-col.abnormality {
-    flex: none;
     min-width: 17rem;
+    flex: none;
   }
   .e-sil {
     height: 4.5rem;
@@ -1618,8 +1622,8 @@ h4 {
     height: 6rem;
   }
   .ally {
-    flex: none;
     width: 6rem;
+    flex: none;
   }
   .legend {
     gap: 0.5rem;
@@ -1630,8 +1634,8 @@ h4 {
     display: none;
   }
   .logwin {
-    right: 0.5rem;
     bottom: 4rem;
+    right: 0.5rem;
     width: calc(100vw - 1rem);
   }
   .side {
