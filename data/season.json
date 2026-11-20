@@ -1,0 +1,10 @@
+{
+  "season-1": {
+    "name": "シーズン1",
+    "released": true
+  },
+  "season-2": {
+    "name": "シーズン2",
+    "released": false
+  }
+}
