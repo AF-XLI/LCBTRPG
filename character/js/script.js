@@ -463,7 +463,7 @@ document.addEventListener('dragstart', function (ev) {
       var k = sin.id;
       var m = ego && ego.resist && ego.resist[k] != null ? ego.resist[k] : 1;
       var kind = m > 1 ? 'weak' : (m < 0.75 ? 'strong' : (m < 1 ? 'resist' : 'normal'));
-      var label = m > 1 ? '脆弱' : (m < 0.75 ? '耐性' : (m < 1 ? '抵抗' : '普通'));
+      var label = m > 1 ? (m < 2 ? '弱点' : '脆弱') : (m < 0.75 ? '耐性' : (m < 1 ? '抵抗' : '普通'));
       h += '<div class="resist is-' + kind + '" role="group" aria-label="' + sin.label + ' ' + label + ' ×' + m + '">' +
         img('image/icon/sin/' + k + '.png', 'resist-icon') +
         '<div class="resist-text"><div class="resist-label">' + label + '</div><div class="resist-mult">[x' + m + ']</div></div></div>';
@@ -498,7 +498,7 @@ document.addEventListener('dragstart', function (ev) {
     RESIST_TYPES.forEach(function (t) {
       var m = identity.resist && identity.resist[t] != null ? identity.resist[t] : 1;
       var kind = m > 1 ? 'weak' : (m < 1 ? 'strong' : 'normal');
-      var label = m > 1 ? '脆弱' : (m < 1 ? '耐性' : '普通');
+      var label = m > 1 ? (m < 2 ? '弱点' : '脆弱') : (m < 1 ? '耐性' : '普通');
       h += '<div class="resist is-' + kind + '" role="group" aria-label="' + t + ' ' + label + ' ×' + m + '">' +
         img('image/icon/' + t + '.png', 'resist-icon') +
         '<div class="resist-text"><div class="resist-label">' + label + '</div><div class="resist-mult">[x' + m + ']</div></div>' +
@@ -568,7 +568,7 @@ document.addEventListener('dragstart', function (ev) {
     RESIST_TYPES.forEach(function (t) {
       var m = identity.resist && identity.resist[t] != null ? identity.resist[t] : 1;
       var kind = m > 1 ? 'weak' : (m < 1 ? 'strong' : 'normal');
-      var label = m > 1 ? '脆弱' : (m < 1 ? '耐性' : '普通');
+      var label = m > 1 ? (m < 2 ? '弱点' : '脆弱') : (m < 1 ? '耐性' : '普通');
       h += '<span class="pl-rs-item is-' + kind + '">' + img('image/icon/' + t + '.png', 'pl-rs-icon') +
         '<b>' + label + '</b><b>[x' + m + ']</b></span>';
     });
