@@ -1,0 +1,168 @@
+{
+  "lcb": {
+    "initial": true,
+    "name": "LCB囚人",
+    "nameParts": [
+      "LCB",
+      "囚人"
+    ],
+    "affiliation": "ルナリスカンパニー",
+    "rarity": "1",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 200,
+    "speed": [
+      4,
+      7
+    ],
+    "thr": [
+      70,
+      40
+    ],
+    "resist": {
+      "slash": 2,
+      "pierce": 0.5,
+      "blunt": 1
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "envy",
+        "type": "slash",
+        "name": "抜剣",
+        "base": 4,
+        "coin": 2,
+        "coins": 3,
+        "effects": [
+          {
+            "timing": "matchWin",
+            "type": "gain",
+            "status": "breath",
+            "count": 2,
+            "target": "self"
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "grant",
+            "status": "breath",
+            "power": 1,
+            "target": "self",
+            "text": "{breath}1を得る"
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "grant",
+            "status": "breath",
+            "power": 1,
+            "target": "self",
+            "text": "{breath}1を得る"
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "grant",
+            "status": "breath",
+            "power": 2,
+            "target": "self",
+            "text": "{breath}2を得る"
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "wrath",
+        "type": "slash",
+        "name": "連続斬り",
+        "base": 3,
+        "coin": 5,
+        "coins": 2,
+        "effects": [
+          {
+            "timing": "matchWin",
+            "type": "gain",
+            "status": "breath",
+            "count": 2,
+            "target": "self"
+          },
+          {
+            "coin": 1,
+            "timing": "headsHit",
+            "type": "grant",
+            "status": "critDmgUp",
+            "power": 3,
+            "target": "self",
+            "delay": "nextTurn",
+            "text": "次のターンに{critDmgUp}3を得る"
+          },
+          {
+            "coin": 2,
+            "timing": "headsHit",
+            "type": "grant",
+            "status": "dmgUp@pierce",
+            "power": 2,
+            "target": "self",
+            "delay": "nextTurn",
+            "text": "次のターンに{dmgUp@pierce}2を得る"
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "gloom",
+        "type": "pierce",
+        "name": "抉り刺し",
+        "base": 6,
+        "coin": 14,
+        "coins": 1,
+        "effects": [
+          {
+            "type": "critBonus",
+            "percent": 30
+          },
+          {
+            "coin": 1,
+            "timing": "critHit",
+            "type": "grant",
+            "status": "fragile",
+            "power": 2
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "ため息",
+      "sin": "gloom",
+      "count": 5,
+      "effects": [
+        {
+          "type": "breathKeep",
+          "percent": 50,
+          "text": "クリティカル的中時、50%の確率で{breath}回数を消耗しない"
+        }
+      ]
+    },
+    "support": {
+      "name": "怒気",
+      "sin": "gloom",
+      "count": 5,
+      "effects": [
+        {
+          "type": "critBonus",
+          "percent": 10,
+          "scope": "allies",
+          "text": "全員の、クリティカルダメージ量 +10%"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "wrath",
+      "type": "guard",
+      "name": "ガード",
+      "base": 7,
+      "coin": 3,
+      "coins": 1,
+      "effects": []
+    }
+  }
+}
