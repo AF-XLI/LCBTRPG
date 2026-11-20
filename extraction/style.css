@@ -1,0 +1,275 @@
+:root {
+  --gold: rgb(232, 178, 56);
+  --gold-text: rgb(252, 198, 0);
+  --brown: rgb(122, 88, 40);
+  --cream: rgb(237, 205, 164);
+  --sub: rgb(159, 106, 58);
+  --panel: rgb(30, 25, 20);
+}
+ 
+* {
+  box-sizing: border-box;
+}
+ 
+[hidden] {
+  display: none !important;
+}
+ 
+img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+ 
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+ 
+body {
+  background: rgb(0, 0, 0);
+  color: var(--cream);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+ 
+button,
+select {
+  font-family: var(--font-body);
+}
+ 
+.ex {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+ 
+.ex-note {
+  color: var(--sub);
+}
+ 
+.ex-title {
+  margin: 0 0 1.25rem;
+  color: var(--gold-text);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+ 
+.ex-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block-end: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  border: 0.125rem solid var(--brown);
+}
+ 
+.ex-bar-name {
+  color: var(--gold-text);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+ 
+.ex-ticket {
+  margin-inline-start: auto;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+}
+ 
+.ex-ticket b {
+  color: var(--gold-text);
+  font-family: var(--font-num);
+  font-size: 1.75rem;
+}
+ 
+.ex-btn {
+  padding: 0.5rem 1.25rem;
+  background: rgb(66, 50, 30);
+  border: 0.125rem solid var(--gold);
+  color: var(--gold-text);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+ 
+.ex-btn:hover {
+  background: rgb(102, 76, 40);
+}
+ 
+.ex-btn:disabled {
+  border-color: var(--brown);
+  color: var(--sub);
+  cursor: default;
+  opacity: 0.6;
+}
+ 
+.ex-pull {
+  padding: 0.75rem 3rem;
+  font-size: 1.5rem;
+}
+ 
+.ex-sec {
+  margin-block-end: 1.5rem;
+}
+ 
+.ex-sec-title {
+  margin: 0 0 0.75rem;
+  padding-block-end: 0.25rem;
+  border-bottom: 0.125rem solid var(--brown);
+  color: var(--gold-text);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+}
+ 
+.ex-pu {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+ 
+.ex-pu select {
+  padding: 0.375rem 0.5rem;
+  background: rgb(14, 12, 10);
+  border: 0.125rem solid var(--brown);
+  color: var(--cream);
+  font-size: 1rem;
+}
+ 
+.ex-pu-rate {
+  color: var(--sub);
+}
+ 
+.ex-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+ 
+.ex-card {
+  position: relative;
+  aspect-ratio: 333 / 465;
+  background: rgb(28, 20, 14);
+  color: var(--gold-text);
+}
+ 
+.ex-card-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+ 
+.ex-card-icon {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  width: 55%;
+  opacity: 0.55;
+  transform: translateX(-50%);
+}
+ 
+.ex-card-name {
+  position: absolute;
+  left: 1rem;
+  bottom: 1.25rem;
+  right: 1.375rem;
+  font-family: var(--font-display);
+  font-size: 0.938rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  text-shadow: 0 0.063rem 0.25rem rgb(0, 0, 0);
+}
+ 
+.ex-card.is-pu {
+  box-shadow: 0 0 0.75rem rgb(251, 124, 0);
+}
+ 
+.ex-card-pu {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0 0.5rem;
+  background: rgb(220, 70, 20);
+  color: rgb(255, 255, 255);
+  font-family: var(--font-label);
+  font-size: 1.125rem;
+}
+ 
+.ex-empty {
+  color: var(--sub);
+}
+ 
+.ex-test {
+  margin-block-start: 2rem;
+  padding: 0.75rem 1rem;
+  border: 0.125rem dashed var(--brown);
+  color: var(--sub);
+  font-size: 0.875rem;
+}
+ 
+.ex-test-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+ 
+.ex-test .ex-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+ 
+.ex-back {
+  display: inline-block;
+  margin-block-start: 1.25rem;
+  color: var(--sub);
+}
+ 
+.ex-result {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 1.5rem;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+}
+ 
+.ex-result-label {
+  color: var(--gold-text);
+  font-family: var(--font-label);
+  font-size: 2.5rem;
+}
+ 
+.ex-result .ex-card {
+  width: 14rem;
+  animation: ex-pop 0.5s ease-out;
+}
+ 
+@keyframes ex-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-6deg);
+  }
+ 
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
