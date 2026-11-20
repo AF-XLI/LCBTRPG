@@ -1,4 +1,31 @@
 {
+  "luis": {
+    "no": 1,
+    "name": "ルイス",
+    "themeColor": "rgb(173, 125, 93)",
+    "ghostOpacity": 100,
+    "portrait": "image/character/luis/portrait.png",
+    "icon": "image/character/luis/icon.png",
+    "background": "image/character/luis/bg.png",
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "library-of-all"
+    ],
+    "default": {
+      "identity": "lcb",
+      "egos": {
+        "ZAYIN": "library-of-all"
+      }
+    },
+    "portraitTop": 4.92,
+    "portraitWidth": 40,
+    "cardX": 3,
+    "cardShift": -2.3,
+    "bannerFit": 0.173,
+    "bannerShift": 2
+  },
   "giovanni": {
     "no": 2,
     "name": "ジョバンニ",
@@ -51,6 +78,33 @@
     "cardShift": 13.6,
     "portraitTop": -9.867,
     "portraitWidth": 59.8
+  },
+  "frodo": {
+    "no": 4,
+    "name": "フロド",
+    "themeColor": "rgb(152, 93, 145)",
+    "ghostOpacity": 60,
+    "portrait": "image/character/frodo/portrait.png",
+    "icon": "image/character/frodo/icon.png",
+    "background": "image/character/frodo/bg.png",
+    "identities": [
+      "lcb"
+    ],
+    "egos": [
+      "durbatuluk"
+    ],
+    "default": {
+      "identity": "lcb",
+      "egos": {
+        "ZAYIN": "durbatuluk"
+      }
+    },
+    "portraitTop": 4.92,
+    "portraitWidth": 40,
+    "cardX": 3,
+    "cardShift": -2.3,
+    "bannerFit": 0.173,
+    "bannerShift": 2
   },
   "gray": {
     "no": 5,
