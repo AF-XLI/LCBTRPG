@@ -18,8 +18,8 @@
   };
   var RES_ORDER = ['wrath', 'lust', 'sloth', 'gluttony', 'gloom', 'pride', 'envy'];
   var PHYS = { slash: '斬撃', pierce: '貫通', blunt: '打撃' };
-  var RES_MULT = { normal: 1, weak: 2, resist: 0.75, strong: 0.5 };
-  var RES_LABEL = { normal: '普通', weak: '脆弱', resist: '抵抗', strong: '耐性' };
+  var RES_MULT = { normal: 1, weakpoint: 1.5, weak: 2, resist: 0.75, strong: 0.5 };
+  var RES_LABEL = { normal: '普通', weakpoint: '弱点', weak: '脆弱', resist: '抵抗', strong: '耐性' };
   var SP_MIN = -45;
   var SP_MAX = 45;
   var KIND_LABEL = { attack: '攻撃', defense: '守備', counter: '反撃' };
@@ -30,7 +30,7 @@
     vibration: { label: '振動', type: 'pc', kind: 'debuff', glyph: '振', color: 'rgb(140, 170, 235)', text: '振動爆発で混乱線が前進する' },
     rupture: { label: '破裂', type: 'pc', kind: 'debuff', glyph: '破', color: 'rgb(235, 130, 190)', text: 'ダメージ時に威力分の固定ダメージ' },
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', glyph: '沈', color: 'rgb(80, 130, 210)', text: 'ダメージ時に威力分の精神力ダメージ' },
-    breath: { label: '呼吸', type: 'pc', kind: 'buff', glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
+    breath: { label: '呼吸', type: 'pc', kind: 'buff', keepPotency: true, glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
     charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, charge: true, text: '消耗でスキルが強化される' },
     paralysis: { label: '麻痺', type: 'val', kind: 'debuff', glyph: '麻', color: 'rgb(200, 190, 90)', text: 'コイン威力を0にする(トスごとに-1)' },
     bind: { label: '束縛', type: 'val', kind: 'debuff', glyph: '縛', color: 'rgb(160, 130, 100)', text: '速度が減少' },
@@ -49,7 +49,8 @@
     defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', glyph: '守威↑', color: 'rgb(240, 170, 90)', text: '守備スキルの最終威力を増やす' },
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', glyph: '合威↑', color: 'rgb(240, 170, 90)', text: 'マッチ時の最終威力を増やす' },
     coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', glyph: '幣↑', color: 'rgb(240, 170, 90)', text: 'コインの加算分を増やす' },
-    weakDmg: { label: '弱点攻撃時ダメージ量増加', type: 'val', kind: 'buff', glyph: '弱↑', color: 'rgb(240, 170, 90)', text: '相手が脆弱な属性(物理・罪悪)を攻撃するとき、ダメージが数値%増加' },
+    weakDmg: { label: '弱点攻撃時にダメージ量増加', type: 'val', kind: 'buff', glyph: '弱↑', color: 'rgb(240, 170, 90)', text: '相手が脆弱な属性(物理・罪悪)を攻撃するとき、ダメージが数値%増加' },
+    critDmgUp: { label: 'クリティカルダメージ増加', type: 'val', kind: 'buff', glyph: '会↑', color: 'rgb(240, 120, 90)', max: 10, text: 'クリティカル時のダメージが数値×10%増加' },
     egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', glyph: '資↑', color: 'rgb(240, 200, 90)', text: 'スキル使用時に獲得するE.G.O資源が数値分増加' }
   };
 
@@ -128,7 +129,7 @@
     return out;
   }
 
-  var RES_NAME_OF = { 2: 'weak', 1: 'normal', 0.75: 'resist', 0.5: 'strong' };
+  var RES_NAME_OF = { 2: 'weak', 1.5: 'weakpoint', 1: 'normal', 0.75: 'resist', 0.5: 'strong' };
   function resNameOf(v) {
     if (typeof v === 'string') { return RES_MULT[v] !== undefined ? v : 'normal'; }
     return RES_NAME_OF[v] || 'normal';
@@ -1102,11 +1103,13 @@
     opt = opt || {};
     var f = 1 + 0.1 * (sumVal(atkB, 'dmgUp', skill) - sumVal(atkB, 'dmgDown', skill) + sumVal(defB, 'fragile', skill) - sumVal(defB, 'protect', skill));
     f += num(skill.dmgBonus, 0) + num(atkUnit.dmgBonus, 0);
+    if (opt.crit) { f += 0.1 * sumVal(atkB, 'critDmgUp', skill); }
     var wd = vOf(atkB, 'weakDmg');
     if (wd > 0 && opt.dg && isWeakTo(opt.dg, skill)) { f += wd / 100; }
     A(atkB.mods).forEach(function (m) {
       if (m.k === 'dmg' && (m.scope !== 'finalCoin' || opt.final)) {
         if (m.dmgIf && !condOkG(m.dmgIf, opt.ag, opt.dg)) { return; }
+        if (m.weakOnly && !(opt.dg && isWeakTo(opt.dg, skill))) { return; }
         var pc = m.perMatch !== undefined ? Math.min(m.max === undefined ? Infinity : num(m.max, 0), num(m.perMatch, 0) * num(opt.matches, 0)) : num(m.pct, 0);
         if (m.perCoinLive !== undefined) { pc = num(m.perCoinLive, 0) * (opt.coinsLeft !== undefined ? num(opt.coinsLeft, 0) : A(skill.coins).length); }
         f += pc / 100;
@@ -1124,7 +1127,7 @@
   }
   function isWeakTo(defG, skill) {
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
-    return physM >= 2 || resMultOf(defG.b.resist, skill.sin) >= 2;
+    return physM > 1 || resMultOf(defG.b.resist, skill.sin) > 1;
   }
   function resFrame(defG, skill, matches, crit) {
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
@@ -1225,6 +1228,7 @@
       if (coin === undefined) { if (gr.coin || tm.side) { return; } }
       else if (gr.coin !== coin) { return; }
       if (tm.side && (tm.side === 'heads') !== !!ctx.heads) { return; }
+      if (gr.crit && !ctx.crit) { return; }
       var okc = ctx.pre && ctx.pre[gi] !== undefined ? ctx.pre[gi] : grantCondOk(state, gr, atkRef, defRef);
       if (!okc) { return; }
       if (gr.if && gr.if.skillType && gr.if.skillType !== O(ctx.skill || skill).phys) { return; }
@@ -1267,6 +1271,7 @@
           tg.b.mods = A(tg.b.mods);
           var dm = { k: 'dmg', pct: pct, scope: ctx.passive ? gr.scope || 'round' : gr.scope === 'finalCoin' ? 'finalCoin' : 'skill' };
           if (gr.dmgIf) { dm.dmgIf = gr.dmgIf; }
+          if (gr.weakOnly) { dm.weakOnly = true; }
           if (gr.perMatch !== undefined) { dm.perMatch = num(gr.perMatch, 0); dm.max = gr.max; }
           if (gr.perCoinLive !== undefined) { dm.perCoinLive = num(gr.perCoinLive, 0); }
           tg.b.mods.push(dm);
@@ -1297,6 +1302,37 @@
             tg.b.mods = A(tg.b.mods);
             tg.b.mods.push({ k: 'coinPow', n: cp, scope: 'skill' });
             log(state, nameOf(state, tref) + ' のコイン威力 +' + cp);
+          }
+        }
+        if (gr.resGain) {
+          var rk = shuffle(Object.keys(SINS), activeRng).slice(0, Math.max(1, num(gr.resGain.kinds, 1)));
+          state.res = O(state.res);
+          rk.forEach(function (k) {
+            state.res[k] = resOf(state, k) + num(gr.resGain.each, 1);
+            log(state, '資源: ' + SINS[k].label + ' +' + num(gr.resGain.each, 1) + '(計' + state.res[k] + ')');
+          });
+        }
+        if (gr.resoGift) {
+          var rc = O(O(resoOf(state)).count);
+          var rby = O(O(resoOf(state)).by);
+          var best = '';
+          Object.keys(rc).forEach(function (k) { if (!best || rc[k] > rc[best]) { best = k; } });
+          if (best && rc[best] >= num(gr.resoGift.min, 3)) {
+            var isFull = Object.keys(rby).some(function (id) { return rby[id].sin === best && rby[id].kind === 'full'; });
+            var gp = [];
+            Object.keys(state.units).forEach(function (id) {
+              var au = state.units[id];
+              if (au.side === 'ally' && !au.dead && !isOut(getB(state, { u: id, p: null }))) { gp.push({ u: id, p: null }); }
+            });
+            shuffle(gp, activeRng).slice(0, Math.max(1, num(gr.resoGift.n, 3))).forEach(function (r2) {
+              var tb = getB(state, r2);
+              tb.b.next = O(tb.b.next);
+              var cu = tb.b.next[gr.resoGift.status] || { p: 0, c: 0, v: 0 };
+              cu.v += num(gr.resoGift.power, 1);
+              tb.b.next[gr.resoGift.status] = cu;
+              if (isFull && num(gr.resoGift.fullExtra, 0) > 0) { addStatus(tb.b, gr.resoGift.status, { v: num(gr.resoGift.fullExtra, 0) }); }
+              log(state, nameOf(state, r2) + ' に ' + (STATUS[gr.resoGift.status] || { label: gr.resoGift.status }).label + (isFull ? '(次ラウンド+' + num(gr.resoGift.power, 1) + '・今ターン+' + num(gr.resoGift.fullExtra, 0) + ')' : '(次ラウンド+' + num(gr.resoGift.power, 1) + ')'));
+            });
           }
         }
         if (gr.thresholdAdvance !== undefined) { advanceLines(state, tref, num(gr.thresholdAdvance, 0)); }
@@ -1555,13 +1591,14 @@
             fx(state, defRef, '精神-' + pot, 'sinking');
           }
         }
-        applyGrants(state, atk.ref, defRef, skill, 'hit', num(atk.lost, 0) + i + 1, { heads: r.heads, pre: pre });
+        applyGrants(state, atk.ref, defRef, skill, 'hit', num(atk.lost, 0) + i + 1, { heads: r.heads, pre: pre, crit: crit });
         if (ag.unit.side === 'ally' && !isOut(getB(state, atk.ref))) { firePassives(state, 'hit', ag.unit.id, { defRef: defRef, skill: skill }); }
         if (dg.unit.dead && dg.unit.side !== ag.unit.side && !isOut(getB(state, atk.ref))) {
           changeSp(state, atk.ref, 10);
           log(state, '  ' + nameOf(state, atk.ref) + ' は ' + nameOf(state, { u: defRef.u, p: null }) + ' を倒して精神力 +10');
           fx(state, atk.ref, '精神+10', 'sp');
           applyGrants(state, atk.ref, defRef, skill, 'kill');
+          applyGrants(state, atk.ref, defRef, skill, 'kill', num(atk.lost, 0) + i + 1, {});
           if (ag.unit.side === 'ally') { firePassives(state, 'kill', ag.unit.id, { defRef: defRef }); }
         }
       });

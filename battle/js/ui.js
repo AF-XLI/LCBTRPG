@@ -41,7 +41,8 @@
     coinWeak: 'plus-coin-drop.png',
     quick: 'haste.png',
     weakDmg: 'weak-resist-dmg-boost.png',
-    egoResUp: 'e.g.o-resource-amp.png'
+    egoResUp: 'e.g.o-resource-amp.png',
+    critDmgUp: 'crit-dmg-up.png'
   };
 
   function statusIcon(base, suf) {
