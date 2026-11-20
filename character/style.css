@@ -1614,14 +1614,14 @@ textarea {
  
 .pl-back {
   position: absolute;
-  top: 1.3rem;
+  top: 1.8rem;
   left: 1.3rem;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 5.063rem;
-  height: 3.375rem;
+  height: 2.375rem;
   background: linear-gradient(rgb(232, 201, 163), rgb(196, 168, 132));
   border: 0.125rem solid rgb(150, 124, 96);
   border-radius: 0.25rem;
