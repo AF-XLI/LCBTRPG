@@ -46,7 +46,7 @@
     defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', icon: 'defense-power-up.png' },
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', icon: 'clash-power-up.png' },
     coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', icon: 'plus-coin-boost.png' },
-    weakDmg: { label: '弱点攻撃時ダメージ量増加', type: 'val', kind: 'buff', icon: 'weak-resist-dmg-boost.png' },
+    weakDmg: { label: '弱点攻撃時にダメージ量増加', type: 'val', kind: 'buff', icon: 'weak-resist-dmg-boost.png' },
     egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', icon: 'e.g.o-resource-amp.png' },
     critDmgUp: { label: 'クリティカルダメージ増加', type: 'val', kind: 'buff', icon: 'crit-dmg-up.png' },
     tremorBurst: { label: '振動爆発', type: 'none', kind: 'neutral', icon: 'tremor-burst.png' }
