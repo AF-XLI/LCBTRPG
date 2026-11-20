@@ -1152,7 +1152,7 @@ textarea {
 .detail-weight {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.125rem;
   color: var(--gold-text);
   font-size: 0.875rem;
 }
@@ -1162,6 +1162,10 @@ textarea {
   width: 0.875rem;
   height: 0.875rem;
   background: rgb(230, 200, 60);
+}
+ 
+.detail-weight i:first-of-type {
+  margin-inline-start: 0.875rem;
 }
  
 .effects {
