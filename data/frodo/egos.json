@@ -1,0 +1,65 @@
+{
+  "durbatuluk": {
+    "rank": "ZAYIN",
+    "name": "ドゥルバトゥルーク",
+    "sin": "gloom",
+    "type": "pierce",
+    "base": 10,
+    "coin": 10,
+    "coins": 1,
+    "weight": 1,
+    "sp": 20,
+    "cost": {
+      "gloom": 5
+    },
+    "resist": {
+      "lust": 2,
+      "pride": 2,
+      "gloom": 0.75
+    },
+    "effects": [
+      {
+        "type": "dmgBonus",
+        "percent": 25,
+        "ifTargetHp": {
+          "op": "lt",
+          "value": 25,
+          "unit": "percent"
+        },
+        "text": "対象の体力が25%未満のとき、ダメージ量 +25%"
+      },
+      {
+        "timing": "use",
+        "type": "resoGift",
+        "min": 3,
+        "count": 3,
+        "status": "egoResUp",
+        "power": 1,
+        "fullExtra": 1,
+        "text": "最大共鳴数が3以上なら、ランダムな味方3名が次ターンに{egoResUp}1を得る\n- 該当共鳴が完全共鳴なら、追加で{egoResUp}1を得る"
+      },
+      {
+        "coin": 1,
+        "timing": "kill",
+        "type": "resGain",
+        "kinds": 2,
+        "each": 1,
+        "text": "ランダムなE.G.O資源2種を1つずつ獲得"
+      }
+    ],
+    "passive": {
+      "name": "重荷",
+      "effects": [
+        {
+          "timing": "battleStart",
+          "timingLabel": false,
+          "type": "resGain",
+          "kinds": 1,
+          "each": 1,
+          "needFullReso": true,
+          "text": "戦闘開始時、自分のスキルが完全共鳴に含まれているならランダムなE.G.O資源を1つ獲得"
+        }
+      ]
+    }
+  }
+}
