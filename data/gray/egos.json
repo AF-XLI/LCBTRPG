@@ -32,6 +32,7 @@
       }
     ],
     "passive": {
+      "name": "心からの悦び",
       "effects": [
         {
           "timing": "turnStart",
