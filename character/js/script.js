@@ -57,6 +57,8 @@ document.addEventListener('dragstart', function (ev) {
     prisoner: null,
     identities: {},
     egos: {},
+    seasons: {},
+    showAll: false,
     remote: {},
     roles: { admin: false, gm: false, player: false },
     view: 'sheet',
@@ -171,12 +173,35 @@ document.addEventListener('dragstart', function (ev) {
     return state.roles.admin || state.roles.player;
   }
 
+  function isReleased(identity) {
+    if (!identity || !identity.season) { return true; }
+    var season = state.seasons[identity.season];
+    return !!(season && season.released);
+  }
+
+  function isOwned(id) {
+    var identity = state.identities[id];
+    if (!identity) { return false; }
+    if (identity.initial) { return true; }
+    var owned = state.remote && state.remote.owned;
+    return !!(owned && owned[id] === true);
+  }
+
+  function isUsable(id) {
+    return !!state.identities[id] && isReleased(state.identities[id]);
+  }
+
+  function seasonName(identity) {
+    var season = identity && identity.season ? state.seasons[identity.season] : null;
+    return season && season.name ? season.name : '';
+  }
+
   function equipment() {
     var p = state.prisoner;
     var def = p.default || {};
     var remote = state.remote || {};
     var identityId = remote.identity;
-    if (!identityId || p.identities.indexOf(identityId) < 0 || !state.identities[identityId]) { identityId = def.identity; }
+    if (!identityId || p.identities.indexOf(identityId) < 0 || !isUsable(identityId) || !isOwned(identityId)) { identityId = def.identity; }
     var egos = {};
     RANKS.forEach(function (rank) {
       var rid = remote.egos && remote.egos[rank];
@@ -196,7 +221,7 @@ document.addEventListener('dragstart', function (ev) {
     var p = state.prisoner;
     state.detail = '';
     state.confirm = '';
-    if (parts[0] === 'identities' && parts[1] && p && p.identities.indexOf(parts[1]) >= 0 && state.identities[parts[1]]) {
+    if (parts[0] === 'identities' && parts[1] && p && p.identities.indexOf(parts[1]) >= 0 && isUsable(parts[1])) {
       state.view = 'persona';
       state.personaId = parts[1];
       state.sub = 0;
@@ -578,14 +603,22 @@ document.addEventListener('dragstart', function (ev) {
   function cardHtml(id, identity, selected) {
     var det = state.detail;
     var art = identityArt(state.prisoner, id, identity);
-    return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + '" href="#identities/' + esc(id) + '" aria-label="' + esc(identity.name) + '">' +
+    return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + (isOwned(id) ? '' : ' is-lock') + '" href="#identities/' + esc(id) + '" aria-label="' + esc(identity.name) + '">' +
       '<span class="pl-card-bg"></span>' +
       '<span ' + artBgAttr(art, 'pl-card-art') + '>' + artImgHtml(art, identity, 'pl-card-img') + '</span>' +
       img('image/frame/' + (identity.rarity || 1) + '.png', 'pl-card-frame') +
       (selected ? '<span class="pl-card-tag">SELECTED</span>' : '') +
+      (isOwned(id) ? '' : '<span class="pl-card-lock">未所持</span>') +
       '<span class="pl-card-name">' + nameLines(identity) + '</span>' +
       (det === 'skill' ? cardSkillsHtml(identity) : (det === 'stat' ? cardStatHtml(identity) : '')) +
       '</a>';
+  }
+
+  function ownToggleHtml() {
+    return '<div class="pl-dctl pl-own" role="group" aria-label="表示する人格">' +
+      '<button class="pl-dctl-op" type="button" aria-pressed="' + (!state.showAll) + '" data-act="own-mode" data-mode="owned">所持のみ</button>' +
+      '<button class="pl-dctl-op" type="button" aria-pressed="' + state.showAll + '" data-act="own-mode" data-mode="all">未所持も表示</button>' +
+      '</div>';
   }
 
   function detailCtlHtml() {
@@ -626,7 +659,9 @@ document.addEventListener('dragstart', function (ev) {
       cards = '<p class="pl-note">E.G.O一覧は準備中です。</p>';
     } else {
       p.identities.forEach(function (id) {
-        if (state.identities[id]) { cards += cardHtml(id, state.identities[id], id === eq.identityId); }
+        if (!isUsable(id)) { return; }
+        if (!state.showAll && !isOwned(id)) { return; }
+        cards += cardHtml(id, state.identities[id], id === eq.identityId);
       });
     }
     return '<div class="pl">' +
@@ -638,6 +673,7 @@ document.addEventListener('dragstart', function (ev) {
       '<a class="pl-bev pl-tab" href="#identities" aria-current="' + (!isEgo) + '">人格</a>' +
       '<a class="pl-bev pl-tab" href="#egos" aria-current="' + isEgo + '">E.G.O</a>' +
       '</div>' +
+      (isEgo ? '' : ownToggleHtml()) +
       '<div class="pl-ctl">' + (isEgo ? '' : detailCtlHtml()) + '</div>' +
       '<div class="pl-grid">' + cards + '</div>' +
       listSideHtml(eq) +
@@ -657,11 +693,13 @@ document.addEventListener('dragstart', function (ev) {
 
   function equipBtnHtml(eq) {
     if (state.personaId === eq.identityId) { return '<span class="persona-btn is-on">装備中</span>'; }
+    if (!isOwned(state.personaId)) { return '<span class="persona-btn is-on">未所持</span>'; }
     if (!canEquip()) { return ''; }
     return '<button class="persona-btn" type="button" data-act="equip">装備</button>';
   }
 
   function equip() {
+    if (!isOwned(state.personaId)) { return; }
     if (!state.db || state.saving) {
       state.status = '保存できません。ログイン状態と接続を確認してください。';
       render();
@@ -734,6 +772,7 @@ document.addEventListener('dragstart', function (ev) {
       '<div class="head-body">' +
       '<div class="head-top">' +
       '<div class="head-affiliation">' + esc(identity.affiliation || '') + '</div>' +
+      (isPersona && seasonName(identity) ? '<div class="head-season">' + esc(seasonName(identity)) + '</div>' : '') +
       (identity.rarity != null ? img('image/icon/rarity/' + identity.rarity + '.png', 'head-rarity', 'レアリティ') : '') +
       '</div>' +
       '<div class="head-identity">' +
@@ -856,6 +895,8 @@ document.addEventListener('dragstart', function (ev) {
       state.detail = '';
     } else if (act === 'detail-mode') {
       state.detail = el.getAttribute('data-mode') === 'stat' ? 'stat' : 'skill';
+    } else if (act === 'own-mode') {
+      state.showAll = el.getAttribute('data-mode') === 'all';
     } else if (act === 'equip') {
       state.confirm = state.personaId;
       state.status = '';
@@ -913,11 +954,12 @@ document.addEventListener('dragstart', function (ev) {
 
   function init() {
     if (!charId) { showError('囚人が指定されていません。'); return; }
-    Promise.all([loadJson('data/prisoners.json'), loadJson('data/' + charId + '/identities.json'), loadJson('data/' + charId + '/egos.json')])
+    Promise.all([loadJson('data/prisoners.json'), loadJson('data/' + charId + '/identities.json'), loadJson('data/' + charId + '/egos.json'), loadJson('data/seasons.json').catch(function () { return {}; })])
       .then(function (r) {
         state.prisoner = r[0][charId];
         state.identities = r[1];
         state.egos = r[2];
+        state.seasons = r[3] || {};
         if (!state.prisoner) { throw new Error('囚人「' + charId + '」のデータがありません。'); }
         document.title = state.prisoner.name + ' | キャラクターシート | LCBTRPG';
         appEl.addEventListener('click', onClick);
