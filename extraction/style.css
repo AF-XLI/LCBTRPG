@@ -842,65 +842,23 @@ button {
   }
 }
 
-@media only screen and (max-width: 900px) {
-  .ex-body {
-    grid-template-columns: 1fr;
+@media only screen and (max-width: 1279px) {
+  html:has(.ex) {
+    font-size: min(calc(100vw / 80), calc(100vh / 44));
+    font-size: min(calc(100vw / 80), calc(100dvh / 44));
   }
-
-  .ex-rail {
-    flex-direction: row;
-    overflow-x: auto;
+ 
+  html:has(.ex) body {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: url("../image/bg/letterbox.png") center / cover no-repeat rgb(0, 0, 0);
   }
-
-  .ex-banner {
-    width: 11rem;
-    flex: none;
-  }
-
-  .ex-main {
-    aspect-ratio: auto;
-    min-height: 40rem;
-  }
-
-  .ex-art {
-    top: 6rem;
-    left: 5%;
-    bottom: 12rem;
-    right: 5%;
-  }
-
-  .ex-tag {
-    left: 1.5rem;
-    bottom: 13rem;
-    right: 3.5rem;
-    align-items: flex-start;
-  }
-
-  .ex-tag-name {
-    font-size: 1.5rem;
-  }
-
-  .ex-mag {
-    right: -2.25rem;
-  }
-
-  .ex-tools {
-    bottom: 6rem;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .ex-actions {
-    left: 1.5rem;
-    bottom: 1rem;
-    right: 1.5rem;
-  }
-
-  .ex-pull {
-    width: 100%;
-  }
-
-  .ex-left {
-    display: none;
+ 
+  .ex {
+    width: 80rem;
+    max-width: none;
+    margin: 0;
   }
 }
