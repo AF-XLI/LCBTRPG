@@ -2,10 +2,12 @@
   'use strict';
 
   var FIREBASE_VERSION = '10.12.2';
-  var PICKUP_RATE = 2;
+  var PICKUP_RATE = 3;
+  var FX_MS = 1700;
   var cfg = root.LC_FIREBASE_CONFIG;
   var usable = !!(cfg && cfg.apiKey && cfg.databaseURL && cfg.useAuth !== false);
   var app = document.getElementById('app');
+  var layer = document.getElementById('layer');
   var data = { prisoners: {}, seasons: {}, identities: {} };
   var state = {
     db: null,
@@ -16,8 +18,7 @@
     remote: {},
     ref: null,
     busy: false,
-    status: '',
-    result: null
+    status: ''
   };
 
   function esc(v) {
@@ -64,6 +65,11 @@
     return o.season ? data.seasons[o.season] : null;
   }
 
+  function seasonLabel(o) {
+    var s = seasonOf(o);
+    return o.season ? (s && s.name ? s.name : o.season) : '';
+  }
+
   function isOpen(o) {
     if (!o.season) { return true; }
     var s = seasonOf(o);
@@ -84,8 +90,13 @@
     var listed = (data.prisoners[pid] && data.prisoners[pid].identities) || Object.keys(base);
     return listed.filter(function (k) { return base[k]; }).map(function (k) {
       var o = base[k];
-      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial };
+      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial, stageImage: o.stageImage, portrait: o.portrait };
     });
+  }
+
+  function identityById(pid, id) {
+    var hit = identitiesOf(pid).filter(function (o) { return o.id === id; });
+    return hit.length ? hit[0] : null;
   }
 
   function pool(pid) {
@@ -105,11 +116,15 @@
     return pickupId(pid) === o.id ? PICKUP_RATE : 1;
   }
 
+  function totalWeight(pid) {
+    var total = 0;
+    pool(pid).forEach(function (o) { total += weight(pid, o); });
+    return total;
+  }
+
   function draw(pid) {
     var list = pool(pid);
-    var total = 0;
-    list.forEach(function (o) { total += weight(pid, o); });
-    var r = Math.random() * total;
+    var r = Math.random() * totalWeight(pid);
     for (var i = 0; i < list.length; i++) {
       r -= weight(pid, list[i]);
       if (r < 0) { return list[i]; }
@@ -117,23 +132,100 @@
     return list[list.length - 1];
   }
 
-  function cardHtml(pid, o) {
+  function canChange(pid) {
+    return pid === state.own || isGm();
+  }
+
+  function artSrc(pid, o) {
+    var p = data.prisoners[pid] || {};
+    if (o && o.stageImage) { return { src: '../' + o.stageImage, kind: 'stage' }; }
+    if (o && o.portrait) { return { src: '../' + o.portrait, kind: 'portrait' }; }
+    if (!o) { return { src: '../' + (p.portrait || ''), kind: 'portrait' }; }
+    return { src: '../image/icon/org/lcb.png', kind: 'placeholder' };
+  }
+
+  function rarityTag(o) {
+    var r = String(o.rarity || 1);
+    return '<span class="ex-rarity"><img alt="" src="../image/icon/rarity/' + esc(r) + '.png" onerror="this.remove()"><span>レア' + esc(r) + '</span></span>';
+  }
+
+  function cardHtml(pid, o, extra) {
     var pu = pickupId(pid) === o.id;
-    return '<div class="ex-card' + (pu ? ' is-pu' : '') + '">' +
+    return '<span class="ex-card' + (pu ? ' is-pu' : '') + '">' +
       '<img class="ex-card-icon" alt="" src="../image/icon/org/lcb.png">' +
       '<img class="ex-card-frame" alt="" src="../image/frame/' + esc(o.rarity || 1) + '.png">' +
       (pu ? '<span class="ex-card-pu">PICK UP</span>' : '') +
-      '<span class="ex-card-name">' + esc(o.name) + '</span></div>';
+      '<span class="ex-card-name">' + esc(o.name) + '</span>' +
+      (extra ? '<span class="ex-card-extra">' + extra + '</span>' : '') + '</span>';
   }
 
   function message(text) {
     app.innerHTML = '<h1 class="ex-title">抽出</h1><p class="ex-note">' + esc(text) + '</p>' +
-      '<a class="ex-back" href="../">メインページへ戻る</a>';
+      '<a class="ex-link" href="../">メインページへ戻る</a>';
+  }
+
+  function ticketIcon() {
+    return '<span class="ex-ticket-icon" aria-hidden="true"></span>';
+  }
+
+  function railHtml(pid) {
+    var ids = isGm() ? sortedPrisoners() : [pid];
+    var h = '<nav class="ex-rail" aria-label="囚人">';
+    ids.forEach(function (id) {
+      var p = data.prisoners[id];
+      var on = id === pid;
+      var inner = '<span class="ex-banner-kind">特定抽出</span><span class="ex-banner-name">' + esc(p.name) + '</span>';
+      var style = ' style="--theme: ' + esc(p.themeColor || 'rgb(232, 178, 56)') + '; background-image: url(\'../' + esc(p.background || '') + '\');"';
+      if (isGm()) {
+        h += '<button class="ex-banner' + (on ? ' is-on' : '') + '" type="button" data-act="who" data-id="' + esc(id) + '"' + style + '>' + inner + '</button>';
+      } else {
+        h += '<div class="ex-banner is-on is-fixed"' + style + '>' + inner + '</div>';
+      }
+    });
+    return h + '</nav>';
+  }
+
+  function mainHtml(pid) {
+    var p = data.prisoners[pid];
+    var list = pool(pid);
+    var mine = pid === state.own;
+    var n = tickets();
+    var puId = pickupId(pid);
+    var pu = puId ? identityById(pid, puId) : null;
+    var art = artSrc(pid, pu);
+    var h = '<section class="ex-main" style="--theme: ' + esc(p.themeColor || 'rgb(232, 178, 56)') + ';">';
+    h += '<div class="ex-bg" style="background-image: url(\'../' + esc(p.background || '') + '\');"></div>';
+    h += '<div class="ex-heading"><span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name">' + esc(p.name) + '</span></div>';
+    h += '<div class="ex-art is-' + art.kind + '"><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
+    h += '<div class="ex-tag">';
+    if (pu) {
+      var sl = seasonLabel(pu);
+      h += (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
+        '<span class="ex-tag-name">' + esc(pu.name) + '</span>' +
+        '<span class="ex-tag-sub">PICK UP ×' + PICKUP_RATE + ' ' + rarityTag(pu) + '</span>' +
+        '<a class="ex-mag" href="../character/' + esc(pid) + '/#identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
+        '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"></circle><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></a>';
+    } else {
+      h += '<span class="ex-tag-name is-none">ピックアップ未指定</span>';
+    }
+    h += '</div>';
+    h += '<div class="ex-tools">' +
+      '<button class="ex-tool" type="button" data-act="open" data-kind="odds">確率の詳細</button>' +
+      '<button class="ex-tool" type="button" data-act="open" data-kind="history">抽出履歴</button>' +
+      (canChange(pid) ? '<button class="ex-tool" type="button" data-act="open" data-kind="pickup">ピックアップ変更</button>' : '') +
+      '</div>';
+    if (mine) {
+      h += '<div class="ex-actions"><button class="ex-pull" type="button" data-act="pull"' + (n > 0 && list.length && !state.busy ? '' : ' disabled') + '>' +
+        '<span class="ex-pull-label">1回抽出</span><span class="ex-pull-cost">' + ticketIcon() + '<b>1</b></span></button></div>';
+    }
+    h += '<div class="ex-stock">' + ticketIcon() + '<span>抽出チケット</span><b>' + n + '</b></div>';
+    h += '<div class="ex-left"><span>未所持</span><b>' + list.length + '</b></div>';
+    return h + '</section>';
   }
 
   function gmHtml(pid) {
     var owned = ownedMap();
-    var h = '<section class="ex-sec ex-gm"><h2 class="ex-sec-title">GM操作</h2>';
+    var h = '<section class="ex-gm"><h2 class="ex-gm-title">GM操作(' + esc(data.prisoners[pid].name) + ')</h2>';
     h += '<div class="ex-gm-row"><span>チケット</span>' +
       '<button class="ex-btn" type="button" data-act="tk" data-n="-1">-1</button>' +
       '<button class="ex-btn" type="button" data-act="tk" data-n="1">+1</button>' +
@@ -142,7 +234,7 @@
     var list = identitiesOf(pid).filter(function (o) { return !o.initial; });
     h += '<div class="ex-gm-sub">人格の付与・剥奪</div>';
     if (!list.length) {
-      h += '<p class="ex-empty">付与できる人格がありません。</p>';
+      h += '<p class="ex-note">付与できる人格がありません。</p>';
     } else {
       h += '<ul class="ex-gm-list">';
       list.forEach(function (o) {
@@ -160,64 +252,101 @@
 
   function render() {
     var pid = state.prisoner;
-    var p = data.prisoners[pid];
-    var list = pool(pid);
-    var mine = pid === state.own;
-    var n = tickets();
-    var pu = pickupId(pid);
-    var h = '<h1 class="ex-title">抽出</h1>';
-    h += '<div class="ex-bar">';
-    if (isGm()) {
-      h += '<select id="who" aria-label="囚人">';
-      sortedPrisoners().forEach(function (id) {
-        h += '<option value="' + esc(id) + '"' + (id === pid ? ' selected' : '') + '>' + esc(data.prisoners[id].name) + '</option>';
-      });
-      h += '</select>';
-    } else {
-      h += '<span class="ex-bar-name">' + esc(p.name) + '</span>';
-    }
-    h += '<span class="ex-ticket">抽出チケット <b>' + n + '</b> 枚</span>';
-    if (mine) {
-      h += '<button class="ex-btn ex-pull" type="button" id="pull"' + (n > 0 && list.length && !state.busy ? '' : ' disabled') + '>抽出する</button>';
-    }
-    h += '</div>';
+    var h = '<header class="ex-top"><a class="ex-back" href="../">戻る</a><h1 class="ex-title">抽出</h1></header>';
     if (state.status) { h += '<p class="ex-status">' + esc(state.status) + '</p>'; }
-    if (!mine && !isGm()) { h += '<p class="ex-note">この囚人の抽出はできません。</p>'; }
-    h += '<section class="ex-sec"><h2 class="ex-sec-title">ピックアップ</h2><div class="ex-pu">';
-    if (mine || isGm()) {
-      h += '<select id="pu"><option value="">指定なし</option>';
-      list.forEach(function (o) {
-        h += '<option value="' + esc(o.id) + '"' + (pu === o.id ? ' selected' : '') + '>' + esc(o.name) + '</option>';
-      });
-      h += '</select>';
-    } else {
-      h += '<span>' + esc(pu ? (list.filter(function (o) { return o.id === pu; })[0] || {}).name : '指定なし') + '</span>';
-    }
-    h += '<span class="ex-pu-rate">指定した人格の排出確率が' + PICKUP_RATE + '倍になります</span></div></section>';
-    h += '<section class="ex-sec"><h2 class="ex-sec-title">未所持の人格(' + list.length + ')</h2>';
-    if (list.length) {
-      h += '<ul class="ex-list">';
-      list.forEach(function (o) { h += '<li>' + cardHtml(pid, o) + '</li>'; });
-      h += '</ul>';
-    } else {
-      h += '<p class="ex-empty">抽出できる人格がありません。</p>';
-    }
-    h += '</section>';
+    h += '<div class="ex-body">' + railHtml(pid) + mainHtml(pid) + '</div>';
     if (isGm()) { h += gmHtml(pid); }
-    h += '<a class="ex-back" href="../">メインページへ戻る</a>';
-    h += '<div class="ex-result" id="result"' + (state.result ? '' : ' hidden') + '>' +
-      (state.result ? '<span class="ex-result-label">NEW</span>' + cardHtml(pid, state.result) +
-        '<button class="ex-btn" type="button" data-act="close">閉じる</button>' : '') + '</div>';
     app.innerHTML = h;
+  }
+
+  function percent(pid, o) {
+    var t = totalWeight(pid);
+    return t ? Math.round(weight(pid, o) / t * 1000) / 10 : 0;
+  }
+
+  function dateText(ms) {
+    if (typeof ms !== 'number') { return ''; }
+    var d = new Date(ms);
+    function z(v) { return v < 10 ? '0' + v : '' + v; }
+    return d.getFullYear() + '/' + z(d.getMonth() + 1) + '/' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+  }
+
+  function modalHtml(kind) {
+    var pid = state.prisoner;
+    var list = pool(pid);
+    var title = kind === 'odds' ? '確率の詳細' : kind === 'history' ? '抽出履歴' : 'ピックアップ変更';
+    var h = '<div class="ex-ov" data-act="close"><div class="ex-modal" role="dialog" aria-label="' + title + '">' +
+      '<h2 class="ex-modal-title">' + title + '</h2><div class="ex-modal-body">';
+    if (kind === 'odds') {
+      if (!list.length) {
+        h += '<p class="ex-note">抽出できる人格がありません。</p>';
+      } else {
+        h += '<p class="ex-note">未所持の人格から1つが選ばれます(' + list.length + '件)。ピックアップに指定した人格は ×' + PICKUP_RATE + ' で数えます。</p><ul class="ex-list">';
+        list.forEach(function (o) {
+          h += '<li>' + cardHtml(pid, o, percent(pid, o) + '%') + '</li>';
+        });
+        h += '</ul>';
+      }
+    } else if (kind === 'history') {
+      var hist = (state.remote && state.remote.history) || {};
+      var rows = Object.keys(hist).map(function (k) { return hist[k]; }).filter(function (r) { return r && r.id; })
+        .sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+      if (!rows.length) {
+        h += '<p class="ex-note">まだ抽出していません。</p>';
+      } else {
+        h += '<ul class="ex-hist">';
+        rows.forEach(function (r) {
+          var o = identityById(pid, r.id);
+          h += '<li><span class="ex-hist-date">' + esc(dateText(r.at)) + '</span><span class="ex-hist-name">' + esc(o ? o.name : r.id) + '</span></li>';
+        });
+        h += '</ul>';
+      }
+    } else {
+      var cur = pickupId(pid);
+      h += '<button class="ex-btn' + (cur ? '' : ' is-on') + '" type="button" data-act="pick" data-id="">指定なし</button>';
+      if (!list.length) {
+        h += '<p class="ex-note">ピックアップにできる人格がありません。</p>';
+      } else {
+        h += '<ul class="ex-list">';
+        list.forEach(function (o) {
+          h += '<li><button class="ex-pick' + (cur === o.id ? ' is-on' : '') + '" type="button" data-act="pick" data-id="' + esc(o.id) + '">' + cardHtml(pid, o) + '</button></li>';
+        });
+        h += '</ul>';
+      }
+    }
+    return h + '</div><div class="ex-modal-foot"><button class="ex-btn" type="button" data-act="close">閉じる</button></div></div></div>';
+  }
+
+  function resultHtml(o) {
+    var pid = state.prisoner;
+    var art = artSrc(pid, o);
+    var sl = seasonLabel(o);
+    return '<div class="ex-ov is-result"><div class="ex-res">' +
+      '<span class="ex-res-new">NEW</span>' +
+      '<div class="ex-res-art is-' + art.kind + '"><img alt="" src="' + esc(art.src) + '"></div>' +
+      '<div class="ex-res-info">' + (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
+      '<span class="ex-res-name">' + esc(o.name) + '</span>' + rarityTag(o) + '</div>' +
+      '<div class="ex-res-btns"><a class="ex-btn" href="../character/' + esc(pid) + '/#identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
+      '<button class="ex-btn" type="button" data-act="close">閉じる</button></div></div></div>';
+  }
+
+  function fxHtml() {
+    return '<div class="ex-fx"><span class="ex-fx-ring"></span><span class="ex-fx-ring is-2"></span><span class="ex-fx-flash"></span></div>';
   }
 
   function fail(e) {
     state.busy = false;
+    layer.innerHTML = '';
     var m = e && e.message ? e.message : '';
     state.status = /permission/i.test(m)
       ? '保存できませんでした。チケット枚数などが変わっている可能性があります。もう一度お試しください。'
       : '保存できませんでした。' + m;
     render();
+  }
+
+  function stamp() {
+    var fb = root.firebase;
+    return fb && fb.database && fb.database.ServerValue ? fb.database.ServerValue.TIMESTAMP : Date.now();
   }
 
   function pull() {
@@ -228,42 +357,47 @@
     updates['owned/' + got.id] = true;
     updates.tickets = tickets() - 1;
     if (pickupId(pid) === got.id) { updates.pickup = null; }
+    var t0 = Date.now();
     state.busy = true;
     state.status = '';
+    layer.innerHTML = fxHtml();
     render();
     state.ref.update(updates).then(function () {
-      state.busy = false;
-      state.result = got;
-      render();
+      try {
+        state.ref.child('history').push({ id: got.id, at: stamp() }).catch(function () {});
+      } catch (e) {}
+      setTimeout(function () {
+        state.busy = false;
+        layer.innerHTML = resultHtml(got);
+        render();
+      }, Math.max(0, FX_MS - (Date.now() - t0)));
     }, fail);
   }
 
   function onClick(ev) {
-    var el = ev.target.closest ? ev.target.closest('[data-act], #pull') : null;
+    var el = ev.target.closest ? ev.target.closest('[data-act]') : null;
     if (!el || !state.ref) { return; }
-    var act = el.getAttribute('data-act') || el.id;
-    if (act === 'pull') {
+    var act = el.getAttribute('data-act');
+    if (act === 'close') {
+      if (el.classList.contains('ex-ov') && ev.target !== el) { return; }
+      layer.innerHTML = '';
+    } else if (act === 'pull') {
       pull();
-    } else if (act === 'close') {
-      state.result = null;
-      render();
+    } else if (act === 'open') {
+      layer.innerHTML = modalHtml(el.getAttribute('data-kind'));
+    } else if (act === 'pick' && canChange(state.prisoner)) {
+      var id = el.getAttribute('data-id');
+      layer.innerHTML = '';
+      state.ref.child('pickup').set(id || null).catch(fail);
+    } else if (act === 'who' && isGm()) {
+      select(el.getAttribute('data-id'));
     } else if (act === 'tk' && isGm()) {
       var d = parseInt(el.getAttribute('data-n'), 10) || 0;
       state.ref.child('tickets').transaction(function (v) {
         return Math.max(0, (typeof v === 'number' ? v : 0) + d);
       }).catch(fail);
     } else if (act === 'own' && isGm()) {
-      var id = el.getAttribute('data-id');
-      state.ref.child('owned/' + id).set(el.getAttribute('data-on') === '1' ? true : null).catch(fail);
-    }
-  }
-
-  function onChange(ev) {
-    var t = ev.target;
-    if (t.id === 'who') {
-      select(t.value);
-    } else if (t.id === 'pu' && state.ref) {
-      state.ref.child('pickup').set(t.value || null).catch(fail);
+      state.ref.child('owned/' + el.getAttribute('data-id')).set(el.getAttribute('data-on') === '1' ? true : null).catch(fail);
     }
   }
 
@@ -272,7 +406,7 @@
     state.prisoner = pid;
     state.remote = {};
     state.status = '';
-    state.result = null;
+    layer.innerHTML = '';
     state.ref = state.db.ref('characters/' + pid);
     state.ref.on('value', function (snap) {
       state.remote = snap.val() || {};
@@ -306,8 +440,7 @@
         message('このアカウントには囚人が登録されていません。GMに登録を依頼してください。');
         return;
       }
-      app.addEventListener('click', onClick);
-      app.addEventListener('change', onChange);
+      document.addEventListener('click', onClick);
       select(first);
     });
   }
