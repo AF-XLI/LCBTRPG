@@ -34,6 +34,38 @@ function checkSkill(s, where) {
   check(s.effects, where, true, s.coins);
 }
 
+function readJson(file) {
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+}
+
+var seasons = readJson(path.join(dataDir, 'seasons.json')) || {};
+var prisoners = readJson(path.join(dataDir, 'prisoners.json')) || {};
+
+Object.keys(seasons).forEach(function (id) {
+  var s = seasons[id];
+  if (!s || typeof s.name !== 'string' || !s.name) { errors.push('seasons/' + id + ': name がありません'); }
+  if (!s || typeof s.released !== 'boolean') { errors.push('seasons/' + id + ': released は true か false で指定してください'); }
+});
+
+function checkAcquire(dir, ids) {
+  var p = prisoners[dir];
+  if (!p) { errors.push(dir + ': data/prisoners.json に登録されていません'); return; }
+  var listed = p.identities || [];
+  listed.forEach(function (id) {
+    if (!ids[id]) { errors.push(dir + ': prisoners.json の人格 "' + id + '" が identities.json にありません'); }
+  });
+  Object.keys(ids).forEach(function (id) {
+    var it = ids[id];
+    var w = dir + '/identities/' + id;
+    if (listed.indexOf(id) < 0) { errors.push(w + ': prisoners.json の identities に登録されていません'); }
+    if (it.initial !== undefined && it.initial !== true) { errors.push(w + ': initial は true のときだけ書いてください'); }
+    if (it.initial && it.season) { errors.push(w + ': initial(初期人格)に season は指定できません'); }
+    if (it.season && !seasons[it.season]) { errors.push(w + ': 未登録のシーズン "' + it.season + '"(data/seasons.json に追加してください)'); }
+  });
+  var def = p.default && p.default.identity;
+  if (def && ids[def] && !ids[def].initial) { errors.push(dir + ': 既定の人格 "' + def + '" には initial: true が必要です'); }
+}
+
 fs.readdirSync(dataDir).forEach(function (dir) {
   var full = path.join(dataDir, dir);
   if (!fs.statSync(full).isDirectory()) { return; }
@@ -41,6 +73,7 @@ fs.readdirSync(dataDir).forEach(function (dir) {
   var egf = path.join(full, 'egos.json');
   if (fs.existsSync(idf)) {
     var ids = JSON.parse(fs.readFileSync(idf, 'utf8'));
+    checkAcquire(dir, ids);
     Object.keys(ids).forEach(function (k) {
       var it = ids[k];
       var w = dir + '/identities/' + k;
