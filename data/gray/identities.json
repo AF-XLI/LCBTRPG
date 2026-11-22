@@ -138,5 +138,310 @@
       "coins": 1,
       "effects": []
     }
+  },
+  "w-corp-l3": {
+    "name": "W社3級整理要員",
+    "nameParts": [
+      "W社3級",
+      "整理要員"
+    ],
+    "affiliation": "W社",
+    "rarity": "2",
+    "orgIcon": "image/icon/org/lcb.png",
+    "hp": 200,
+    "speed": [
+      3,
+      6
+    ],
+    "thr": [
+      70,
+      40
+    ],
+    "resist": {
+      "blunt": 2,
+      "pierce": 0.5,
+      "slash": 1
+    },
+    "skills": [
+      {
+        "tier": 1,
+        "sin": "sloth",
+        "type": "slash",
+        "name": "切断",
+        "base": 2,
+        "coin": 4,
+        "coins": 3,
+        "effects": [
+          {
+            "timing": "use",
+            "type": "dmgBonus",
+            "percent": 10,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 10
+            },
+            "text": "自分の{charge}回数が10以上なら、ダメージ量 +10%"
+          },
+          {
+            "timing": "use",
+            "type": "dmgBonus",
+            "percent": 10,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 15
+            },
+            "text": "自分の{charge}回数が15以上なら、追加でダメージ量 +10%"
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "gain",
+            "status": "charge",
+            "count": 1,
+            "target": "self",
+            "text": "自分の{charge}回数が1増加"
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "gain",
+            "status": "charge",
+            "count": 1,
+            "target": "self",
+            "text": "自分の{charge}回数が1増加"
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "gain",
+            "status": "charge",
+            "count": 2,
+            "target": "self",
+            "text": "自分の{charge}回数が2増加"
+          }
+        ]
+      },
+      {
+        "tier": 2,
+        "sin": "pride",
+        "type": "pierce",
+        "name": "跳躍",
+        "base": 3,
+        "coin": 4,
+        "coins": 3,
+        "effects": [
+          {
+            "timing": "use",
+            "type": "gain",
+            "status": "charge",
+            "count": 5,
+            "target": "self",
+            "text": "自分の{charge}回数が5増加"
+          },
+          {
+            "timing": "use",
+            "type": "coinPower",
+            "amount": 1,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 10
+            },
+            "text": "自分の{charge}回数が10以上なら、コイン威力 +1"
+          },
+          {
+            "timing": "use",
+            "type": "coinPower",
+            "amount": 1,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 15
+            },
+            "text": "自分の{charge}回数が15以上なら、追加でコイン威力 +1"
+          },
+          {
+            "coin": 1,
+            "timing": "hit",
+            "type": "gain",
+            "status": "charge",
+            "count": 1,
+            "target": "self",
+            "text": "自分の{charge}回数が1増加"
+          },
+          {
+            "coin": 2,
+            "timing": "hit",
+            "type": "gain",
+            "status": "charge",
+            "count": 1,
+            "target": "self",
+            "text": "自分の{charge}回数が1増加"
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "spend",
+            "status": "charge",
+            "max": 5,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 15
+            },
+            "text": "自分の{charge}回数が15以上なら、{charge}回数を5消費する",
+            "hidden": false
+          },
+          {
+            "coin": 3,
+            "timing": "hit",
+            "type": "grant",
+            "status": "dmgUp",
+            "power": 1,
+            "target": "self",
+            "delay": "nextTurn",
+            "ifSpent": {
+              "op": "gte",
+              "value": 5,
+              "status": "charge"
+            },
+            "text": "次ターンに{dmgUp}1を得る"
+          }
+        ]
+      },
+      {
+        "tier": 3,
+        "sin": "envy",
+        "type": "pierce",
+        "name": "次元貫通",
+        "base": 1,
+        "coin": 2,
+        "coins": 5,
+        "effects": [
+          {
+            "timing": "use",
+            "type": "hpLoss",
+            "percent": 20,
+            "ifStatus": {
+              "status": "charge",
+              "op": "lt",
+              "value": 15
+            },
+            "text": "自分の{charge}回数が15未満の場合、体力が20%減少\n- このスキルで体力減少後、{charge}回数が3以上ならコイン威力 +4"
+          },
+          {
+            "timing": "use",
+            "type": "coinPower",
+            "amount": 4,
+            "ifHpLost": true,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 3
+            },
+            "hidden": true
+          },
+          {
+            "timing": "use",
+            "type": "spend",
+            "status": "charge",
+            "max": 15,
+            "ifStatus": {
+              "status": "charge",
+              "op": "gte",
+              "value": 15
+            },
+            "text": "自分の{charge}回数が15以上なら、{charge}回数を15消費してコイン威力 +4"
+          },
+          {
+            "type": "spentCoin",
+            "status": "charge",
+            "per": 15,
+            "amount": 4,
+            "hidden": true
+          },
+          {
+            "timing": "use",
+            "type": "dmgPerPower",
+            "status": "charge",
+            "percentPer": 2,
+            "max": 20,
+            "ifSpentStatus": "charge",
+            "text": "スキル使用時に自分の{charge}回数を消耗したなら、ダメージ量 +({charge}威力×2)% (最大20%)"
+          },
+          {
+            "coin": 5,
+            "timing": "hit",
+            "type": "grant",
+            "status": "rupture",
+            "power": 5,
+            "target": "target"
+          }
+        ]
+      }
+    ],
+    "passive": {
+      "name": "効率のいい整理業務",
+      "sin": "pride",
+      "count": 4,
+      "effects": [
+        {
+          "type": "spendReward",
+          "status": "charge",
+          "every": 10,
+          "reward": {
+            "status": "charge",
+            "power": 1
+          },
+          "timingLabel": false
+        },
+        {
+          "type": "dmgPerPower",
+          "status": "charge",
+          "percentPer": 2,
+          "max": 20,
+          "basicOnly": true,
+          "timingLabel": false
+        }
+      ]
+    },
+    "support": {
+      "name": "整理業務指南",
+      "sin": "envy",
+      "count": 4,
+      "effects": [
+        {
+          "type": "dmgBonus",
+          "percent": 10,
+          "scope": "allies",
+          "ifSpentStatus": "charge",
+          "timingLabel": false,
+          "text": "{charge}・特殊{charge}を保有する味方の、{charge}回数を消費するスキルのダメージ量 +10%"
+        }
+      ]
+    },
+    "defense": {
+      "sin": "pride",
+      "type": "evade",
+      "name": "充電回避",
+      "base": 4,
+      "coin": 10,
+      "coins": 1,
+      "effects": [
+        {
+          "timing": "evadeSuccess",
+          "type": "gain",
+          "status": "charge",
+          "count": 1,
+          "target": "self",
+          "text": "自分の{charge}回数が1増加"
+        }
+      ]
+    },
+    "stageImage": "image/identity/gray/w-corp-l3.webp",
+    "cardPos": "28% 0%",
+    "stagePos": "17% top"
   }
 }
