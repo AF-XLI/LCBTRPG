@@ -68,6 +68,7 @@
     matchLose: { label: 'マッチ敗北', coin: false, when: 'matchLose', color: 'rgb(222, 0, 0)' },
     kill: { label: '敵討伐時', coin: false, when: 'kill' },
     damaged: { label: '被ダメージ時', coin: false, when: 'damaged' },
+    evadeSuccess: { label: '回避成功時', coin: false, when: 'evadeSuccess' },
     hit: { label: '的中時', coin: true, when: 'hit' },
     headsHit: { label: '表面的中時', coin: true, when: 'hit', side: 'heads', color: 'rgb(199, 254, 149)' },
     tailsHit: { label: '裏面的中時', coin: true, when: 'hit', side: 'tails' },
@@ -76,7 +77,7 @@
     spCond: { label: null, coin: false, cond: true, when: 'hit' }
   };
   var TIMING_COLOR = 'rgb(147, 240, 64)';
-  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'critHit', 'kill', 'damaged', 'hpCond', 'spCond'];
+  var TIMING_ORDER = ['battleEnter', 'battleStart', 'turnStart', 'use', 'beforeAttack', 'matchWin', 'matchLose', 'hit', 'headsHit', 'tailsHit', 'critHit', 'kill', 'damaged', 'evadeSuccess', 'hpCond', 'spCond'];
 
   var OPS = { lte: '以下', gte: '以上', lt: '未満', gt: '超' };
   var TARGETS = { self: '自分', target: '対象', ally: '味方', allAllies: '味方全員', enemy: '敵' };
@@ -151,8 +152,10 @@
     }
     if (e.ifSpent) {
       c.spent = { op: BATTLE_OPS[e.ifSpent.op], v: e.ifSpent.value };
+      if (e.ifSpent.status) { c.spent.status = e.ifSpent.status; }
       any = true;
     }
+    if (e.ifHpLost) { c.hpLost = true; any = true; }
     if (e.ifSelfHp) { c.hp = hpCond('self', e.ifSelfHp); any = true; }
     if (e.ifTargetHp && e.type !== 'dmgBonus') { c.hp = hpCond('target', e.ifTargetHp); any = true; }
     return any ? c : null;
@@ -336,6 +339,7 @@
         if (e.when && e.when.targetSp === 'lowerThanSelf') { g.dmgIf = { sp: { of: 'target', vs: 'self', op: '<' } }; }
         if (e.ifTargetHp) { g.dmgIf = { hp: hpCond('target', e.ifTargetHp) }; }
         if (e.ifTargetWeak) { g.weakOnly = true; }
+        if (e.ifSpentStatus) { g.dmgIf = { spent: { status: e.ifSpentStatus, op: '>=', v: 1 } }; }
         return [g];
       },
       render: function (e) {
@@ -396,6 +400,43 @@
       },
       render: function (e) {
         return head(e, new Segs().text('戦闘中、累計で自分の').status(e.status).text('回数を' + e.every + '消費する度に').status(e.reward.status).text(e.reward.power + 'を得る'));
+      }
+    },
+    hpLoss: {
+      required: ['percent'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ hpLossPct: e.percent, to: 'self' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('体力が' + e.percent + '%減少'));
+      }
+    },
+    coinPower: {
+      required: ['amount'],
+      statuses: function () { return []; },
+      grants: function (e) {
+        return [{ coinPower: e.amount, to: 'self' }];
+      },
+      render: function (e) {
+        return head(e, new Segs().text('コイン威力 ' + (e.amount >= 0 ? '+' : '') + e.amount));
+      }
+    },
+    dmgPerPower: {
+      required: ['status', 'percentPer'],
+      statuses: function (e) { return [e.status]; },
+      grants: function (e) {
+        var g = { perPower: { status: e.status, pct: e.percentPer, max: e.max }, to: 'self' };
+        if (e.basicOnly) { g.basicOnly = true; }
+        if (e.ifSpentStatus) { g.dmgIf = { spent: { status: e.ifSpentStatus, op: '>=', v: 1 } }; }
+        return [g];
+      },
+      render: function (e) {
+        var s = new Segs();
+        if (e.basicOnly) { s.text('基本攻撃スキルの'); }
+        s.text('ダメージ量が(').status(e.status).text('威力×' + e.percentPer + ')%だけ増加');
+        if (e.max !== undefined) { s.text(' (最大' + e.max + '%)'); }
+        return head(e, s);
       }
     },
     matchBonus: {
