@@ -195,14 +195,13 @@
     var art = artSrc(pid, pu);
     var h = '<section class="ex-main" style="--theme: ' + esc(p.themeColor || 'rgb(232, 178, 56)') + ';">';
     h += '<div class="ex-bg" style="background-image: url(\'../' + esc(p.background || '') + '\');"></div>';
-    h += '<div class="ex-heading"><span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name">' + esc(p.name) + '</span></div>';
+    h += '<div class="ex-heading">' + (p.icon ? '<img class="ex-heading-logo" alt="" src="../' + esc(p.icon) + '">' : '') + '<span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name">' + esc(p.name) + '</span></div>';
     h += '<div class="ex-art is-' + art.kind + '"><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
     h += '<div class="ex-tag">';
     if (pu) {
-      var sl = seasonLabel(pu);
-      h += (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
-        '<span class="ex-tag-name">' + esc(pu.name) + '</span>' +
-        '<span class="ex-tag-sub">PICK UP ×' + PICKUP_RATE + ' ' + rarityTag(pu) + '</span>' +
+      h += '<span class="ex-tag-identity">' + esc(pu.name) + '</span>' +
+        '<span class="ex-tag-name">' + esc(p.name) + '</span>' +
+        '<span class="ex-tag-sub">' + rarityTag(pu) + '</span>' +
         '<a class="ex-mag" href="../character/' + esc(pid) + '/#identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
         '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"></circle><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></a>';
     } else {
@@ -212,14 +211,22 @@
     h += '<div class="ex-tools">' +
       '<button class="ex-tool" type="button" data-act="open" data-kind="odds">確率の詳細</button>' +
       '<button class="ex-tool" type="button" data-act="open" data-kind="history">抽出履歴</button>' +
-      (canChange(pid) ? '<button class="ex-tool" type="button" data-act="open" data-kind="pickup">ピックアップ変更</button>' : '') +
       '</div>';
-    if (mine) {
-      h += '<div class="ex-actions"><button class="ex-pull" type="button" data-act="pull"' + (n > 0 && list.length && !state.busy ? '' : ' disabled') + '>' +
-        '<span class="ex-pull-label">1回抽出</span><span class="ex-pull-cost">' + ticketIcon() + '<b>1</b></span></button></div>';
+    if (canChange(pid)) {
+      h += '<button class="ex-swap" type="button" data-act="open" data-kind="pickup"><span class="ex-swap-label">ピックアップ変更</span><span class="ex-swap-arrow" aria-hidden="true"></span></button>';
     }
-    h += '<div class="ex-stock">' + ticketIcon() + '<span>抽出チケット</span><b>' + n + '</b></div>';
-    h += '<div class="ex-left"><span>未所持</span><b>' + list.length + '</b></div>';
+    if (isGm()) {
+      var order = sortedPrisoners();
+      var at = order.indexOf(pid);
+      h += '<button class="ex-arrow is-prev" type="button" data-act="who" data-id="' + esc(order[(at + order.length - 1) % order.length]) + '" aria-label="前の囚人"></button>' +
+        '<button class="ex-arrow is-next" type="button" data-act="who" data-id="' + esc(order[(at + 1) % order.length]) + '" aria-label="次の囚人"></button>';
+    }
+    h += '<div class="ex-actions">';
+    if (mine) {
+      h += '<button class="ex-pull" type="button" data-act="pull"' + (n > 0 && list.length && !state.busy ? '' : ' disabled') + '>' +
+        '<span class="ex-pull-label">1回抽出</span><span class="ex-pull-cost"><img alt="" src="../image/icon/extraction-ticket.png"><b>1</b></span></button>';
+    }
+    h += '</div>';
     return h + '</section>';
   }
 
@@ -252,7 +259,7 @@
 
   function render() {
     var pid = state.prisoner;
-    var h = '<header class="ex-top"><a class="ex-back" href="../">戻る</a><h1 class="ex-title">抽出</h1></header>';
+    var h = '';
     if (state.status) { h += '<p class="ex-status">' + esc(state.status) + '</p>'; }
     h += '<div class="ex-body">' + railHtml(pid) + mainHtml(pid) + '</div>';
     if (isGm()) { h += gmHtml(pid); }
