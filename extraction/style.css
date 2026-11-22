@@ -165,8 +165,9 @@ button {
   aspect-ratio: 16 / 9;
   min-height: 27rem;
   background: rgb(10, 8, 6);
-  border: 0.188rem solid var(--brown);
-  box-shadow: inset 0 0 0 0.25rem rgb(0, 0, 0), inset 0 0 0 0.313rem var(--gold);
+  border: 0.5rem solid rgb(96, 66, 34);
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 0.25rem rgb(0, 0, 0), 0 0 0 0.125rem rgb(20, 12, 6);
   overflow: hidden;
 }
 
@@ -195,25 +196,41 @@ button {
 
 .ex-heading {
   position: absolute;
-  top: 1.5rem;
-  left: 2rem;
+  top: 0.9rem;
+  left: 0;
   z-index: 3;
   display: flex;
+  align-items: center;
   flex-direction: column;
+  justify-content: center;
+  width: 11rem;
+  height: 11rem;
+  text-align: center;
   text-shadow: 0 0.125rem 0.5rem rgb(0, 0, 0);
+}
+
+.ex-heading-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.35;
 }
 
 .ex-heading-kind {
   color: var(--gold-text);
   font-family: var(--font-label);
-  font-size: 1.125rem;
+  font-size: 1.625rem;
   letter-spacing: 0.125rem;
 }
 
 .ex-heading-name {
   color: rgb(255, 255, 255);
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 3.5rem;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -260,40 +277,68 @@ button {
 
 .ex-tag {
   position: absolute;
-  bottom: 9.5rem;
-  right: 2rem;
+  bottom: 9.25rem;
+  right: 3rem;
   z-index: 4;
   display: flex;
   align-items: flex-end;
   flex-direction: column;
   gap: 0.25rem;
   max-width: 26rem;
+  transform: rotate(-6deg);
+  transform-origin: right bottom;
 }
 
-.ex-tag-season {
+.ex-tag-identity {
+  position: relative;
   align-self: flex-start;
-  padding: 0 0.75rem;
-  background: rgb(30, 20, 10);
-  border: 0.063rem solid var(--gold);
-  color: var(--gold-text);
-  font-family: var(--font-label);
-  font-size: 1rem;
-  letter-spacing: 0.063rem;
-  transform: skewX(-12deg);
+  margin-inline-end: 0;
+  padding: 0.125rem 0.75rem 0.125rem 0.5rem;
+  color: var(--sub);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  isolation: isolate;
+  text-shadow: 0.125rem 0.125rem 0 rgb(0, 0, 0);
+}
+
+.ex-tag-identity::before {
+  content: '';
+  position: absolute;
+  top: 40%;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: -1;
+  background: var(--theme);
+}
+
+.ex-tag-name::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: -1;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='43' viewBox='0 0 192 43' fill='rgb(0,0,0)' fill-opacity='0.45'><circle cx='90' cy='3' r='0.26'/><circle cx='96' cy='3' r='0.27'/><circle cx='102' cy='3' r='0.28'/><circle cx='108' cy='3' r='0.3'/><circle cx='114' cy='3' r='0.31'/><circle cx='120' cy='3' r='0.32'/><circle cx='126' cy='3' r='0.34'/><circle cx='132' cy='3' r='0.35'/><circle cx='138' cy='3' r='0.36'/><circle cx='144' cy='3' r='0.38'/><circle cx='150' cy='3' r='0.39'/><circle cx='156' cy='3' r='0.41'/><circle cx='162' cy='3' r='0.42'/><circle cx='168' cy='3' r='0.44'/><circle cx='174' cy='3' r='0.45'/><circle cx='180' cy='3' r='0.47'/><circle cx='186' cy='3' r='0.49'/><circle cx='192' cy='3' r='0.5'/><circle cx='87' cy='9' r='0.4'/><circle cx='93' cy='9' r='0.41'/><circle cx='99' cy='9' r='0.43'/><circle cx='105' cy='9' r='0.44'/><circle cx='111' cy='9' r='0.46'/><circle cx='117' cy='9' r='0.48'/><circle cx='123' cy='9' r='0.49'/><circle cx='129' cy='9' r='0.51'/><circle cx='135' cy='9' r='0.52'/><circle cx='141' cy='9' r='0.54'/><circle cx='147' cy='9' r='0.56'/><circle cx='153' cy='9' r='0.58'/><circle cx='159' cy='9' r='0.59'/><circle cx='165' cy='9' r='0.61'/><circle cx='171' cy='9' r='0.63'/><circle cx='177' cy='9' r='0.65'/><circle cx='183' cy='9' r='0.66'/><circle cx='189' cy='9' r='0.68'/><circle cx='195' cy='9' r='0.68'/><circle cx='84' cy='15' r='0.57'/><circle cx='90' cy='15' r='0.58'/><circle cx='96' cy='15' r='0.6'/><circle cx='102' cy='15' r='0.62'/><circle cx='108' cy='15' r='0.63'/><circle cx='114' cy='15' r='0.65'/><circle cx='120' cy='15' r='0.67'/><circle cx='126' cy='15' r='0.69'/><circle cx='132' cy='15' r='0.71'/><circle cx='138' cy='15' r='0.73'/><circle cx='144' cy='15' r='0.74'/><circle cx='150' cy='15' r='0.76'/><circle cx='156' cy='15' r='0.78'/><circle cx='162' cy='15' r='0.8'/><circle cx='168' cy='15' r='0.82'/><circle cx='174' cy='15' r='0.84'/><circle cx='180' cy='15' r='0.86'/><circle cx='186' cy='15' r='0.87'/><circle cx='192' cy='15' r='0.87'/><circle cx='81' cy='21' r='0.75'/><circle cx='87' cy='21' r='0.77'/><circle cx='93' cy='21' r='0.79'/><circle cx='99' cy='21' r='0.81'/><circle cx='105' cy='21' r='0.83'/><circle cx='111' cy='21' r='0.85'/><circle cx='117' cy='21' r='0.87'/><circle cx='123' cy='21' r='0.89'/><circle cx='129' cy='21' r='0.91'/><circle cx='135' cy='21' r='0.93'/><circle cx='141' cy='21' r='0.95'/><circle cx='147' cy='21' r='0.97'/><circle cx='153' cy='21' r='0.99'/><circle cx='159' cy='21' r='1.01'/><circle cx='165' cy='21' r='1.03'/><circle cx='171' cy='21' r='1.05'/><circle cx='177' cy='21' r='1.07'/><circle cx='183' cy='21' r='1.08'/><circle cx='189' cy='21' r='1.08'/><circle cx='195' cy='21' r='1.08'/><circle cx='78' cy='27' r='0.95'/><circle cx='84' cy='27' r='0.97'/><circle cx='90' cy='27' r='0.99'/><circle cx='96' cy='27' r='1.02'/><circle cx='102' cy='27' r='1.04'/><circle cx='108' cy='27' r='1.06'/><circle cx='114' cy='27' r='1.08'/><circle cx='120' cy='27' r='1.1'/><circle cx='126' cy='27' r='1.12'/><circle cx='132' cy='27' r='1.14'/><circle cx='138' cy='27' r='1.16'/><circle cx='144' cy='27' r='1.18'/><circle cx='150' cy='27' r='1.21'/><circle cx='156' cy='27' r='1.23'/><circle cx='162' cy='27' r='1.25'/><circle cx='168' cy='27' r='1.27'/><circle cx='174' cy='27' r='1.29'/><circle cx='180' cy='27' r='1.31'/><circle cx='186' cy='27' r='1.31'/><circle cx='192' cy='27' r='1.31'/><circle cx='75' cy='33' r='1.17'/><circle cx='81' cy='33' r='1.19'/><circle cx='87' cy='33' r='1.21'/><circle cx='93' cy='33' r='1.24'/><circle cx='99' cy='33' r='1.26'/><circle cx='105' cy='33' r='1.28'/><circle cx='111' cy='33' r='1.3'/><circle cx='117' cy='33' r='1.32'/><circle cx='123' cy='33' r='1.35'/><circle cx='129' cy='33' r='1.37'/><circle cx='135' cy='33' r='1.39'/><circle cx='141' cy='33' r='1.41'/><circle cx='147' cy='33' r='1.44'/><circle cx='153' cy='33' r='1.46'/><circle cx='159' cy='33' r='1.48'/><circle cx='165' cy='33' r='1.5'/><circle cx='171' cy='33' r='1.53'/><circle cx='177' cy='33' r='1.54'/><circle cx='183' cy='33' r='1.54'/><circle cx='189' cy='33' r='1.54'/><circle cx='195' cy='33' r='1.54'/><circle cx='72' cy='39' r='1.4'/><circle cx='78' cy='39' r='1.42'/><circle cx='84' cy='39' r='1.44'/><circle cx='90' cy='39' r='1.47'/><circle cx='96' cy='39' r='1.49'/><circle cx='102' cy='39' r='1.51'/><circle cx='108' cy='39' r='1.54'/><circle cx='114' cy='39' r='1.56'/><circle cx='120' cy='39' r='1.58'/><circle cx='126' cy='39' r='1.6'/><circle cx='132' cy='39' r='1.63'/><circle cx='138' cy='39' r='1.65'/><circle cx='144' cy='39' r='1.68'/><circle cx='150' cy='39' r='1.7'/><circle cx='156' cy='39' r='1.72'/><circle cx='162' cy='39' r='1.75'/><circle cx='168' cy='39' r='1.75'/><circle cx='174' cy='39' r='1.75'/><circle cx='180' cy='39' r='1.75'/><circle cx='186' cy='39' r='1.75'/><circle cx='192' cy='39' r='1.75'/><circle cx='69' cy='45' r='1.55'/><circle cx='75' cy='45' r='1.58'/><circle cx='81' cy='45' r='1.6'/><circle cx='87' cy='45' r='1.62'/><circle cx='93' cy='45' r='1.65'/><circle cx='99' cy='45' r='1.67'/><circle cx='105' cy='45' r='1.69'/><circle cx='111' cy='45' r='1.72'/><circle cx='117' cy='45' r='1.74'/><circle cx='123' cy='45' r='1.75'/><circle cx='129' cy='45' r='1.75'/><circle cx='135' cy='45' r='1.75'/><circle cx='141' cy='45' r='1.75'/><circle cx='147' cy='45' r='1.75'/><circle cx='153' cy='45' r='1.75'/><circle cx='159' cy='45' r='1.75'/><circle cx='165' cy='45' r='1.75'/><circle cx='171' cy='45' r='1.75'/><circle cx='177' cy='45' r='1.75'/><circle cx='183' cy='45' r='1.75'/><circle cx='189' cy='45' r='1.75'/><circle cx='195' cy='45' r='1.75'/></svg>") right bottom / 12rem 2.688rem no-repeat;
 }
 
 .ex-tag-name {
   position: relative;
-  padding: 0.25rem 3.75rem 0.25rem 1.5rem;
+  padding: 0 5.375rem 0 4rem;
   background: var(--theme);
   border-block-end: 0.25rem solid rgba(0, 0, 0, 0.45);
-  color: rgb(255, 255, 255);
+  color: var(--cream);
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 700;
-  line-height: 1.2;
-  text-shadow: 0 0.063rem 0.25rem rgba(0, 0, 0, 0.6);
-  transform: skewX(-12deg);
+  line-height: 1.304;
+  text-align: center;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 1.375rem) 100%, 0 100%);
+  isolation: isolate;
+  text-shadow: 0.125rem 0.125rem 0 rgb(0, 0, 0);
 }
 
 .ex-tag-name.is-none {
@@ -303,13 +348,16 @@ button {
 }
 
 .ex-tag-sub {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: var(--gold-text);
-  font-family: var(--font-label);
-  font-size: 1.125rem;
-  text-shadow: 0 0.063rem 0.25rem rgb(0, 0, 0);
+  margin-block-start: -1.25rem;
+  margin-inline-end: -0.3rem;
+}
+
+.ex-tag .ex-rarity img + span {
+  display: none;
 }
 
 .ex-rarity {
@@ -322,68 +370,154 @@ button {
 }
 
 .ex-rarity img {
-  height: 1.25rem;
+  width: auto;
+  height: 2.5rem;
+  filter: drop-shadow(0 0 0.25rem rgba(232, 150, 20, 0.7));
+  flex: none;
 }
 
 .ex-mag {
+  --fill: rgba(30, 20, 10, 0.55);
+  --edge: var(--gold);
   position: absolute;
-  top: 2.05rem;
-  right: 0.875rem;
+  top: -3.5rem;
+  right: 0.5rem;
   z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: rgb(30, 20, 10);
-  border: 0.125rem solid var(--gold);
-  border-radius: 0.375rem;
   color: var(--gold-text);
+  transform: rotate(6deg);
 }
 
 .ex-tools {
   position: absolute;
-  left: 1.5rem;
-  bottom: 1.25rem;
+  left: 2rem;
+  bottom: 3rem;
   z-index: 4;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  justify-content: center;
+  height: 6rem;
+}
+
+.ex-swap {
+  --fill: rgba(24, 16, 10, 0.55);
+  --edge: var(--brown);
+  position: absolute;
+  left: 2rem;
+  bottom: 9.25rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  color: var(--cream);
+  font-size: 1.063rem;
+  cursor: pointer;
+}
+
+.ex-swap:hover {
+  --edge: var(--gold);
+  color: var(--gold-text);
+}
+
+.ex-swap-arrow {
+  width: 0;
+  height: 0;
+  border-block: 0.4rem solid transparent;
+  border-inline-start: 0.65rem solid currentColor;
+}
+
+.ex-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  width: 0;
+  height: 0;
+  padding: 0;
+  background: none;
+  border-block: 1.25rem solid transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 0.063rem 0.25rem rgb(0, 0, 0));
+}
+
+.ex-arrow.is-prev {
+  left: 1.25rem;
+  border-inline-end: 1.75rem solid rgba(255, 255, 255, 0.8);
+  border-inline-start: 0;
+}
+
+.ex-arrow.is-next {
+  right: 1.25rem;
+  border-inline-start: 1.75rem solid rgba(255, 255, 255, 0.8);
+  border-inline-end: 0;
+}
+
+.ex-arrow:hover {
+  opacity: 0.7;
 }
 
 .ex-tool {
-  padding: 0.375rem 1rem;
-  background: rgba(30, 20, 10, 0.85);
-  border: 0.125rem solid var(--brown);
+  --fill: rgba(30, 20, 10, 0.55);
+  --edge: var(--brown);
+  padding: 0.625rem 1.25rem;
   color: var(--cream);
   font-size: 0.938rem;
   cursor: pointer;
 }
 
 .ex-tool:hover {
-  border-color: var(--gold);
+  --edge: var(--gold);
   color: var(--gold-text);
 }
 
 .ex-actions {
   position: absolute;
-  bottom: 1.25rem;
+  bottom: 3rem;
   right: 2rem;
   z-index: 4;
   display: flex;
-  gap: 0.75rem;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0;
+  justify-content: center;
+  height: 6rem;
+}
+
+.ex-pull-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.125rem 1rem;
+  background: rgb(120, 90, 50);
+  color: rgb(255, 240, 210);
+  font-size: 0.875rem;
+  text-shadow: 0 0.063rem 0.125rem rgb(0, 0, 0);
+}
+
+.ex-pull-tab b {
+  color: rgb(255, 255, 255);
+  font-family: var(--font-num);
+  font-size: 1.125rem;
 }
 
 .ex-pull {
+  --fill: rgba(40, 28, 16, 0.55);
+  --edge: var(--gold);
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.75rem;
   justify-content: space-between;
-  min-width: 15rem;
-  padding: 0.75rem 1.25rem;
-  background: rgba(40, 28, 16, 0.92);
-  border: 0.125rem solid var(--gold);
-  color: var(--gold-text);
+  height: 4.5rem;
+  min-width: 0;
+  padding: 0 0.625rem 0 1.5rem;
+  color: var(--cream);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
@@ -391,22 +525,29 @@ button {
 }
 
 .ex-pull:hover:not(:disabled) {
-  background: rgba(86, 60, 28, 0.95);
+  --fill: rgba(86, 60, 28, 0.55);
 }
 
 .ex-pull:disabled {
-  border-color: var(--brown);
+  --edge: var(--brown);
   color: var(--sub);
   cursor: default;
   opacity: 0.7;
 }
 
+.ex-pull-cost img {
+  width: 3.5rem;
+  margin-block: -0.875rem -1rem;
+}
+
 .ex-pull-cost {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  flex-direction: column;
   font-family: var(--font-num);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  transform: translateY(-0.25rem);
 }
 
 .ex-ticket-icon {
@@ -419,10 +560,9 @@ button {
   box-shadow: inset 0 0 0 0.125rem rgba(90, 40, 0, 0.35);
 }
 
-.ex-stock,
 .ex-left {
   position: absolute;
-  top: 1.5rem;
+  top: 1.75rem;
   z-index: 4;
   display: flex;
   align-items: center;
@@ -433,15 +573,10 @@ button {
   font-size: 0.938rem;
 }
 
-.ex-stock {
+.ex-left {
   right: 2rem;
 }
 
-.ex-left {
-  right: 15rem;
-}
-
-.ex-stock b,
 .ex-left b {
   color: var(--gold-text);
   font-family: var(--font-num);
@@ -499,11 +634,11 @@ button {
 }
 
 .ex-btn {
+  --fill: rgba(66, 50, 30, 0.55);
+  --edge: var(--gold);
   display: inline-block;
-  padding: 0.375rem 1.125rem;
-  background: rgb(66, 50, 30);
-  border: 0.125rem solid var(--gold);
-  color: var(--gold-text);
+  padding: 0.5rem 1.25rem;
+  color: var(--cream);
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
@@ -512,15 +647,15 @@ button {
 }
 
 .ex-btn:hover {
-  background: rgb(102, 76, 40);
+  --fill: rgba(102, 76, 40, 0.55);
 }
 
 .ex-btn.is-on {
-  background: rgb(120, 86, 30);
+  --fill: rgba(120, 86, 30, 0.55);
 }
 
 .ex-btn:disabled {
-  border-color: var(--brown);
+  --edge: var(--brown);
   color: var(--sub);
   cursor: default;
   opacity: 0.6;
@@ -840,6 +975,60 @@ button {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.ex-tool,
+.ex-swap,
+.ex-pull,
+.ex-btn,
+.ex-mag {
+  background: none;
+  border: 0;
+  isolation: isolate;
+}
+
+.ex-tool,
+.ex-pull,
+.ex-btn {
+  position: relative;
+}
+
+.ex-tool::before,
+.ex-swap::before,
+.ex-pull::before,
+.ex-btn::before,
+.ex-mag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: -1;
+  background: var(--fill);
+  clip-path: polygon(0 0.25rem, 0.25rem 0, calc(100% - 0.25rem) 0, 100% 0.25rem, 100% calc(100% - 0.25rem), calc(100% - 0.25rem) 100%, 0.25rem 100%, 0 calc(100% - 0.25rem));
+}
+
+.ex-tool::after,
+.ex-swap::after,
+.ex-pull::after,
+.ex-btn::after,
+.ex-mag::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: -1;
+  background: var(--edge);
+  clip-path: polygon(evenodd, 0 0.25rem, 0.25rem 0, calc(100% - 0.25rem) 0, 100% 0.25rem, 100% calc(100% - 0.25rem), calc(100% - 0.25rem) 100%, 0.25rem 100%, 0 calc(100% - 0.25rem), 0 0.25rem, 0.125rem 0.302rem, 0.125rem calc(100% - 0.302rem), 0.302rem calc(100% - 0.125rem), calc(100% - 0.302rem) calc(100% - 0.125rem), calc(100% - 0.125rem) calc(100% - 0.302rem), calc(100% - 0.125rem) 0.302rem, calc(100% - 0.302rem) 0.125rem, 0.302rem 0.125rem, 0.125rem 0.302rem);
+  opacity: 0.55;
+}
+
+.ex-main {
+  border-radius: 0;
+  clip-path: polygon(0 0.5rem, 0.5rem 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% calc(100% - 0.5rem), calc(100% - 0.5rem) 100%, 0.5rem 100%, 0 calc(100% - 0.5rem));
 }
 
 @media only screen and (max-width: 1279px) {
