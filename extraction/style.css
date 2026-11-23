@@ -275,15 +275,6 @@ button {
   transform: translateX(calc(-50% + (0.5 - var(--cx, 0.5)) * 100%));
 }
 
-.ex-art.is-placeholder {
-  align-items: center;
-}
-
-.ex-art.is-placeholder img {
-  width: 45%;
-  opacity: 0.35;
-}
-
 .ex-art.is-stage {
   top: 0;
   left: 0;
@@ -756,8 +747,62 @@ button {
   position: relative;
   display: block;
   aspect-ratio: 333 / 465;
-  background: rgb(28, 20, 14);
   color: var(--gold-text);
+}
+
+.ex-card-bg {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: linear-gradient(rgba(28, 20, 14, 0.55), rgba(28, 20, 14, 0.55)), url("../image/bg/panel.png") 0 0 / 44rem auto rgb(28, 20, 14);
+  border-radius: 0.375rem;
+}
+
+.ex-card-art {
+  position: absolute;
+  top: 6.5%;
+  left: 5.7%;
+  bottom: 5.4%;
+  right: 9%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.ex-card-art.has-bg {
+  background-position: center;
+  background-size: cover;
+}
+
+.ex-card-img {
+  --pos: 50% 0%;
+  --zoom: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--pos);
+  transform: scale(var(--zoom));
+  transform-origin: var(--pos);
+}
+
+.ex-card-img.is-fit {
+  --fit: 0.36;
+  --shift: 0%;
+  --x: 0%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: auto;
+  height: calc(100% / var(--fit));
+  max-width: none;
+  transform: translate(calc(-50% + var(--x)), calc(var(--shift) * -1));
+}
+
+.ex-card-img.is-ph {
+  object-fit: contain;
+  object-position: center;
 }
 
 .ex-card-frame {
@@ -766,15 +811,6 @@ button {
   left: 0;
   width: 100%;
   height: 100%;
-}
-
-.ex-card-icon {
-  position: absolute;
-  top: 28%;
-  left: 50%;
-  width: 55%;
-  opacity: 0.55;
-  transform: translateX(-50%);
 }
 
 .ex-card-name {
@@ -801,7 +837,7 @@ button {
 }
 
 .ex-card.is-pu {
-  box-shadow: 0 0 0.75rem rgb(251, 124, 0);
+  filter: drop-shadow(0 0 0.5rem rgb(251, 124, 0));
 }
 
 .ex-card-pu {
@@ -921,15 +957,6 @@ button {
   max-height: 100%;
   object-fit: contain;
   object-position: bottom;
-}
-
-.ex-res-art.is-placeholder {
-  align-items: center;
-}
-
-.ex-res-art.is-placeholder img {
-  width: 40%;
-  opacity: 0.35;
 }
 
 .ex-res-art.is-stage img {
