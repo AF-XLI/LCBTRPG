@@ -366,6 +366,10 @@ button {
   margin-inline-end: -0.3rem;
 }
 
+.ex-tag-sub.is-empty {
+  height: 2.5rem;
+}
+
 .ex-tag .ex-rarity img + span {
   display: none;
 }
