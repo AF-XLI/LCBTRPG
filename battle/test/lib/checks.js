@@ -51,6 +51,7 @@ function condVariants(ctx) {
     }
   });
   if (e.ifSpent && !spendSib) { return [unsupported('消耗の効果が同じスキルにありません')]; }
+  if (e.ifSpent && spendSib.ifStatus) { return [unsupported('条件付きの消耗は、この確認では扱えません')]; }
   const out = [mk(true, true, '条件を満たす')];
   if (e.ifStatus) { out.push(mk(false, true, '条件を満たさない(使用前の値が境界の1つ手前)')); }
   if (e.ifSpent) { out.push(mk(true, false, '消耗量が条件に1足りない')); }
@@ -136,6 +137,7 @@ const CHECKERS = {
   spend(ctx) {
     const e = ctx.e;
     if (!holderOk(ctx, ['skill', 'ego'])) { return [unsupported('持ち主の確認部品がありません')]; }
+    if (e.ifStatus) { return [unsupported('条件付きの消耗は、この確認では扱えません')]; }
     return [0, 8, 20].map((c) => ({
       label: '使用前の ' + label(e.status) + ' 回数 ' + c,
       run() {
@@ -335,6 +337,46 @@ function collect(data) {
         });
       });
     });
+  });
+  cases.push({
+    tags: ['roster', 'sheet'],
+    name: 'キャラクターシートの装備から全囚人の味方データを作れる',
+    run: () => {
+      const R = require('../../../shared/roster.js');
+      const fs = require('fs');
+      const path = require('path');
+      const seasons = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', 'data', 'seasons.json'), 'utf8'));
+      const units = Object.keys(data).map((pid) => {
+        const pd = data[pid];
+        const r = R.buildAlly(pid, pd.info, pd.identities, pd.egos, seasons, {}, '../');
+        check(r.unit.id === pid, pid + ': 味方のIDが囚人IDと違います');
+        check(r.notes.length === 0, pid + ': 既定の装備なのに注意が出ました: ' + r.notes.join(' / '));
+        return r.unit;
+      });
+      const parsed = L.parseSetup({ allies: units });
+      check(parsed.errors.length === 0, parsed.errors.join(' / '));
+    }
+  });
+  cases.push({
+    tags: ['roster', 'sheet'],
+    name: '未所持・未公開の人格を装備していても既定の人格に戻る',
+    run: () => {
+      const R = require('../../../shared/roster.js');
+      const pd = data[Object.keys(data)[0]];
+      const base = Object.keys(pd.identities)[0];
+      const identities = Object.assign({}, pd.identities, {
+        locked: Object.assign({}, pd.identities[base], { name: '未所持', initial: false }),
+        future: Object.assign({}, pd.identities[base], { name: '未公開', initial: false, season: 'next' })
+      });
+      const info = Object.assign({}, pd.info, { identities: pd.info.identities.concat(['locked', 'future']) });
+      const seasons = { next: { name: 'N', released: false } };
+      const a = R.buildAlly(pd.id, info, identities, pd.egos, seasons, { identity: 'locked', owned: {} }, '');
+      check(a.unit.identityName === pd.identities[pd.info.default.identity].name && a.notes.length === 1, '未所持の人格が使われました');
+      const b = R.buildAlly(pd.id, info, identities, pd.egos, seasons, { identity: 'future', owned: { future: true } }, '');
+      check(b.unit.identityName === a.unit.identityName && b.notes.length === 1, '未公開の人格が使われました');
+      const c = R.buildAlly(pd.id, info, identities, pd.egos, { next: { name: 'N', released: true } }, { identity: 'future', owned: { future: true } }, '');
+      check(c.unit.identityName === '未公開' && c.notes.length === 0, '公開済み・所持済みの人格が使われませんでした');
+    }
   });
   return cases;
 }
