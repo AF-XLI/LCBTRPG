@@ -90,7 +90,7 @@
     var listed = (data.prisoners[pid] && data.prisoners[pid].identities) || Object.keys(base);
     return listed.filter(function (k) { return base[k]; }).map(function (k) {
       var o = base[k];
-      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial, stageImage: o.stageImage, portrait: o.portrait };
+      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial, stageImage: o.stageImage, portrait: o.portrait, portraitTop: o.portraitTop, portraitWidth: o.portraitWidth };
     });
   }
 
@@ -139,8 +139,8 @@
   function artSrc(pid, o) {
     var p = data.prisoners[pid] || {};
     if (o && o.stageImage) { return { src: '../' + o.stageImage, kind: 'stage' }; }
-    if (o && o.portrait) { return { src: '../' + o.portrait, kind: 'portrait' }; }
-    if (!o) { return { src: '../' + (p.portrait || ''), kind: 'portrait' }; }
+    if (o && o.portrait) { return { src: '../' + o.portrait, kind: 'portrait', lay: o }; }
+    if (!o) { return { src: '../' + (p.portrait || ''), kind: 'portrait', lay: p }; }
     return { src: '../image/icon/org/lcb.png', kind: 'placeholder' };
   }
 
@@ -196,7 +196,9 @@
     var h = '<section class="ex-main" style="--theme: ' + esc(p.themeColor || 'rgb(232, 178, 56)') + ';">';
     h += '<div class="ex-bg" style="background-image: url(\'../' + esc(p.background || '') + '\');"></div>';
     h += '<div class="ex-heading">' + (p.icon ? '<img class="ex-heading-logo" alt="" src="../' + esc(p.icon) + '">' : '') + '<span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name">' + esc(p.name) + '</span></div>';
-    h += '<div class="ex-art is-' + art.kind + '"><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
+    var lay = art.lay || {};
+    var artStyle = art.kind === 'portrait' ? ' style="--pt: ' + (lay.portraitTop != null ? lay.portraitTop : 5.375) + '; --pw: ' + (lay.portraitWidth != null ? lay.portraitWidth : 41.25) + ';"' : '';
+    h += '<div class="ex-art is-' + art.kind + '"' + artStyle + '><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
     h += '<div class="ex-tag">';
     if (pu) {
       h += '<span class="ex-tag-identity">' + esc(pu.name) + '</span>' +
@@ -264,6 +266,52 @@
     h += '<div class="ex-body">' + railHtml(pid) + mainHtml(pid) + '</div>';
     if (isGm()) { h += gmHtml(pid); }
     app.innerHTML = h;
+    centerArt();
+  }
+
+  // 立ち絵の上半身(画像の高さの20〜50%)の横方向の重心を測り、枠の中央に被写体が来るように補正する
+  var centers = {};
+
+  function measureCenter(src, done) {
+    var img = new Image();
+    img.onload = function () {
+      var w = 120;
+      var hh = Math.max(1, Math.round(img.naturalHeight / img.naturalWidth * w));
+      var cv = document.createElement('canvas');
+      cv.width = w;
+      cv.height = hh;
+      var cx = cv.getContext('2d');
+      var c = 0.5;
+      try {
+        cx.drawImage(img, 0, 0, w, hh);
+        var px = cx.getImageData(0, 0, w, hh).data;
+        var sum = 0;
+        var cnt = 0;
+        for (var y = Math.floor(hh * 0.2); y < Math.floor(hh * 0.5); y++) {
+          for (var x = 0; x < w; x++) {
+            if (px[(y * w + x) * 4 + 3] > 40) { sum += x + 0.5; cnt++; }
+          }
+        }
+        if (cnt) { c = sum / cnt / w; }
+      } catch (e) { c = 0.5; }
+      done(c);
+    };
+    img.onerror = function () { done(0.5); };
+    img.src = src;
+  }
+
+  function centerArt() {
+    var nodes = app.querySelectorAll('.ex-art.is-portrait');
+    Array.prototype.forEach.call(nodes, function (el) {
+      var im = el.querySelector('img');
+      if (!im) { return; }
+      var src = im.getAttribute('src');
+      if (centers[src] !== undefined) { el.style.setProperty('--cx', centers[src]); return; }
+      measureCenter(src, function (c) {
+        centers[src] = c;
+        el.style.setProperty('--cx', c);
+      });
+    });
   }
 
   function percent(pid, o) {
