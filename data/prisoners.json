@@ -116,7 +116,8 @@
     "icon": "image/character/gray/icon.png",
     "background": "image/character/gray/bg.png",
     "identities": [
-      "lcb"
+      "lcb",
+      "w-corp-l3"
     ],
     "egos": [
       "end-of-spring"
