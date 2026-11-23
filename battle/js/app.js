@@ -21,6 +21,8 @@
   var firstState = true;
   var popupState = null;
   var pressed = {};
+  var roster = [];
+  var rosterSel = {};
   var retarget = false;
   var gmPick = null;
   var scrollKey = '';
@@ -74,6 +76,7 @@
     var ctx = {
       me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false, gmPick: gmPick,
       canSeeEnemySpeed: isGm,
+      roster: roster, rosterSel: rosterSel,
       pairs: null, targeting: false, selectedPid: null
     };
     ctx.pairs = S.phase === 'process' && S.proc && S.proc.pairs ? S.proc.pairs : L.computePairs(S);
@@ -337,6 +340,43 @@
     return true;
   }
 
+  function sheetJson(path, optional) {
+    return fetch('../data/' + path).then(function (r) {
+      if (!r.ok) {
+        if (optional) { return {}; }
+        throw new Error('data/' + path + ' を読み込めませんでした(' + r.status + ')');
+      }
+      return r.json();
+    });
+  }
+
+  function loadRoster() {
+    if (roster.length) { return; }
+    sheetJson('prisoners.json', true).then(function (pr) {
+      roster = Object.keys(pr).map(function (id) { return { id: id, no: typeof pr[id].no === 'number' ? pr[id].no : 99, name: pr[id].name }; })
+        .sort(function (a, b) { return a.no - b.no; });
+      roster.forEach(function (r) { if (rosterSel[r.id] === undefined) { rosterSel[r.id] = true; } });
+      render();
+    });
+  }
+
+  function loadFromSheet() {
+    var ids = roster.filter(function (r) { return rosterSel[r.id] && !S.units[r.id]; }).map(function (r) { return r.id; });
+    if (!ids.length) { alert('追加する囚人を選んでください。'); return; }
+    if (!store) { return; }
+    Promise.all([sheetJson('prisoners.json'), sheetJson('seasons.json', true)]).then(function (base) {
+      return Promise.all(ids.map(function (pid) {
+        return Promise.all([sheetJson(pid + '/identities.json'), sheetJson(pid + '/egos.json'), store.readCharacter(pid)]).then(function (r) {
+          return window.LCRoster.buildAlly(pid, base[0][pid], r[0], r[1], base[1], r[2], '../');
+        });
+      }));
+    }).then(function (res) {
+      var notes = [];
+      res.forEach(function (r, i) { r.notes.forEach(function (n) { notes.push(roster.filter(function (x) { return x.id === ids[i]; })[0].name + ': ' + n); }); });
+      if (loadText({ allies: res.map(function (r) { return r.unit; }) }, '味方') && notes.length) { alert(notes.join('\n')); }
+    }).catch(function (e) { alert('キャラクターシートから読み込めませんでした。\n' + e.message); });
+  }
+
   function fetchJson(url) {
     return fetch(url).then(function (r) { if (!r.ok) { throw new Error(url + ' (' + r.status + ')'); } return r.text(); });
   }
@@ -426,6 +466,7 @@
       if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃・守備は行われません)')) { return; }
       commit(function (s) { L.gmConfirm(s); });
     },
+    'load-roster': function () { loadFromSheet(); },
     'load-sample': function () {
       Promise.all([fetchJson('sample/party.json'), fetchJson('sample/enemies.json')]).then(function (r) {
         loadText(r[0], '味方'); loadText(r[1], '敵');
@@ -516,6 +557,7 @@
 
   var changes = {
     unit: function (el) { me.unitId = el.value; saveMe(); render(); },
+    roster: function (el) { rosterSel[el.dataset.id] = el.checked; },
     arrows: function (el) { arrowMode = el.value; render(); },
     mtarget: function (el) { manualTarget = el.value; },
     ptarget: function (el) {
@@ -583,6 +625,7 @@
     }).then(function (st) {
       store = st;
       mode = st.mode;
+      if (me.role === 'gm') { loadRoster(); }
       if (me.role === 'player' && st.unitId) { me.unitId = st.unitId; me.locked = true; saveMe(); }
       render();
     }).catch(function (e) {
