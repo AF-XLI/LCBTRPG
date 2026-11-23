@@ -246,12 +246,6 @@
     if (canChange(pid)) {
       h += '<button class="ex-swap" type="button" data-act="open" data-kind="pickup"><span class="ex-swap-label">ピックアップ変更</span><span class="ex-swap-arrow" aria-hidden="true"></span></button>';
     }
-    if (isGm()) {
-      var order = sortedPrisoners();
-      var at = order.indexOf(pid);
-      h += '<button class="ex-arrow is-prev" type="button" data-act="who" data-id="' + esc(order[(at + order.length - 1) % order.length]) + '" aria-label="前の囚人"></button>' +
-        '<button class="ex-arrow is-next" type="button" data-act="who" data-id="' + esc(order[(at + 1) % order.length]) + '" aria-label="次の囚人"></button>';
-    }
     h += '<div class="ex-actions">';
     if (mine) {
       h += '<button class="ex-pull" type="button" data-act="pull"' + (n > 0 && list.length && !state.busy ? '' : ' disabled') + '>' +
