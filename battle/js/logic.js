@@ -1112,6 +1112,12 @@
         if (m.weakOnly && !(opt.dg && isWeakTo(opt.dg, skill))) { return; }
         var pc = m.perMatch !== undefined ? Math.min(m.max === undefined ? Infinity : num(m.max, 0), num(m.perMatch, 0) * num(opt.matches, 0)) : num(m.pct, 0);
         if (m.perCoinLive !== undefined) { pc = num(m.perCoinLive, 0) * (opt.coinsLeft !== undefined ? num(opt.coinsLeft, 0) : A(skill.coins).length); }
+        if (m.perPower) {
+          if (m.basicOnly && !(skill.kind === 'attack' && !skill.ego)) { return; }
+          var ps = O(atkB.st)[m.perPower.status];
+          pc = num(ps && ps.p, 0) * num(m.perPower.pct, 0);
+          if (m.perPower.max !== undefined) { pc = Math.min(pc, num(m.perPower.max, 0)); }
+        }
         f += pc / 100;
       }
       if (m.k === 'crit' && opt.crit) { f += num(m.pct, 0) / 100; }
@@ -1174,7 +1180,9 @@
     if (cnd.spent) {
       var sp = selfG && selfG.b.spent ? num(selfG.b.spent.n, 0) : 0;
       if (!cmpOp(sp, cnd.spent.op, num(cnd.spent.v, 0))) { ok = false; }
+      if (cnd.spent.status && !(selfG && selfG.b.spent && selfG.b.spent.status === cnd.spent.status)) { ok = false; }
     }
+    if (cnd.hpLost && !(selfG && selfG.b.hpLost)) { ok = false; }
     if (cnd.noDebuff) {
       var dg = cnd.noDebuff === 'self' ? selfG : otherG;
       if (!dg || debuffKeys(dg.b).length) { ok = false; }
@@ -1266,7 +1274,7 @@
       trefs.forEach(function (tref) {
         var tg = getB(state, tref);
         if (!tg || isOut(tg)) { return; }
-        if (gr.dmgPct !== undefined || gr.perCoin !== undefined || gr.perMatch !== undefined || gr.perCoinLive !== undefined) {
+        if (gr.dmgPct !== undefined || gr.perCoin !== undefined || gr.perMatch !== undefined || gr.perCoinLive !== undefined || gr.perPower !== undefined) {
           var pct = gr.dmgPct !== undefined ? num(gr.dmgPct, 0) : num(gr.perCoin, 0) * coinCount;
           tg.b.mods = A(tg.b.mods);
           var dm = { k: 'dmg', pct: pct, scope: ctx.passive ? gr.scope || 'round' : gr.scope === 'finalCoin' ? 'finalCoin' : 'skill' };
@@ -1274,6 +1282,7 @@
           if (gr.weakOnly) { dm.weakOnly = true; }
           if (gr.perMatch !== undefined) { dm.perMatch = num(gr.perMatch, 0); dm.max = gr.max; }
           if (gr.perCoinLive !== undefined) { dm.perCoinLive = num(gr.perCoinLive, 0); }
+          if (gr.perPower !== undefined) { dm.perPower = gr.perPower; if (gr.basicOnly) { dm.basicOnly = true; } }
           tg.b.mods.push(dm);
           if (trefs.length === 1) { log(state, nameOf(state, tref) + ' の与えるダメージ +' + (gr.perMatch !== undefined ? 'マッチ毎' + gr.perMatch : pct) + '%' + (gr.scope === 'finalCoin' ? ' (最終コイン)' : '')); }
         }
@@ -1303,6 +1312,21 @@
             tg.b.mods.push({ k: 'coinPow', n: cp, scope: 'skill' });
             log(state, nameOf(state, tref) + ' のコイン威力 +' + cp);
           }
+        }
+        if (gr.hpLossPct !== undefined && tg.unit.hp > 1) {
+          var loss = Math.min(Math.floor(tg.unit.maxHp * num(gr.hpLossPct, 0) / 100), tg.unit.hp - 1);
+          if (loss > 0) {
+            tg.unit.hp -= loss;
+            tg.b.hpLost = true;
+            log(state, nameOf(state, tref) + ' の体力が ' + loss + ' 減少');
+            fx(state, tref, '-' + loss, 'dmg');
+            checkStagger(state, tref);
+          }
+        }
+        if (gr.coinPower !== undefined) {
+          tg.b.mods = A(tg.b.mods);
+          tg.b.mods.push({ k: 'coinPow', n: num(gr.coinPower, 0), scope: 'skill' });
+          log(state, nameOf(state, tref) + ' のコイン威力 ' + (num(gr.coinPower, 0) >= 0 ? '+' : '') + num(gr.coinPower, 0));
         }
         if (gr.resGain) {
           var rk = shuffle(Object.keys(SINS), activeRng).slice(0, Math.max(1, num(gr.resGain.kinds, 1)));
@@ -1535,6 +1559,7 @@
           if (power <= ev.power) {
             log(state, nameOf(state, atk.ref) + ' コイン' + (i + 1) + ' 威力' + power + ' → ' + nameOf(state, defRef) + ' が回避成功(回避威力' + ev.power + ')');
             fx(state, defRef, '回避', 'guard');
+            applyGrants(state, evade.ref, atk.ref, evade.skill, 'evadeSuccess');
             return;
           }
           evade.active = false;
@@ -1607,6 +1632,7 @@
     tgts.forEach(function (t, ti) { if (hits[ti]) { applyGrants(state, atk.ref, t.ref, skill, 'hit', undefined, { pre: pre0[ti] }); } });
     var gsp = getB(state, atk.ref);
     if (gsp && gsp.b.spent) { delete gsp.b.spent; }
+    if (gsp && gsp.b.hpLost) { delete gsp.b.hpLost; }
     return hits;
   }
 
