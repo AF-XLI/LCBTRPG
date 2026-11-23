@@ -195,7 +195,7 @@
     var art = artSrc(pid, pu);
     var h = '<section class="ex-main" style="--theme: ' + esc(p.themeColor || 'rgb(232, 178, 56)') + ';">';
     h += '<div class="ex-bg" style="background-image: url(\'../' + esc(p.background || '') + '\');"></div>';
-    h += '<div class="ex-heading">' + (p.icon ? '<img class="ex-heading-logo" alt="" src="../' + esc(p.icon) + '">' : '') + '<span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name">' + esc(p.name) + '</span></div>';
+    h += '<div class="ex-heading">' + (p.icon ? '<img class="ex-heading-logo" alt="" src="../' + esc(p.icon) + '">' : '') + '<span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name" style="font-size: ' + Math.round(Math.min(3.5, 14 / Array.from(p.name).length) * 1000) / 1000 + 'rem;">' + esc(p.name) + '</span></div>';
     var lay = art.lay || {};
     var artStyle = art.kind === 'portrait' ? ' style="--pt: ' + (lay.portraitTop != null ? lay.portraitTop : 5.375) + '; --pw: ' + (lay.portraitWidth != null ? lay.portraitWidth : 41.25) + ';"' : '';
     h += '<div class="ex-art is-' + art.kind + '"' + artStyle + '><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
