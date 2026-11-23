@@ -271,11 +271,25 @@
     }).join('') + '</div>';
   }
 
+  function rosterHtml(S, ctx) {
+    var list = ctx.roster || [];
+    if (!list.length) { return ''; }
+    var sel = ctx.rosterSel || {};
+    var rows = list.map(function (r) {
+      var loaded = !!S.units[r.id];
+      return '<label class="roster-row' + (loaded ? ' is-done' : '') + '"><input type="checkbox" data-change="roster" data-id="' + esc(r.id) + '"' +
+        (loaded ? ' disabled' : (sel[r.id] ? ' checked' : '')) + '>' + esc(r.name) + (loaded ? '(読み込み済み)' : '') + '</label>';
+    }).join('');
+    return '<div class="roster"><h4>キャラクターシートから味方を読み込む</h4><div class="roster-list">' + rows + '</div>' +
+      '<div class="btns"><button type="button" class="btn primary" data-act="load-roster">選んだ囚人を味方に追加</button></div></div>';
+  }
+
   function toolsPanel(S, ctx) {
     if (ctx.me.role !== 'gm') { return ''; }
     var html = '<h3>GM操作</h3>';
     if (S.phase === 'setup') {
-      html += '<p class="note">味方と敵のJSONを読み込み、戦闘を開始します。形式はREADMEをご覧ください。</p>' +
+      html += '<p class="note">味方はキャラクターシートの装備から、敵はJSONから読み込み、戦闘を開始します。形式はREADMEをご覧ください。</p>' +
+        rosterHtml(S, ctx) +
         '<div class="btns"><button type="button" class="btn" data-act="load-sample">サンプルを読み込む</button></div>' +
         '<label class="field">味方JSON<textarea id="jsonAllies" rows="4" placeholder="{&quot;allies&quot;:[...]} を貼り付け"></textarea></label>' +
         '<div class="btns"><button type="button" class="btn" data-act="load-allies">味方を追加</button><label class="btn file">ファイル<input type="file" accept=".json,application/json" data-change="file" data-to="jsonAllies"></label></div>' +
