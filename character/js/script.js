@@ -721,6 +721,8 @@ document.addEventListener('dragstart', function (ev) {
   }
 
   function render() {
+    // 保存済みの装備を読み込むまでは描画しない(既定の人格が一瞬映るのを防ぐ)
+    if (state.waiting) { return; }
     if (state.view === 'list' || state.view === 'egolist') {
       appEl.innerHTML = listHtml();
       return;
@@ -790,7 +792,7 @@ document.addEventListener('dragstart', function (ev) {
 
     appEl.innerHTML =
       '<div class="sheet">' +
-      '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + (art.kind === 'stage' ? art.src : p.background)) + '\')">' +
+      '<section class="stage' + (isEgoTab ? ' is-ego' : '') + '" aria-label="囚人表示" style="background-image: url(\'' + esc(base + (art.kind === 'stage' ? art.src : p.background)) + '\')' + (art.kind === 'stage' && art.layout.stagePos ? '; background-position: ' + esc(art.layout.stagePos) : '') + '">' +
       portraitHtml(art, p) +
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
@@ -943,13 +945,20 @@ document.addEventListener('dragstart', function (ev) {
         state.db = db;
         db.ref('characters/' + charId).on('value', function (snap) {
           state.remote = snap.val() || {};
+          state.waiting = false;
           if (!state.editing) { render(); }
         }, function (e) {
           state.status = '保存済みのデータを読み込めませんでした。' + (e && e.message ? e.message : '');
+          state.waiting = false;
+          render();
         });
         fb.auth(app).onAuthStateChanged(function (user) { onUser(db, user); });
       })
-      .catch(function (e) { state.status = e.message; });
+      .catch(function (e) {
+        state.status = e.message;
+        state.waiting = false;
+        render();
+      });
   }
 
   function init() {
@@ -968,6 +977,7 @@ document.addEventListener('dragstart', function (ev) {
           render();
           window.scrollTo(0, 0);
         });
+        state.waiting = firebaseUsable;
         route();
         render();
         initFirebase();
