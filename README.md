@@ -10,6 +10,7 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
 | `config.js` | Firebase の接続情報(全ページ共通。ここだけ書き換えます) |
 | `battle/` | 戦闘システム(説明は [battle/README.md](battle/README.md)) |
 | `character/` | キャラクターシート(ハブ `character/` と、囚人ごとのページ `character/<囚人ID>/`。説明は下の「キャラクターシート」) |
+| `extraction/` | 抽出(人格のガチャ)。チケットを使って、未所持の人格を1つずつ引きます。GMはチケットと人格を付与できます |
 | `data/` | キャラクターシートのマスターデータ(JSON。`prisoners.json` と、囚人ごとのフォルダ `data/<囚人ID>/` に人格・E.G.O) |
 | `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理) |
 | `tools/` | データの検査ツール(`node tools/validate.js` で `data/` の人格・E.G.Oの誤りを調べます) |
@@ -56,13 +57,32 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
            "desc": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" },
            "memo": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" },
            "identity": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" },
-           "egos": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" }
+           "egos": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" },
+           "owned": {
+             "$pid": {
+               ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || (root.child('player').child(auth.uid).val() === $cid && !data.exists() && newData.val() === true && newData.parent().parent().child('tickets').val() === data.parent().parent().child('tickets').val() - 1)",
+               ".validate": "newData.val() === true"
+             }
+           },
+           "tickets": {
+             ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || (root.child('player').child(auth.uid).val() === $cid && newData.isNumber() && newData.val() === data.val() - 1)",
+             ".validate": "newData.isNumber() && newData.val() >= 0"
+           },
+           "pickup": { ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || root.child('player').child(auth.uid).val() === $cid" },
+           "history": {
+             "$h": {
+               ".write": "root.child('admin').child(auth.uid).val() === true || root.child('gm').child(auth.uid).val() === true || (root.child('player').child(auth.uid).val() === $cid && !data.exists())",
+               ".validate": "newData.hasChildren(['id', 'at'])"
+             }
+           }
          }
        }
      }
    }
    ```
-   `characters/<囚人ID>` はキャラクターシートの保存先です。誰でも読めます(ログイン不要)。`desc`(説明)と `memo`(メモ)は、管理者と、その囚人の担当プレイヤー(`player/<UID>` がその囚人のID)だけが書き込めます。`identity`(装備中の人格)と `egos`(装備中のE.G.O)は、これに加えてGMも書き込めます(装備の変更画面は、これから作ります)。
+   `characters/<囚人ID>` はキャラクターシートの保存先です。誰でも読めます(ログイン不要)。`desc`(説明)と `memo`(メモ)は、管理者と、その囚人の担当プレイヤー(`player/<UID>` がその囚人のID)だけが書き込めます。`identity`(装備中の人格)と `egos`(装備中のE.G.O)は、これに加えてGMも書き込めます(装備の変更画面は、人格の詳細ページにあります)。
+   `owned`(入手済みの人格)・`tickets`(抽出チケットの枚数)・`pickup`(ピックアップに選んだ人格)は抽出用です。`owned` は、キーが人格ID・値が `true` の形で、管理者とGMが自由に付与・剥奪できます。プレイヤーは、チケットを1枚減らすのと同時にだけ、自分の囚人の `owned` を1つ増やせます(抽出ページの動作です)。`tickets` を増やせるのは、管理者とGMだけです。
+   `history`(抽出履歴)は、抽出するたびに、引いた人格と日時が1件ずつ追加されます(追加だけで、書き換えはできません)。履歴の保存に失敗しても、抽出自体は成立します。
    プレイヤーの操作が「permission denied」で失敗する場合は、いったん `"state"` の中を `".read": "auth != null", ".write": "auth != null"` の2行だけにして原因を確認してください。
 5. プロジェクトの設定 →「マイアプリ」→ ウェブアプリ(`</>`)を追加し、表示される `firebaseConfig` の値を、`config.js` に転記する。`databaseURL` は Realtime Database の画面に表示されるURLです。
    ```js
@@ -103,3 +123,15 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 囚人を増やすには、`data/prisoners.json` に追記して `data/<囚人ID>/` に人格・E.G.Oを置き、`character/<囚人ID>/index.html` を `character/gray/index.html` からコピーして `data-prisoner` を書き換えます。画像は `image/character/<囚人ID>/` に `portrait.png`(立ち絵)・`icon.png`(アイコン)・`bg.png`(立ち絵の背景)を置き、`data/prisoners.json` の `portrait` `icon` `background` で指定します。レアリティ画像は `image/icon/rarity/<レア>.png`(例: レア1は `1.png`)で、人格の `rarity` にその数字を書きます。
 - 閲覧は全員、説明・メモの編集は管理者と担当プレイヤー、装備の変更はこれに加えてGMが可能です(装備の変更画面は未実装)。
 - 今のところ、スマートフォンでは PC 版と同じ画面を横スクロールで表示します(見栄えの調整は後で行います)。
+
+## 人格の入手と抽出
+
+- 人格データ(`data/<囚人ID>/identities.json`)には、入手のしかたを決める項目があります。
+  - `initial: true`: 初期人格。最初から所持していて、抽出には出ません。囚人の既定の人格には、必ず付けます。
+  - `season`: 登場するシーズン(`data/seasons.json` のキー。例: `season-1`)。そのシーズンが未公開(`released: false`)の間は、どのページにも出ません。シーズン名は、人格の詳細ページだけに表示されます。
+  - どちらもない人格: 恒常人格。すぐに公開され、抽出で入手できます。シーズンの表示はありません。
+- 未所持の人格は、人格一覧では「所持のみ」と「未所持も表示」(グレー表示)を切り替えられます。未所持の人格は装備できません。
+- 入手済みの人格は、Realtime Database の `characters/<囚人ID>/owned/<人格ID>` に `true` で保存されます。配布の人格や、クリア報酬の人格は、抽出ページのGM操作(人格の付与・剥奪)から渡せます。データベースの画面から直接追加しても構いません。
+- 抽出ページ(`extraction/`)は、ログインした本人の囚人だけを表示します。管理者とGMは、囚人を切り替えて、チケットと人格を付与できます。
+- 抽出のルール: 人格のみ・被りなし・1枚で1回(単発)・確率は均等です。ピックアップに選んだ人格は、確率が3倍になります(倍率は `extraction/js/script.js` の `PICKUP_RATE`)。
+- `node tools/validate.js` は、`season` が `data/seasons.json` にあるか、既定の人格が初期人格か、なども調べます。
