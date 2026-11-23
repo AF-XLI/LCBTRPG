@@ -4,6 +4,7 @@
   var FIREBASE_VERSION = '10.12.2';
   var PICKUP_RATE = 3;
   var FX_MS = 1700;
+  var PLACEHOLDER = '../image/placeholder/portrait.webp';
   var cfg = root.LC_FIREBASE_CONFIG;
   var usable = !!(cfg && cfg.apiKey && cfg.databaseURL && cfg.useAuth !== false);
   var app = document.getElementById('app');
@@ -90,7 +91,7 @@
     var listed = (data.prisoners[pid] && data.prisoners[pid].identities) || Object.keys(base);
     return listed.filter(function (k) { return base[k]; }).map(function (k) {
       var o = base[k];
-      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial, stageImage: o.stageImage, portrait: o.portrait, portraitTop: o.portraitTop, portraitWidth: o.portraitWidth };
+      return { id: k, name: o.name, rarity: o.rarity, season: o.season, initial: !!o.initial, stageImage: o.stageImage, portrait: o.portrait, portraitTop: o.portraitTop, portraitWidth: o.portraitWidth, cardPos: o.cardPos, cardZoom: o.cardZoom, cardFit: o.cardFit, cardX: o.cardX, cardShift: o.cardShift };
     });
   }
 
@@ -141,7 +142,7 @@
     if (o && o.stageImage) { return { src: '../' + o.stageImage, kind: 'stage' }; }
     if (o && o.portrait) { return { src: '../' + o.portrait, kind: 'portrait', lay: o }; }
     if (!o) { return { src: '../' + (p.portrait || ''), kind: 'portrait', lay: p }; }
-    return { src: '../image/icon/org/lcb.png', kind: 'placeholder' };
+    return { src: PLACEHOLDER, kind: 'placeholder' };
   }
 
   function rarityTag(o) {
@@ -149,10 +150,38 @@
     return '<span class="ex-rarity"><img alt="" src="../image/icon/rarity/' + esc(r) + '.png" onerror="this.remove()"><span>レア' + esc(r) + '</span></span>';
   }
 
+  // 人格カードの立ち絵(キャラクターシートの人格カードと同じ規則): stageImage=立ち絵と背景が1枚 / portrait=立ち絵のみ(背景は囚人の背景) / どちらも無ければプレースホルダー
+  function cardArtHtml(pid, o) {
+    var p = data.prisoners[pid] || {};
+    var cls = 'ex-card-img';
+    var src = PLACEHOLDER;
+    var bg = '';
+    var vars = '';
+    var fit = false;
+    if (o.stageImage) {
+      src = '../' + o.stageImage;
+    } else if (o.portrait) {
+      src = '../' + o.portrait;
+      bg = p.background ? ' has-bg" style="background-image: url(\'../' + esc(p.background) + '\')' : '';
+      fit = true;
+    } else {
+      cls += ' is-ph';
+    }
+    if (fit) { cls += ' is-fit'; }
+    if (o.cardPos) { vars += '--pos: ' + o.cardPos + ';'; }
+    if (o.cardZoom) { vars += '--zoom: ' + o.cardZoom + ';'; }
+    if (fit && o.cardFit) { vars += '--fit: ' + o.cardFit + ';'; }
+    if (fit && o.cardX) { vars += '--x: ' + o.cardX + '%;'; }
+    if (fit && o.cardShift) { vars += '--shift: ' + o.cardShift + '%;'; }
+    return '<span class="ex-card-art' + bg + '">' +
+      '<img class="' + cls + '" alt="" ' + (vars ? 'style="' + esc(vars) + '" ' : '') + 'src="' + esc(src) + '"' + (cls.indexOf('is-ph') >= 0 ? ' onerror="this.remove()"' : '') + '></span>';
+  }
+
   function cardHtml(pid, o, extra) {
     var pu = pickupId(pid) === o.id;
     return '<span class="ex-card' + (pu ? ' is-pu' : '') + '">' +
-      '<img class="ex-card-icon" alt="" src="../image/icon/org/lcb.png">' +
+      '<span class="ex-card-bg"></span>' +
+      cardArtHtml(pid, o) +
       '<img class="ex-card-frame" alt="" src="../image/frame/' + esc(o.rarity || 1) + '.png">' +
       (pu ? '<span class="ex-card-pu">PICK UP</span>' : '') +
       '<span class="ex-card-name">' + esc(o.name) + '</span>' +
@@ -198,7 +227,7 @@
     h += '<div class="ex-heading">' + (p.icon ? '<img class="ex-heading-logo" alt="" src="../' + esc(p.icon) + '">' : '') + '<span class="ex-heading-kind">特定抽出</span><span class="ex-heading-name" style="font-size: ' + Math.round(Math.min(3.5, 14 / Array.from(p.name).length) * 1000) / 1000 + 'rem;">' + esc(p.name) + '</span></div>';
     var lay = art.lay || {};
     var artStyle = art.kind === 'portrait' ? ' style="--pt: ' + (lay.portraitTop != null ? lay.portraitTop : 5.375) + '; --pw: ' + (lay.portraitWidth != null ? lay.portraitWidth : 41.25) + ';"' : '';
-    h += '<div class="ex-art is-' + art.kind + '"' + artStyle + '><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"></div>';
+    h += '<div class="ex-art is-' + art.kind + '"' + artStyle + '><img alt="' + esc(pu ? pu.name : p.name) + '" src="' + esc(art.src) + '"' + (art.kind === 'placeholder' ? ' onerror="this.remove()"' : '') + '></div>';
     h += '<div class="ex-tag">';
     if (pu) {
       h += '<span class="ex-tag-identity">' + esc(pu.name) + '</span>' +
@@ -378,7 +407,7 @@
     var sl = seasonLabel(o);
     return '<div class="ex-ov is-result"><div class="ex-res">' +
       '<span class="ex-res-new">NEW</span>' +
-      '<div class="ex-res-art is-' + art.kind + '"><img alt="" src="' + esc(art.src) + '"></div>' +
+      '<div class="ex-res-art is-' + art.kind + '"><img alt="" src="' + esc(art.src) + '"' + (art.kind === 'placeholder' ? ' onerror="this.remove()"' : '') + '></div>' +
       '<div class="ex-res-info">' + (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
       '<span class="ex-res-name">' + esc(o.name) + '</span>' + rarityTag(o) + '</div>' +
       '<div class="ex-res-btns"><a class="ex-btn" href="../character/' + esc(pid) + '/#identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
