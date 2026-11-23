@@ -205,7 +205,7 @@
         '<a class="ex-mag" href="../character/' + esc(pid) + '/#identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
         '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"></circle><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></a>';
     } else {
-      h += '<span class="ex-tag-identity">PU未選択</span><span class="ex-tag-name">' + esc(p.name) + '</span>';
+      h += '<span class="ex-tag-identity">PU未選択</span><span class="ex-tag-name">' + esc(p.name) + '</span><span class="ex-tag-sub is-empty"></span>';
     }
     h += '</div>';
     h += '<div class="ex-tools">' +
