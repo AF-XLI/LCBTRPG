@@ -254,6 +254,22 @@ button {
   object-position: bottom;
 }
 
+.ex-art.is-portrait {
+  top: 0;
+  align-items: flex-start;
+  mask-image: linear-gradient(to bottom, rgb(0, 0, 0) 0, rgb(0, 0, 0) 82%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0, 0, 0) 0, rgb(0, 0, 0) 82%, rgba(0, 0, 0, 0) 100%);
+  overflow: hidden;
+}
+
+.ex-art.is-portrait img {
+  width: 100%;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin-block-start: 1.5rem;
+}
+
 .ex-art.is-placeholder {
   align-items: center;
 }
@@ -339,12 +355,6 @@ button {
   clip-path: polygon(0 0, 100% 0, calc(100% - 1.375rem) 100%, 0 100%);
   isolation: isolate;
   text-shadow: 0.125rem 0.125rem 0 rgb(0, 0, 0);
-}
-
-.ex-tag-name.is-none {
-  padding-inline-end: 1.5rem;
-  font-size: 1.25rem;
-  opacity: 0.8;
 }
 
 .ex-tag-sub {
