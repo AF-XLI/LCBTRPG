@@ -981,6 +981,13 @@ document.addEventListener('dragstart', function (ev) {
         route();
         render();
         initFirebase();
+        // 通信が遅い・途切れている場合でも、画面が空のままにならないようにする
+        setTimeout(function () {
+          if (state.waiting) {
+            state.waiting = false;
+            render();
+          }
+        }, 4000);
       })
       .catch(function (e) { showError(e.message); });
   }
