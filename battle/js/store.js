@@ -88,6 +88,7 @@
         if (chan) { chan.postMessage({ patch: { '': null } }); }
         emit();
       },
+      readCharacter: function () { return Promise.resolve({}); },
       close: function () { if (chan) { chan.close(); } }
     });
   }
@@ -164,6 +165,9 @@
             return ref.update(clean).catch(function (e) { if (onStatus) { onStatus('error', '書き込めませんでした: ' + e.message); } });
           },
           reset: function () { return ref.set(null); },
+          readCharacter: function (pid) {
+            return db.ref('characters/' + pid).once('value').then(function (snap) { return snap.val() || {}; });
+          },
           close: function () { ref.off(); }
         };
       });
