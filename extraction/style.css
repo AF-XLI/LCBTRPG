@@ -256,18 +256,22 @@ button {
 
 .ex-art.is-portrait {
   top: 0;
-  align-items: flex-start;
+  left: 0;
+  right: 0;
+  container-type: size;
   mask-image: linear-gradient(to bottom, rgb(0, 0, 0) 0, rgb(0, 0, 0) 82%, rgba(0, 0, 0, 0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, rgb(0, 0, 0) 0, rgb(0, 0, 0) 82%, rgba(0, 0, 0, 0) 100%);
-  overflow: hidden;
 }
 
 .ex-art.is-portrait img {
-  width: 100%;
+  position: absolute;
+  top: calc(var(--pt) / 50.625 * 100cqh);
+  left: 50%;
+  width: calc(var(--pw) / 50.625 * 100cqh);
   height: auto;
   max-width: none;
   max-height: none;
-  margin-block-start: 1.5rem;
+  transform: translateX(calc(-50% + (0.5 - var(--cx, 0.5)) * 100%));
 }
 
 .ex-art.is-placeholder {
