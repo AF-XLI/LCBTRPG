@@ -1726,8 +1726,62 @@ textarea {
 .pl-own {
   position: absolute;
   top: 1.8rem;
-  right: 3rem;
+  right: 10rem;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  height: 2.375rem;
+  padding: 0 1rem;
+  transform: translateX(50%);
+}
+ 
+.pl-own::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: var(--cream);
+  clip-path: polygon(evenodd, 0 0.5rem, 0.5rem 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% calc(100% - 0.5rem), calc(100% - 0.5rem) 100%, 0.5rem 100%, 0 calc(100% - 0.5rem), 0 0.5rem, 0.125rem 0.552rem, 0.552rem 0.125rem, calc(100% - 0.552rem) 0.125rem, calc(100% - 0.125rem) 0.552rem, calc(100% - 0.125rem) calc(100% - 0.552rem), calc(100% - 0.552rem) calc(100% - 0.125rem), 0.552rem calc(100% - 0.125rem), 0.125rem calc(100% - 0.552rem), 0.125rem 0.552rem, 0 0.5rem);
+  pointer-events: none;
+}
+ 
+.pl-own-op {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+ 
+.pl-own-box {
+  position: relative;
+  box-sizing: border-box;
+  width: 1.625rem;
+  height: 1.625rem;
+  background: rgb(34, 24, 16);
+  border: 0.125rem solid var(--cream);
+  border-radius: 0.125rem;
+}
+ 
+.pl-own-op[aria-checked="true"] .pl-own-box::after {
+  content: "";
+  position: absolute;
+  top: 0.063rem;
+  left: 0.438rem;
+  width: 0.438rem;
+  height: 0.875rem;
+  border-block-end: 0.188rem solid var(--cream);
+  border-inline-end: 0.188rem solid var(--cream);
+  transform: rotate(45deg);
 }
  
 .pl-dctl-close {
