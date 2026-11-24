@@ -35,7 +35,16 @@
       <a class="btn primary" href="extraction/">抽出</a>
     </div>
   </section>
+  <section class="hub-box">
+    <h3>BGM</h3>
+    <div class="hub-actions bgm-controls">
+      <button id="bgmToggle" class="btn" type="button" aria-pressed="false">BGM: OFF</button>
+      <label class="bgm-volume"><span>音量</span><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50"></label>
+    </div>
+    <p id="bgmNote" class="lobby-note" hidden></p>
+  </section>
 </div>
+<script src="shared/bgm.js" data-track="audio/window.mp3"></script>
 <script src="config.js"></script>
 <script src="script.js"></script>
 </body>
