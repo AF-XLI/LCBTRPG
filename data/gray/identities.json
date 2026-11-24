@@ -8,7 +8,6 @@
     ],
     "affiliation": "ルナリスカンパニー",
     "rarity": "1",
-    "orgIcon": "image/icon/org/lcb.png",
     "hp": 220,
     "speed": [
       3,
@@ -147,7 +146,6 @@
     ],
     "affiliation": "W社",
     "rarity": "2",
-    "orgIcon": "image/icon/org/lcb.png",
     "hp": 200,
     "speed": [
       3,
