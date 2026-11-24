@@ -615,9 +615,9 @@ document.addEventListener('dragstart', function (ev) {
   }
 
   function ownToggleHtml() {
-    return '<div class="pl-dctl pl-own" role="group" aria-label="表示する人格">' +
-      '<button class="pl-dctl-op" type="button" aria-pressed="' + (!state.showAll) + '" data-act="own-mode" data-mode="owned">所持のみ</button>' +
-      '<button class="pl-dctl-op" type="button" aria-pressed="' + state.showAll + '" data-act="own-mode" data-mode="all">未所持も表示</button>' +
+    return '<div class="pl-own" role="radiogroup" aria-label="表示する人格">' +
+      '<button class="pl-own-op" type="button" role="radio" aria-checked="' + (!state.showAll) + '" data-act="own-mode" data-mode="owned"><span>保有</span><span class="pl-own-box" aria-hidden="true"></span></button>' +
+      '<button class="pl-own-op" type="button" role="radio" aria-checked="' + state.showAll + '" data-act="own-mode" data-mode="all"><span>ALL</span><span class="pl-own-box" aria-hidden="true"></span></button>' +
       '</div>';
   }
 
