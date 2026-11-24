@@ -53,3 +53,17 @@
   cursor: default;
   opacity: 0.5;
 }
+ 
+.bgm-controls {
+  align-items: center;
+}
+ 
+.bgm-volume {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+ 
+.bgm-volume input {
+  width: 10rem;
+}
