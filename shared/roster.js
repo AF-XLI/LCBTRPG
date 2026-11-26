@@ -50,7 +50,6 @@
     return out;
   }
 
-  // 囚人1人分の味方データ(戦闘用)を作ります。装備は Firebase の characters/<囚人ID>(remote)から、なければ既定の装備
   function buildAlly(pid, info, identities, egosMaster, seasons, remote, imgBase) {
     var notes = [];
     var identityId = pickIdentity(info, identities, seasons, remote, notes);
