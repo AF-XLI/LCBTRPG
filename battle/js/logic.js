@@ -23,7 +23,6 @@
   var SP_MIN = -45;
   var SP_MAX = 45;
   var KIND_LABEL = { attack: '攻撃', defense: '守備', counter: '反撃' };
-  // 特殊振動(通常以外の振動の種類)。振動の状態の k に種類のIDを入れる
   var VIB_KINDS = {
     chain: { label: '鎖', glyph: '鎖', icon: 'tremor-chain.png', text: '振動威力10につき、マッチ威力が1減少(最大3)' },
     decay: { label: '崩壊', glyph: '崩', icon: 'tremor-decay.png', text: '振動威力4につき、防御レベルが1減少' }
@@ -119,14 +118,12 @@
   function incap(b) { return !!(b && (b.stagger || (b.panic && !b.panic.echo))); }
 
   function headsProb(sp) { return clamp(50 + num(sp, 0), 0, 100) / 100; }
-  // 邸宅の木霊: 精神力を持たない(またはパニックタイプが変わらない)対象は表面の確率-10%
   function headsP(b) {
     var p = b.noSp ? 0.5 : headsProb(b.sp);
     if (O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0 && (b.noSp || b.fixedPanic)) { p -= 0.1; }
     return clamp(p, 0, 1);
   }
   function echoHeld(b) { return !!(b && !b.noSp && !b.fixedPanic && O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0); }
-  // 士気低下: 邸宅の木霊を持ち、精神力が-20以下(パニック前)
   function echoMorale(b) { return echoHeld(b) && !b.panic && num(b.sp, 0) <= -20; }
   function echoHeldAny(b) { return !!(b && O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0); }
   function echoPanicOn(b) { return !!(b && b.panic && b.panic.echo); }
@@ -164,7 +161,6 @@
     return out;
   }
 
-  // スキル(攻撃・守備・反撃)の素のデータ(type / base / coin / coins枚数 / effects)から、戦闘で使う値を求める
   function normSkill(s, tier) {
     if (!s || typeof s !== 'object' || s.norm) { return s; }
     var type = s.type;
@@ -223,7 +219,6 @@
     }
     return out;
   }
-  // 人格・敵のデータの形を揃える。何度呼んでも同じ結果になる
   function normalizeUnit(u) {
     if (u.side === 'enemy') {
       A(u.parts).forEach(function (p) {
@@ -268,7 +263,6 @@
     else { e.erode = null; }
     return e;
   }
-  // mode: awaken(覚醒) / erode(侵食) / erodeEnemy(侵食・味方除外) / forced(E.G.O侵食)
   function egoCost(ego, mode) {
     var res = {};
     if (mode === 'forced') { return { res: res, sp: 0 }; }
@@ -278,7 +272,6 @@
     return { res: res, sp: Math.floor(ego.cost.sp * sm) };
   }
   function egoSkillOf(ego, mode) { return mode === 'awaken' ? ego.skill : ego.erode; }
-  // 侵食スキル(敵味方識別不可)は、1.5倍分の資源があれば味方を除外する扱いに自動で切り替える
   function egoErodeMode(state, ego, mode, back) {
     if (mode !== 'erode' || !ego || !ego.erode || !ego.erode.blind) { return mode; }
     return canPayRes(state, egoCost(ego, 'erodeEnemy').res, back) ? 'erodeEnemy' : 'erode';
@@ -351,7 +344,6 @@
     list.forEach(function (u, i) { u.rank = i; });
   }
 
-  // 共鳴は攻撃レベルの上昇量。(罪悪名)共鳴は同罪悪の左から n 番目のスキルが n 番目の値、完全共鳴は連なりの個数に応じた同じ値を全員が受ける
   var RESO_PARTIAL = [0, 0, 1, 3, 3, 5, 5, 7];
   var RESO_FULL = [0, 0, 0, 3, 5, 5, 7, 7, 9];
   function resoPartial(n) { return RESO_PARTIAL[Math.min(n, RESO_PARTIAL.length - 1)] || 0; }
@@ -625,9 +617,7 @@
   function hasKeyword(unit, word) {
     return A(unit && unit.keywords).some(function (k) { return (typeof k === 'string' ? k : O(k).text) === word; });
   }
-  // 防御態勢: 効果が働いているのは、ターン開始時にすでに状態を持っていたターン(act)。付与されたターン自体は働かない
   function stanceActive(b) { var st = O(b && b.st).defensiveStance; return !!(st && st.act); }
-  // 味方1人が持つスキルスロット数(今は1人1駒)
   function allySlotCount() { return 1; }
   function chargeBarrierGain(b, unit, v) {
     v = num(v, 0);
@@ -1122,7 +1112,6 @@
     u.choice.confirmed = canConfirm(state, u);
   }
 
-  // パニックが始まる時点で邸宅の木霊を持っていれば、パニックのタイプが邸宅の木霊になる
   function beginPanic(state, unit, b) {
     if (!echoHeld(b)) { return; }
     b.panic.echo = true;
@@ -1267,11 +1256,8 @@
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
     return physM > 1 || resMultOf(defG.b.resist, skill.sin) > 1;
   }
-  // レベル。個別の level(部位→本体の順)が無ければ、味方・敵とも共通の既定レベル(data/level.json)を使う。
-  // 攻撃レベル・守備レベルは、レベルに bearer の lvAtk / lvDef(効果で増減する加算分)を足したもの
   var defaultLevel = 1;
   function setDefaultLevel(n) { defaultLevel = isFinite(Number(n)) ? Number(n) : 1; }
-  // 振動 - 崩壊: 振動威力4につき防御レベルが1減少(上限なし)
   function decayLevelDown(b) {
     var v = O(b && b.st).vibration;
     return v && v.k === 'decay' ? Math.floor(num(v.p, 0) / 4) : 0;
@@ -1283,13 +1269,11 @@
     var def = lv + num(bb && bb.lvDef, 0) + vOf(bb, 'defenseLevelUp') - vOf(bb, 'defenseLevelDown') - decayLevelDown(bb);
     return { lv: lv, atk: atk, def: def };
   }
-  // 攻撃側の攻撃レベルと受け側の防御レベルの差による耐性枠の補正: 差 / (25 + |差|)
   function levelDamageBonus(state, ag, dg) {
     if (!ag || !dg) { return 0; }
     var d = levelInfo(ag.unit, ag.part, ag.b, resoAmt(state, ag)).atk - levelInfo(dg.unit, dg.part, dg.b).def;
     return d / (25 + Math.abs(d));
   }
-  // マッチ時、攻撃レベルが相手より高い側にだけ (差 ÷ 3 の切り捨て) の威力を加算する
   function setLevelMatch(state, X, Y) {
     var gx = getB(state, X.ref);
     var gy = getB(state, Y.ref);
@@ -1335,7 +1319,6 @@
     if (key === 'hp') { var h = hpInfo(g.unit, g.part); return { cur: h.cur, max: h.max }; }
     return { cur: g.unit.kind === 'abnormality' || g.b.noSp ? 0 : num(g.b.sp, 0), max: SP_MAX };
   }
-  // self=効果の持ち主、other=相手。of:'self'|'target' で見る側を選び、vs を書くと相手側の値と比べる
   function condOkG(cnd, selfG, otherG) {
     if (!cnd) { return true; }
     var ok = true;
@@ -1387,7 +1370,6 @@
       return !!def && def.kind === 'debuff';
     });
   }
-  // 解除可能なデバフからランダムに種類を選び、威力・回数・数値を全て0にする(消す)
   function dispelDebuffs(b, spec) {
     var keys = shuffle(debuffKeys(b), activeRng).slice(0, Math.max(0, num(spec && spec.count, 1)));
     keys.forEach(function (k) { delete b.st[k]; });
@@ -1601,7 +1583,6 @@
     });
   }
 
-  // パッシブ(バトル・サポート)の効果。条件(資源・共鳴)は戦闘開始時に判定し、そのラウンド中は固定
   function passiveKey(uid, kind, idx) { return uid + '|' + kind + '|' + idx; }
   function eachPassive(state, fn) {
     Object.keys(state.units).forEach(function (id) {
@@ -1668,7 +1649,6 @@
   }
 
 
-  // E.G.Oのコストで精神力が下限になったとき、同じE.G.Oの侵食スキルに切り替えて攻撃する
   function instantErosion(state, atk, tgts, u, ch, rng) {
     var ego = A(u.egos)[ch.ego.i];
     var ref = { u: u.id, p: null };
@@ -2100,8 +2080,6 @@
     return u && typeof u.priority === 'number' ? u.priority : 0;
   }
 
-  // 広域攻撃のサブターゲットを選ぶ。side='ally' は味方が敵のスキル駒を、'enemy' は敵が味方を狙う。
-  // keep: すでに決めてあるサブ(有効なものはそのまま残し、足りない分だけ補う)
   function enemySlots(state) {
     var slots = A(state.pieces).slice();
     if (state.phase !== 'setup' && state.phase !== 'over') {
@@ -2698,7 +2676,6 @@
     if (ch && (ch.sel === 'c0' || ch.sel === 'def' || ch.sel === 'ego')) { u.choice = null; }
     return true;
   }
-  // 変更の取り消し: 守備スキルはいつでも、E.G.Oは変更したターンのみ(資源は返却)
   function revertSkill(state, unitId) {
     var u = state.units[unitId];
     var sw = u && u.swap;
@@ -2778,10 +2755,8 @@
     });
   }
 
-  // 挑発値(初期1+付与分。0未満にはならない)。敵のメインターゲット抽選の重みになる
   function aggroOf(u) { return Math.max(0, 1 + vOf(u, 'aggro')); }
 
-  // 敵スキル駒の対象を全て引き直す。メインターゲットは生存中の味方から挑発値を重みにしたランダム(サブは従来通り)
   function autoTargetPieces(state, rng) {
     var r = rng || Math.random;
     var pieces = A(state.pieces);
