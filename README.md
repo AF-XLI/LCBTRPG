@@ -9,7 +9,7 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
 | `index.html`, `style.css`, `script.js` | メインページ(ハブ)。Googleログイン・ログアウトと、各ページへのリンク |
 | `config.js` | Firebase の接続情報(全ページ共通。ここだけ書き換えます) |
 | `battle/` | 戦闘システム(説明は [battle/README.md](battle/README.md)) |
-| `character/` | キャラクターシート(ハブ `character/` と、囚人ごとのページ `character/<囚人ID>/`。説明は下の「キャラクターシート」) |
+| `character/` | キャラクターシート(`character/index.html` 1枚で、ハブと囚人ごとのページを兼ねます。説明は下の「キャラクターシート」) |
 | `extraction/` | 抽出(人格のガチャ)。チケットを使って、未所持の人格を1つずつ引きます。GMはチケットと人格を付与できます |
 | `data/` | キャラクターシートのマスターデータ(JSON。`prisoners.json` と、囚人ごとのフォルダ `data/<囚人ID>/` に人格・E.G.O) |
 | `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理 / `bgm.js`: BGM / `loading.js`・`loading.css`: 読み込み中の黒画面とクルクル / `keywords.js`: 人格のキーワードの読み取りと判定) |
@@ -121,7 +121,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 
 ## キャラクターシート
 
-- 入口は `character/`(メインページの「キャラクターシート」から入れます)。囚人ごとのページは `character/<囚人ID>/index.html` です(試験用: `character/gray/`)。
+- 入口は `character/`(メインページの「キャラクターシート」から入れます)。ハブも囚人ごとのページも `character/index.html` 1枚で、アドレスの `#` 以降で切り替えます(ハブ `character/`、囚人ページ `character/#/<囚人ID>`、人格画面 `character/#/<囚人ID>/identities/<人格ID>`、人格一覧 `.../identities`、E.G.O一覧 `.../egos`。試験用: `character/#/gray`)。画面の切り替えではページを読み込み直さないので、BGMは途切れません。
 - 表示するデータは `data/` のJSONで、管理者がGitHubに置きます。プレイヤーは書き換えられません。
   - `data/prisoners.json`: 囚人(名前、立ち絵・アイコン・背景の画像、所持している人格・E.G.OのID、装備の初期値 `default`)
   - `data/<囚人ID>/identities.json`: その囚人の人格(名前、キーワード `keywords`、レアリティ、体力、速度、混乱区間 `thr`、耐性の倍率 `resist`、スキル1〜3、守備、パッシブ、サポートパッシブ)
@@ -129,7 +129,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
   - スキル・パッシブ・E.G.Oの効果は `effects` に1効果ずつ書きます(書き方は [battle/README.md](battle/README.md) の「効果(effects)」)。表示は効果から自動で作られ、戦闘システムも同じデータを読みます。
   - 人格・E.G.OのIDは囚人ごとに独立しているので、別の囚人に同じ名前の人格があっても、性能は囚人ごとに別に書けます。`prisoners.json` の `identities` `egos` `default` には、その囚人のフォルダ内のIDを書きます。
 - Firebase に保存するのは、説明・メモ・装備です(`characters/<囚人ID>`)。装備が未保存のときは、`data/prisoners.json` の `default` を表示します。
-- 囚人を増やすには、`data/prisoners.json` に追記して `data/<囚人ID>/` に人格・E.G.Oを置き、`character/<囚人ID>/index.html` を `character/gray/index.html` からコピーして `data-prisoner` を書き換えます。画像は `image/character/<囚人ID>/` に `portrait.png`(立ち絵)・`icon.png`(アイコン)・`bg.png`(立ち絵の背景)を置き、`data/prisoners.json` の `portrait` `icon` `background` で指定します。レアリティ画像は `image/icon/rarity/<レア>.png`(例: レア1は `1.png`)で、人格の `rarity` にその数字を書きます。
+- 囚人を増やすには、`data/prisoners.json` に追記して `data/<囚人ID>/` に人格・E.G.Oを置きます。ページの追加は不要で、`data/prisoners.json` に書いた囚人は、そのまま `character/#/<囚人ID>` で開けます。画像は `image/character/<囚人ID>/` に `portrait.png`(立ち絵)・`icon.png`(アイコン)・`bg.png`(立ち絵の背景)を置き、`data/prisoners.json` の `portrait` `icon` `background` で指定します。レアリティ画像は `image/icon/rarity/<レア>.png`(例: レア1は `1.png`)で、人格の `rarity` にその数字を書きます。
 - 閲覧は全員、説明・メモの編集は管理者と担当プレイヤー、装備の変更はこれに加えてGMが可能です(装備の変更画面は未実装)。
 - 今のところ、スマートフォンでは PC 版と同じ画面を横スクロールで表示します(見栄えの調整は後で行います)。
 
