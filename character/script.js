@@ -100,7 +100,6 @@ document.addEventListener('dragstart', function (ev) {
       img('image/icon/' + icon + '.png', 'status-icon') + '<span class="status-num">' + esc(value) + '</span></div>';
   }
 
-  // 人格の立ち絵: stageImage=立ち絵と背景が1枚 / portrait=立ち絵のみ(背景は囚人の背景) / 囚人の既定人格は囚人の立ち絵 / それ以外はプレースホルダー
   function identityArt(p, id, identity) {
     if (identity && identity.stageImage) {
       return { kind: 'stage', src: identity.stageImage, layout: identity };
@@ -219,7 +218,6 @@ document.addEventListener('dragstart', function (ev) {
     return state.roles.admin || state.roles.gm || state.roles.player;
   }
 
-  // 囚人ページ内のリンク用(#/<囚人ID>/<画面>)
   function hashFor(sub) {
     return '#/' + charId + (sub ? '/' + sub : '');
   }
@@ -731,15 +729,12 @@ document.addEventListener('dragstart', function (ev) {
     });
   }
 
-  // 画面を描いたあと、画像が読み込み終わってからLoadingを消す
   function render() {
     var drawn = renderView();
     if (drawn && root.LC_LOADING) { root.LC_LOADING.doneAfterImages(appEl); }
   }
 
-  // 描画した場合は true(装備の読み込み待ちなどで描画しなかった場合は false)
   function renderView() {
-    // 保存済みの装備を読み込むまでは描画しない(既定の人格が一瞬映るのを防ぐ)
     if (state.view === 'hub' && !charId) {
       appEl.innerHTML = hubHtml();
       return true;
@@ -966,7 +961,6 @@ document.addEventListener('dragstart', function (ev) {
     });
   }
 
-  // 表示中の囚人のデータを購読する(囚人を切り替えるときは前の購読を外す)
   function attachRef() {
     if (state.ref) { state.ref.off(); state.ref = null; }
     if (!state.db || !charId) { return; }
@@ -1057,7 +1051,6 @@ document.addEventListener('dragstart', function (ev) {
         render();
         attachRef();
         if (state.db && state.user) { onUser(state.db, state.user); }
-        // 通信が遅い・途切れている場合でも、画面が空のままにならないようにする
         setTimeout(function () {
           if (token === loadToken && state.waiting) {
             state.waiting = false;
@@ -1068,7 +1061,6 @@ document.addEventListener('dragstart', function (ev) {
       .catch(function (e) { if (token === loadToken) { showError(e.message); } });
   }
 
-  // アドレスの # 以降(#/<囚人ID>/<画面>)に合わせて表示を切り替える。ページは読み込み直さない
   function applyRoute() {
     var id = (location.hash || '').replace(/^#\/?/, '').split('/')[0];
     if (!id) {
