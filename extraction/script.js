@@ -150,7 +150,6 @@
     return '<span class="ex-rarity"><img alt="" src="../image/icon/rarity/' + esc(r) + '.png" onerror="this.remove()"><span>レア' + esc(r) + '</span></span>';
   }
 
-  // 人格カードの立ち絵(キャラクターシートの人格カードと同じ規則): stageImage=立ち絵と背景が1枚 / portrait=立ち絵のみ(背景は囚人の背景) / どちらも無ければプレースホルダー
   function cardArtHtml(pid, o) {
     var p = data.prisoners[pid] || {};
     var cls = 'ex-card-img';
@@ -188,7 +187,6 @@
       (extra ? '<span class="ex-card-extra">' + extra + '</span>' : '') + '</span>';
   }
 
-  // 描画後、画面内の画像(背景画像を含む)が読み込み終わってからLoadingを消す(最大5秒待つ)
   function finishLoading() {
     if (!root.LC_LOADING) { return; }
     var urls = [];
@@ -213,10 +211,6 @@
     if (root.LC_LOADING) { root.LC_LOADING.done(); }
     app.innerHTML = '<h1 class="ex-title">抽出</h1><p class="ex-note">' + esc(text) + '</p>' +
       '<a class="ex-link" href="../">メインページへ戻る</a>';
-  }
-
-  function ticketIcon() {
-    return '<span class="ex-ticket-icon" aria-hidden="true"></span>';
   }
 
   function railHtml(pid) {
@@ -314,7 +308,6 @@
     centerArt();
   }
 
-  // 立ち絵の上半身(画像の高さの20〜50%)の横方向の重心を測り、枠の中央に被写体が来るように補正する
   var centers = {};
 
   function measureCenter(src, done) {
