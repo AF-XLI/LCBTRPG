@@ -18,9 +18,12 @@
     });
   }
 
+  function loaded() { if (root.LC_LOADING) { root.LC_LOADING.done(); } }
+
   function show(id, on) { $(id).hidden = !on; }
 
   function render(user) {
+    loaded();
     var logged = !!(user && !user.isAnonymous);
     show('hubLogin', !logged);
     show('hubLogout', logged);
@@ -61,6 +64,7 @@
   function init() {
     if (!usable) {
       $('hubState').textContent = 'Firebase が未設定(または認証なし)のため、ローカルモードです。ログインは不要で、戦闘システムへそのまま進めます。';
+      loaded();
       return;
     }
     var base = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VERSION + '/';
@@ -82,7 +86,7 @@
           if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t); }
         });
       })
-      .catch(function (e) { $('hubState').textContent = '読み込めませんでした。' + e.message; });
+      .catch(function (e) { $('hubState').textContent = '読み込めませんでした。' + e.message; loaded(); });
   }
 
   init();
