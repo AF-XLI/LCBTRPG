@@ -1,7 +1,6 @@
 (function (root) {
   'use strict';
 
-  // 人格のキーワードは文字列、または打消し線つきの { "text": "W社", "strike": true }。打消し線は見た目だけで、判定には影響しない
   function list(identity) {
     var src = identity && Array.isArray(identity.keywords) ? identity.keywords : [];
     var out = [];
