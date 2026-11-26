@@ -41,7 +41,7 @@
     return null;
   }
   function saveMe() {
-    try { sessionStorage.setItem('lc-me', JSON.stringify(me)); } catch (e) { /* 保存できなくても動作は続ける */ }
+    try { sessionStorage.setItem('lc-me', JSON.stringify(me)); } catch (e) {}
   }
 
   function rng() { return Math.random(); }
@@ -387,7 +387,7 @@
     leave: function () {
       if (store) { store.close(); }
       store = null;
-      try { sessionStorage.removeItem('lc-me'); } catch (e) { /* 無視 */ }
+      try { sessionStorage.removeItem('lc-me'); } catch (e) {}
       location.href = location.pathname;
     },
     noop: function () {},
