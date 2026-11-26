@@ -7,7 +7,7 @@
 
   var PHASE_LABEL = { setup: '準備', enemy: '敵の行動決定', player: '味方の行動選択', process: '戦闘処理', roundEnd: 'ラウンド終了', over: '決着' };
   var ROLE_LABEL = { gm: 'GM', player: 'プレイヤー', observer: '観戦' };
-  var SUB_LABEL = { guard: '防御', evade: '回避' };
+  var SUB_LABEL = { guard: 'ガード', evade: '回避' };
 
   function esc(s) {
     return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -17,7 +17,7 @@
 
   function kindLabel(sk) {
     if (!sk) { return ''; }
-    if (sk.kind === 'defense') { return SUB_LABEL[sk.sub] || '防御'; }
+    if (sk.kind === 'defense') { return SUB_LABEL[sk.sub] || 'ガード'; }
     return L.KIND_LABEL[sk.kind] || '';
   }
 
@@ -37,11 +37,18 @@
     defPowerDown: 'defense-power-down.png',
     matchPowerUp: 'clash-power-up.png',
     matchPowerDown: 'clash-power-down.png',
+    defensiveStance: 'defensive-stance.png',
+    echoesOfTheManor: 'echoes-of-the-manor.png',
+    offenseLevelUp: 'offense-level-up.png',
+    offenseLevelDown: 'offense-level-down.png',
+    defenseLevelUp: 'defense-level-up.png',
+    defenseLevelDown: 'defense-level-down.png',
     coinStrong: 'plus-coin-boost.png',
     coinWeak: 'plus-coin-drop.png',
     quick: 'haste.png',
     weakDmg: 'weak-resist-dmg-boost.png',
     egoResUp: 'e.g.o-resource-amp.png',
+    chargeBarrier: 'charge-barrier.png',
     critDmgUp: 'crit-dmg-up.png'
   };
 
@@ -82,7 +89,7 @@
     keys.forEach(function (k) {
       var sp = L.statusParts(k);
       var def = L.STATUS[sp.base];
-      if (!def) { return; }
+      if (!def || sp.base === 'aggro') { return; }
       var s = st[k];
       var pw;
       var cnt = '';
@@ -96,20 +103,53 @@
       }
       var suf = sp.suf ? (L.SINS[sp.suf] ? L.SINS[sp.suf].label : (L.PHYS[sp.suf] || sp.suf)) : '';
       var inert = def.type === 'pc' && L.num(s.p, 0) <= 0 && !def.keepPotency;
-      out += statusHtml(statusIcon(sp.base, sp.suf), def.glyph, def.color, pw, cnt, inert, def.label + (suf ? '(' + suf + ')' : '') + extra + ': ' + def.text);
+      var vk = sp.base === 'vibration' && s.k ? L.VIB_KINDS[s.k] : null;
+      if (vk) { extra = ' - ' + vk.label; }
+      out += statusHtml(vk ? vk.icon : statusIcon(sp.base, sp.suf), vk ? vk.glyph : def.glyph, def.color, pw, cnt, inert, def.label + (suf ? '(' + suf + ')' : '') + extra + ': ' + (vk ? vk.text + '。' : '') + def.text);
     });
-    if (L.num(b && b.barrier, 0) > 0) {
-      out += statusHtml('barrier.png', '盾', 'rgb(110, 200, 235)', String(b.barrier), '', false, 'バリア: 追加の体力(ラウンド終了で消える)');
-    }
+    return out + pendingBadges(b);
+  }
+
+  // 次ターンに付与される予定の状態。アイコンだけを半透明にして、バッジ列の最後尾に並べる(挑発値は表示しない)
+  function pendingBadges(b) {
+    var nx = O(b && b.next);
+    var order = Object.keys(L.STATUS);
+    var keys = Object.keys(nx).sort(function (x, y) {
+      return order.indexOf(L.statusParts(x).base) - order.indexOf(L.statusParts(y).base);
+    });
+    var out = '';
+    keys.forEach(function (k) {
+      var sp = L.statusParts(k);
+      var def = L.STATUS[sp.base];
+      if (!def || sp.base === 'aggro') { return; }
+      var s = O(nx[k]);
+      var suf = sp.suf ? (L.SINS[sp.suf] ? L.SINS[sp.suf].label : (L.PHYS[sp.suf] || sp.suf)) : '';
+      var vk = sp.base === 'vibration' && s.k ? L.VIB_KINDS[s.k] : null;
+      var amount = def.type === 'pc' ? L.num(s.p, 0) + '/' + L.num(s.c, 0) : String(L.num(s.v, 0));
+      var title = '次ターン付与: ' + def.label + (suf ? '(' + suf + ')' : '') + (vk ? ' - ' + vk.label : '') + ' ' + amount;
+      out += '<span class="st pending" style="--c: ' + def.color + ';" title="' + esc(title) + '"><span class="st-ic"><b>' + esc(vk ? vk.glyph : def.glyph) + '</b>' +
+        '<img src="../image/icon/status/' + esc(vk ? vk.icon : statusIcon(sp.base, sp.suf)) + '" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>' +
+        '<span class="st-v">' + (def.type === 'pc' ? L.num(s.p, 0) : L.num(s.v, 0)) + '</span><span class="st-c">' + (def.type === 'pc' ? L.num(s.c, 0) : '') + '</span></span>';
+    });
     return out;
   }
 
-  function hpBar(info, lines, cls, curOnly) {
-    var ratio = info.max > 0 ? Math.max(0, Math.min(1, info.cur / info.max)) : 0;
+  // バリア(ガードなどのバリア+充電力場のバリア)。体力バーを水色で延長して表示する
+  function barrierOf(b) { return L.num(b && b.barrier, 0) + L.num(b && b.cbar, 0); }
+  // 体力+バリアが最大体力を超えたら、バー全体の長さは変えずに基準を伸ばして縮尺を合わせる
+  function barBase(info, bar) { return Math.max(info.max, info.cur + bar, 1); }
+  // バリアがあるあいだは、体力の数字の代わりにバリアの数値だけを水色で表示する
+  function hpNum(cur, bar) { return bar > 0 ? '<span class="shield-num">' + bar + '</span>' : String(cur); }
+
+  function hpBar(info, lines, cls, curOnly, bar) {
+    bar = bar || 0;
+    var base = barBase(info, bar);
+    var ratio = Math.max(0, Math.min(1, info.cur / base));
     var marks = A(lines).map(function (l) {
-      return '<i class="mark" style="left: ' + (Math.min(100, l / info.max * 100)).toFixed(1) + '%;"></i>';
+      return '<i class="mark" style="left: ' + (Math.min(100, l / base * 100)).toFixed(1) + '%;"></i>';
     }).join('');
-    return '<div class="bar ' + (cls || '') + '"><div class="fill" style="width: ' + (ratio * 100).toFixed(1) + '%;"></div>' + marks + '<span class="num">' + (curOnly ? info.cur : info.cur + '/' + info.max) + '</span></div>';
+    var shield = bar > 0 ? '<div class="shield" style="left: ' + (ratio * 100).toFixed(1) + '%; width: ' + (bar / base * 100).toFixed(1) + '%;"></div>' : '';
+    return '<div class="bar ' + (cls || '') + '"><div class="fill" style="width: ' + (ratio * 100).toFixed(1) + '%;"></div>' + shield + marks + '<span class="num">' + (curOnly ? info.cur : info.cur + '/' + info.max) + '</span></div>';
   }
 
   function spChip(b) {
@@ -118,9 +158,15 @@
     return '<span class="sp ' + cls + '" title="精神力 / 表の確率 ' + Math.round(L.headsProb(sp) * 100) + '%">' + (sp > 0 ? '+' : '') + sp + '</span>';
   }
 
+  // レベル(攻撃レベル・守備レベル)。個別に設定がなければ共通の既定レベル
+  function levelLine(unit, part, b) {
+    var li = L.levelInfo(unit, part, b);
+    return '<div class="line">レベル ' + li.lv + ' / 攻撃レベル ' + li.atk + ' / 防御レベル ' + li.def + '</div>';
+  }
+
   function staggerChip(b) {
     if (!b.stagger && !b.panic) { return ''; }
-    if (!b.stagger) { return '<span class="stag">パニック</span>'; }
+    if (!b.stagger) { return '<span class="stag">パニック' + (b.panic && b.panic.echo ? '(邸宅の木霊)' : '') + '</span>'; }
     return '<span class="stag">混乱' + (b.stagger.level > 1 ? ' Lv' + b.stagger.level : '') + '</span>';
   }
 
@@ -151,8 +197,8 @@
     var g = L.getB(S, { u: p.u, p: p.p });
     if (!g) { return ''; }
     var info = L.hpInfo(g.unit, g.part);
-    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3><div class="line">' + (g.part && g.unit.kind === 'abnormality' ? '耐久' : '体力') + '</div>' + hpBar(info, g.b.lines, '', g.unit.side === 'enemy') +
-      '<div class="line">' + (g.b.noSp ? '' : '精神力 ' + spChip(g.b)) + staggerChip(g.b) + '</div><div class="badges">' + badges(g.b) + '</div>' +
+    var html = '<h3>' + esc(L.nameOf(S, g.ref)) + '</h3><div class="line">' + (g.part && g.unit.kind === 'abnormality' ? '耐久' : '体力') + '</div>' + hpBar(info, g.b.lines, '', g.unit.side === 'enemy', barrierOf(g.b)) +
+      '<div class="line">' + (g.b.noSp ? '' : '精神力 ' + spChip(g.b)) + staggerChip(g.b) + '</div>' + levelLine(g.unit, g.part, g.b) + '<div class="badges">' + badges(g.b) + '</div>' +
       resistTable(g.b);
     if (g.unit.kind === 'abnormality') { html += '<p class="note">全体の体力 ' + g.unit.hp + '</p>'; }
     var skills = O(g.b.skills);
@@ -166,8 +212,8 @@
   function unitPopup(S, id) {
     var u = S.units[id];
     if (!u) { return ''; }
-    var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '', u.side === 'enemy') +
-      '<div class="line">精神力 ' + spChip(u) + ' 速度 ' + L.num(u.spd, 0) + ' (' + u.speed[0] + '〜' + u.speed[1] + ')' + staggerChip(u) + '</div>' +
+    var html = '<h3>' + esc(u.name) + '</h3><div class="line">体力</div>' + hpBar(L.hpInfo(u), u.lines, '', u.side === 'enemy', barrierOf(u.side === 'ally' ? u : (u.kind === 'abnormality' ? null : u.parts && u.parts[0]))) +
+      '<div class="line">精神力 ' + spChip(u) + ' 速度 ' + L.num(u.spd, 0) + ' (' + u.speed[0] + '〜' + u.speed[1] + ')' + staggerChip(u) + '</div>' + levelLine(u, null, u) +
       '<div class="badges">' + badges(u, S) + '</div>' + resistTable(u);
     html += '<h4>スキル</h4>';
     [1, 2, 3, 0].forEach(function (n) { html += skillDetail(O(u.skills)[n]); });
@@ -223,7 +269,8 @@
       });
     });
     if (changes) { html += '<details class="more"><summary>敵スキルを手動で変更</summary>' + changes + '</details>'; }
-    html += '<button type="button" class="btn primary" data-act="gm-confirm">敵の行動を確定する</button>';
+    html += '<button type="button" class="btn" data-act="gm-auto-target"' + (any ? '' : ' disabled') + '>対象をオートで決定</button>' +
+      '<button type="button" class="btn primary" data-act="gm-confirm">敵の行動を確定する</button>';
     return html;
   }
 
@@ -422,14 +469,19 @@
     return s + '</svg>';
   }
 
-  function barRow(label, text, pct, color, labelColor, marks) {
+  function barRow(label, text, pct, color, labelColor, marks, shield) {
     var ticks = A(marks).map(function (m) { return '<i class="tick" style="left: ' + m.toFixed(1) + '%;"></i>'; }).join('');
+    var sh = shield ? '<div class="shield" style="left: ' + shield.left.toFixed(1) + '%; width: ' + shield.width.toFixed(1) + '%;"></div>' : '';
     return '<div class="bar-row"><div class="bar-label" style="color: ' + labelColor + ';"><span>' + label + '</span><span>' + text + '</span></div>' +
-      '<div class="bar-track"><div class="bar-fill" style="width: ' + pct + '%; background: ' + color + ';"></div>' + ticks + '</div></div>';
+      '<div class="bar-track"><div class="bar-fill" style="width: ' + pct + '%; background: ' + color + ';"></div>' + sh + ticks + '</div></div>';
   }
-  function hpRow(label, info, lines, labelColor) {
-    var marks = A(lines).map(function (l) { return info.max > 0 ? Math.min(100, l / info.max * 100) : 0; });
-    return barRow(label, String(info.cur), pctOf(info.cur, info.max), C.red, labelColor || C.label, marks);
+  function hpRow(label, info, lines, labelColor, bar) {
+    bar = bar || 0;
+    var base = barBase(info, bar);
+    var marks = A(lines).map(function (l) { return info.max > 0 ? Math.min(100, l / base * 100) : 0; });
+    if (!(bar > 0)) { return barRow(label, String(info.cur), pctOf(info.cur, info.max), C.red, labelColor || C.label, marks); }
+    var fill = Math.max(0, Math.min(100, info.cur / base * 100));
+    return barRow(label, hpNum(info.cur, bar), fill.toFixed(1), C.red, labelColor || C.label, marks, { left: fill, width: bar / base * 100 });
   }
   function spRow(label, sp, labelColor) {
     var v = L.num(sp, 0);
@@ -445,7 +497,9 @@
 
   function mergedBadges(parts) {
     var total = {};
+    var nx = {};
     A(parts).forEach(function (p) {
+      Object.keys(O(p.next)).forEach(function (k) { nx[k] = O(p.next)[k]; });
       var st = O(p.st);
       Object.keys(st).forEach(function (k) {
         var t = total[k] || (total[k] = {});
@@ -454,7 +508,7 @@
         });
       });
     });
-    return badges({ st: total });
+    return badges({ st: total, next: nx });
   }
 
   function physIcon(sk) {
@@ -547,7 +601,7 @@
     var stag = '';
     if (multi && pi !== null) {
       var part = u.parts[pi];
-      bars = u.spShared ? '<div class="e-hp">' + hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + spDot(u.sp) + '</div>' : hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold) + (part.noSp ? '' : spRow('精神力', part.sp, C.gold));
+      bars = u.spShared ? '<div class="e-hp">' + hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold, barrierOf(part)) + spDot(u.sp) + '</div>' : hpRow(esc(part.name) + ' 耐久', L.hpInfo(u, part), part.lines, C.gold, barrierOf(part)) + (part.noSp ? '' : spRow('精神力', part.sp, C.gold));
       bad = badges(part);
       act = ' data-act="info-part" data-ref="' + esc(u.id + '|' + pi) + '"';
       stag = staggerChip(part);
@@ -556,7 +610,7 @@
       bad = mergedBadges(u.parts);
     } else {
       var p0 = u.parts[0];
-      bars = '<div class="e-hp">' + hpRow('体力', L.hpInfo(u), p0.lines) + (p0.noSp ? '' : spDot(p0.sp)) + '</div>';
+      bars = '<div class="e-hp">' + hpRow('体力', L.hpInfo(u), p0.lines, undefined, barrierOf(p0)) + (p0.noSp ? '' : spDot(p0.sp)) + '</div>';
       bad = badges(p0);
       act = ' data-act="info-part" data-ref="' + esc(u.id + '|0') + '"';
       stag = staggerChip(p0);
@@ -640,7 +694,7 @@
   var HEP = makeHep(38.7);
   var HEP_OUT = makeHep(46).outer;
 
-  function hepRing(pct, marks) {
+  function hepRing(pct, marks, shield) {
     var ticks = A(marks).map(function (m) {
       var q = HEP.at(m / 100);
       return '<line x1="' + (q.x - q.nx * 5.2).toFixed(2) + '" y1="' + (q.y - q.ny * 5.2).toFixed(2) + '" x2="' + (q.x + q.nx * 5.2).toFixed(2) + '" y2="' + (q.y + q.ny * 5.2).toFixed(2) + '" stroke="rgb(230, 180, 50)" stroke-width="1.4"/>';
@@ -649,6 +703,7 @@
       '<path d="' + HEP_OUT + '" fill="rgb(26, 16, 16)" stroke="rgb(140, 140, 140)" stroke-width="3.6" stroke-linejoin="miter"/>' +
       '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(70, 46, 44)" stroke-width="9.5" stroke-linejoin="miter"/>' +
       '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(232, 104, 96)" stroke-width="9.5" stroke-linejoin="miter" stroke-dasharray="' + pct.toFixed(2) + ' 100"/>' +
+      (shield > 0 ? '<path d="' + HEP.d + '" pathLength="100" fill="none" stroke="rgb(110, 200, 235)" stroke-width="9.5" stroke-linejoin="miter" stroke-dasharray="' + shield.toFixed(2) + ' 100" stroke-dashoffset="' + (-pct).toFixed(2) + '"/>' : '') +
       ticks + '</svg>';
   }
 
@@ -697,8 +752,10 @@
 
   function allyColumn(S, u, ctx) {
     var info = L.hpInfo(u);
-    var pct = pctOf(info.cur, info.max);
-    var marks = A(u.lines).map(function (l) { return info.max > 0 ? Math.min(100, l / info.max * 100) : 0; });
+    var bar = barrierOf(u);
+    var base = barBase(info, bar);
+    var pct = bar > 0 ? Math.max(0, Math.min(100, info.cur / base * 100)) : pctOf(info.cur, info.max);
+    var marks = A(u.lines).map(function (l) { return info.max > 0 ? Math.min(100, l / base * 100) : 0; });
     var circle = spCircle(u.sp);
     var ch = u.choice;
     var showPiece = S.phase !== 'setup' && S.phase !== 'over';
@@ -720,8 +777,10 @@
     if (re && re.kind) {
       reso = '<span class="p-reso' + (re.kind === 'full' ? ' full' : '') + '" style="--reso: ' + sinColor(re.sin) + ';">' + (re.kind === 'full' ? '完全共鳴' : esc(L.SINS[re.sin].label) + '共鳴') + '</span>';
     }
+    var aggro = showPiece && !u.dead ? L.aggroOf(u) : 0;
+    var aggroHtml = aggro > 1 ? '<span class="a-aggro" title="挑発値: 敵に狙われやすくなる"><span class="st-ic"><b>挑</b><img src="../image/icon/status/' + esc(statusIcon('aggro')) + '" alt="" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span><span class="a-aggro-v">' + aggro + '</span></span>' : '';
     if (showPiece) {
-      piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' +
+      piece = '<button type="button" class="' + pieceCls + '" data-act="ally-piece" data-id="' + esc(u.id) + '">' + aggroHtml +
         '<span class="p-frame">' + frameImg(sk, kind, kind === 'stagger') + reso + '</span>' +
         '<span class="p-sub">' + esc(sub) + '</span></button>';
     }
@@ -730,9 +789,9 @@
     return '<div class="ally' + (ctx.me && ctx.me.unitId === u.id ? ' mine' : '') + (u.dead ? ' dead' : '') + '" data-tok="' + esc(u.id) + '">' +
       piece +
       '<span class="a-spd" title="速度">' + spd + '</span>' +
-      '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '">' + hepRing(pct, marks) + '<span class="a-face">' + face + '</span>' +
+      '<div class="a-ring" data-act="info-unit" data-id="' + esc(u.id) + '">' + hepRing(pct, marks, bar > 0 ? bar / base * 100 : 0) + '<span class="a-face">' + face + '</span>' +
       '<span class="a-sp" style="background: ' + circle.bg + '; color: ' + circle.fg + ';" title="精神力 / 表の確率 ' + Math.round(L.headsProb(L.num(u.sp, 0)) * 100) + '%">' + L.num(u.sp, 0) + '</span>' +
-      '<span class="a-hp" title="体力">' + info.cur + '</span></div>' +
+      '<span class="a-hp" title="' + (bar > 0 ? 'バリア' : '体力') + '">' + hpNum(info.cur, bar) + '</span></div>' +
       '<span class="a-name" data-act="info-unit" data-id="' + esc(u.id) + '">' + esc(u.name) + '</span>' +
       '<div class="a-badges">' + badges(u, S) + '</div></div>';
   }
@@ -804,16 +863,18 @@
 
   function viewPanel() { return ''; }
 
-  function skillRow(S, u, key, card, ch, editable) {
+  function skillRow(S, u, key, card, ch, editable, act) {
     var sk = card && card.skill;
-    var active = ch.sel === key;
+    var swapRow = !!(card && card.swap);
+    var active = swapRow ? (ch.sel === card.swap.kind && (card.swap.kind === 'def' || (ch.ego && ch.ego.fromSwap))) : act ? false : ch.sel === key;
+    if (act && u.swap && u.swap.kind === 'def' && key === 'def') { active = true; }
     var sin = sk && L.SINS[sk.sin] ? L.SINS[sk.sin].label : '';
     var phys = sk ? L.PHYS[sk.phys] || '' : '';
     var kind = sk && sk.kind !== 'attack' ? kindLabel(sk) : '';
     var sub = [kind, phys, sin].filter(function (x) { return x; }).join('・');
     var nums = sk ? '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + (L.num(sk.weight, 1) >= 2 ? ' ／ 広域(加重値' + L.num(sk.weight, 1) + ')' : '') : '';
-    var no = key === 'def' ? 'スキル0' : 'スキル' + (card && card.num ? card.num : '');
-    return '<button type="button" class="srow' + (active ? ' picked' : '') + '" data-act="sel" data-sel="' + key + '"' + (editable && sk ? '' : ' disabled') + ' style="--c: ' + sinColor(sk && sk.sin) + ';">' +
+    var no = swapRow ? '変更中' : key === 'def' ? 'スキル0' : 'スキル' + (card && card.num ? card.num : '');
+    return '<button type="button" class="srow' + (active ? ' picked' : '') + '" data-act="' + (act || 'sel') + '" data-sel="' + key + '"' + (editable && sk && !(act && active) ? '' : ' disabled') + ' style="--c: ' + sinColor(sk && sk.sin) + ';">' +
       '<span class="s-top"><b>' + esc(sk ? sk.name : '-') + '</b><span class="s-no">' + esc(no) + '</span>' + (active ? '<span class="s-pick">選択中</span>' : '') + '</span>' +
       '<span class="s-sub">' + esc(sub) + (sub && nums ? ' ／ ' : '') + esc(nums) + '</span>' +
       (active && sk && sk.text ? '<span class="s-text">' + esc(sk.text).replace(/\n/g, '<br>') + '</span>' : '') + '</button>';
@@ -826,17 +887,18 @@
     if (c.sp) { parts.push('精神 -' + c.sp); }
     return parts.length ? parts.join(' ') : 'コストなし';
   }
-  function egoRow(S, u, ego, i, mode, ch) {
+  function egoRow(S, u, ego, i, mode, ch, act) {
     var sk = L.egoSkillOf(ego, mode);
-    var back = ch.sel === 'ego' && ch.ego && ch.ego.paid && !ch.egoUsed ? ch.ego.paid : {};
+    var sw = u.swap && u.swap.kind === 'ego' ? u.swap : null;
+    var back = act ? (sw && sw.paid ? sw.paid : {}) : ch.sel === 'ego' && ch.ego && ch.ego.paid && !ch.egoUsed ? ch.ego.paid : {};
     var shown = L.egoErodeMode(S, ego, mode, back);
     var cost = L.egoCost(ego, shown);
-    var active = ch.sel === 'ego' && ch.ego && ch.ego.i === i && (ch.ego.mode === mode || ch.ego.mode === shown);
+    var active = act ? !!(sw && sw.i === i && (sw.mode === mode || sw.mode === shown)) : ch.sel === 'ego' && ch.ego && ch.ego.i === i && (ch.ego.mode === mode || ch.ego.mode === shown);
     var ok = !u.erosion && L.canPayRes(S, cost.res, back);
     var tags = (sk.blind ? '敵味方識別不可' : '');
     var sub = [L.PHYS[sk.phys] || '', L.SINS[sk.sin] ? L.SINS[sk.sin].label : '', tags].filter(function (x) { return x; }).join('・');
     var nums = '基礎' + L.num(sk.base, 0) + ' ＋ コイン ' + A(sk.coins).map(function (c) { return '+' + c; }).join(' ') + (L.num(sk.weight, 1) >= 2 ? ' ／ 広域(加重値' + L.num(sk.weight, 1) + ')' : '');
-    return '<button type="button" class="srow ego' + (active ? ' picked' : '') + '" data-act="sel" data-sel="ego:' + i + ':' + mode + '"' + (ok ? '' : ' disabled') + ' style="--c: ' + sinColor(sk.sin) + ';">' +
+    return '<button type="button" class="srow ego' + (active ? ' picked' : '') + '" data-act="' + (act || 'sel') + '" data-sel="ego:' + i + ':' + mode + '"' + (ok && !(act && active) ? '' : ' disabled') + ' style="--c: ' + sinColor(sk.sin) + ';">' +
       '<span class="s-top"><b>' + esc(sk.name || ego.name || '') + '</b><span class="s-no">E.G.O ' + esc((ego.rank || '').toUpperCase()) + '・' + EGO_MODE_LABEL[mode] + '</span>' + (active ? '<span class="s-pick">選択中</span>' : '') + '</span>' +
       '<span class="s-sub">' + esc(sub) + (sub ? ' ／ ' : '') + esc(nums) + '</span>' +
       '<span class="s-sub">コスト: ' + esc(costText(cost)) + '</span>' +
@@ -850,12 +912,25 @@
     var hand = L.handOf(S, u);
     var ch = u.choice || {};
     var html = '<h3><span>' + esc(u.name) + ' のスキル</span><span class="h-spd">速度 ' + L.num(u.spd, 0) + '</span></h3>';
-    html += skillRow(S, u, 'c0', hand.sel[0], ch, true) + skillRow(S, u, 'c1', hand.sel[1], ch, true) + skillRow(S, u, 'def', hand.def, ch, true);
-    A(u.egos).forEach(function (ego, i) {
-      ['awaken', 'erode'].forEach(function (mode) {
-        if (L.egoModeOk(ego, mode) && mode !== 'forced') { html += egoRow(S, u, ego, i, mode, ch); }
+    var sw = u.swap;
+    var canRevert = !!sw && (sw.kind === 'def' || sw.round === S.round);
+    var changing = !!ctx.changeMode && !u.erosion;
+    if (changing) {
+      html += '<p class="note">変更するスキルを選んでください。</p>';
+      html += skillRow(S, u, 'def', hand.def, ch, true, 'chg');
+      A(u.egos).forEach(function (ego, i) {
+        ['awaken', 'erode'].forEach(function (mode) {
+          if (L.egoModeOk(ego, mode) && mode !== 'forced') { html += egoRow(S, u, ego, i, mode, ch, 'chg'); }
+        });
       });
-    });
+      html += '<button type="button" class="btn" data-act="skill-change">変更をやめる</button>';
+    } else {
+      html += skillRow(S, u, sw ? 'swap' : 'c0', hand.sel[0], ch, true) + skillRow(S, u, 'c1', hand.sel[1], ch, true);
+      if (!u.erosion) {
+        html += canRevert ? '<button type="button" class="btn" data-act="skill-revert">変更を戻す</button>' : '';
+        html += '<button type="button" class="btn" data-act="skill-change">スキルを変更する</button>';
+      }
+    }
     if (u.erosion) { html += '<p class="note">E.G.O侵食中のため、スキルは変更できません。</p>'; }
     if (hand.preview && hand.preview.skill) {
       html += '<p class="note">次のカード: ' + esc(hand.preview.skill.name) + ' (スキル' + hand.preview.num + ')</p>';
