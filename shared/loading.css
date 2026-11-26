@@ -32,9 +32,7 @@
 .lc-loading-text {
   padding-inline-start: 0.3em;
   color: rgb(237, 205, 164);
-  font-family:
-    "Noto Sans JP",
-    sans-serif;
+  font-family: "Noto Sans JP", sans-serif;
   font-size: 12px;
   letter-spacing: 0.3em;
   animation: lc-loading-pulse 1.4s ease-in-out infinite;
