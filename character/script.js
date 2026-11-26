@@ -731,18 +731,23 @@ document.addEventListener('dragstart', function (ev) {
     });
   }
 
+  // 画面を描いたあと、画像が読み込み終わってからLoadingを消す
   function render() {
+    var drawn = renderView();
+    if (drawn && root.LC_LOADING) { root.LC_LOADING.doneAfterImages(appEl); }
+  }
+
+  // 描画した場合は true(装備の読み込み待ちなどで描画しなかった場合は false)
+  function renderView() {
     // 保存済みの装備を読み込むまでは描画しない(既定の人格が一瞬映るのを防ぐ)
     if (state.view === 'hub' && !charId) {
-      if (root.LC_LOADING) { root.LC_LOADING.done(); }
       appEl.innerHTML = hubHtml();
-      return;
+      return true;
     }
-    if (state.waiting || !state.prisoner) { return; }
-    if (root.LC_LOADING) { root.LC_LOADING.done(); }
+    if (state.waiting || !state.prisoner) { return false; }
     if (state.view === 'list' || state.view === 'egolist') {
       appEl.innerHTML = listHtml();
-      return;
+      return true;
     }
     var p = state.prisoner;
     var eq = equipment();
@@ -843,6 +848,7 @@ document.addEventListener('dragstart', function (ev) {
       '</main>' +
       '</div>' +
       confirmHtml();
+    return true;
   }
 
   function keywordsHtml(identity) {
@@ -1033,6 +1039,7 @@ document.addEventListener('dragstart', function (ev) {
 
   function loadPrisoner(id) {
     var token = ++loadToken;
+    if (root.LC_LOADING) { root.LC_LOADING.show(); }
     leavePrisoner();
     charId = id;
     state.identities = {};
