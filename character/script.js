@@ -47,14 +47,17 @@ document.addEventListener('dragstart', function (ev) {
     '</svg>';
 
   var body = document.body;
-  var charId = body.getAttribute('data-prisoner');
-  var base = body.getAttribute('data-base') || '../../';
+  var charId = '';
+  var base = '../';
+  var allPrisoners = null;
   var appEl = document.getElementById('app');
   var cfg = root.LC_FIREBASE_CONFIG;
   var firebaseUsable = !!(cfg && cfg.apiKey && cfg.databaseURL);
 
   var state = {
     prisoner: null,
+    user: null,
+    ref: null,
     identities: {},
     egos: {},
     seasons: {},
@@ -216,12 +219,20 @@ document.addEventListener('dragstart', function (ev) {
     return state.roles.admin || state.roles.gm || state.roles.player;
   }
 
+  // 囚人ページ内のリンク用(#/<囚人ID>/<画面>)
+  function hashFor(sub) {
+    return '#/' + charId + (sub ? '/' + sub : '');
+  }
+
   function route() {
-    var parts = (location.hash || '').replace(/^#\/?/, '').split('/');
+    var all = (location.hash || '').replace(/^#\/?/, '').split('/');
+    var parts = all.slice(1);
     var p = state.prisoner;
     state.detail = '';
     state.confirm = '';
-    if (parts[0] === 'identities' && parts[1] && p && p.identities.indexOf(parts[1]) >= 0 && isUsable(parts[1])) {
+    if (!all[0]) {
+      state.view = 'hub';
+    } else if (parts[0] === 'identities' && parts[1] && p && p.identities.indexOf(parts[1]) >= 0 && isUsable(parts[1])) {
       state.view = 'persona';
       state.personaId = parts[1];
       state.sub = 0;
@@ -603,7 +614,7 @@ document.addEventListener('dragstart', function (ev) {
   function cardHtml(id, identity, selected) {
     var det = state.detail;
     var art = identityArt(state.prisoner, id, identity);
-    return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + (isOwned(id) ? '' : ' is-lock') + '" href="#identities/' + esc(id) + '" aria-label="' + esc(identity.name) + '">' +
+    return '<a class="pl-card' + (selected ? ' is-sel' : '') + (det ? ' is-det' : '') + (isOwned(id) ? '' : ' is-lock') + '" href="' + hashFor('identities/' + id) + '" aria-label="' + esc(identity.name) + '">' +
       '<span class="pl-card-bg"></span>' +
       '<span ' + artBgAttr(art, 'pl-card-art') + '>' + artImgHtml(art, identity, 'pl-card-img') + '</span>' +
       img('image/frame/' + (identity.rarity || 1) + '.png', 'pl-card-frame') +
@@ -667,11 +678,11 @@ document.addEventListener('dragstart', function (ev) {
     return '<div class="pl">' +
       img(p.icon, 'pl-logo', '') +
       '<div class="pl-bar"></div>' +
-      '<a class="pl-back" href="#" aria-label="囚人ページへ戻る">' + ICON_BACK + '</a>' +
+      '<a class="pl-back" href="' + hashFor('') + '" aria-label="囚人ページへ戻る">' + ICON_BACK + '</a>' +
       '<h1 class="pl-title">' + (isEgo ? 'E.G.O' : '人格') + ': ' + esc(p.name) + '</h1>' +
       '<div class="pl-tabs">' +
-      '<a class="pl-bev pl-tab" href="#identities" aria-current="' + (!isEgo) + '">人格</a>' +
-      '<a class="pl-bev pl-tab" href="#egos" aria-current="' + isEgo + '">E.G.O</a>' +
+      '<a class="pl-bev pl-tab" href="' + hashFor('identities') + '" aria-current="' + (!isEgo) + '">人格</a>' +
+      '<a class="pl-bev pl-tab" href="' + hashFor('egos') + '" aria-current="' + isEgo + '">E.G.O</a>' +
       '</div>' +
       (isEgo ? '' : ownToggleHtml()) +
       '<div class="pl-ctl">' + (isEgo ? '' : detailCtlHtml()) + '</div>' +
@@ -712,7 +723,7 @@ document.addEventListener('dragstart', function (ev) {
       state.saving = false;
       state.status = '';
       state.confirm = '';
-      location.hash = '';
+      location.hash = hashFor('');
     }, function (e) {
       state.saving = false;
       state.status = '保存できませんでした。' + (e && e.message ? e.message : '');
@@ -722,7 +733,12 @@ document.addEventListener('dragstart', function (ev) {
 
   function render() {
     // 保存済みの装備を読み込むまでは描画しない(既定の人格が一瞬映るのを防ぐ)
-    if (state.waiting) { return; }
+    if (state.view === 'hub' && !charId) {
+      if (root.LC_LOADING) { root.LC_LOADING.done(); }
+      appEl.innerHTML = hubHtml();
+      return;
+    }
+    if (state.waiting || !state.prisoner) { return; }
     if (root.LC_LOADING) { root.LC_LOADING.done(); }
     if (state.view === 'list' || state.view === 'egolist') {
       appEl.innerHTML = listHtml();
@@ -798,7 +814,7 @@ document.addEventListener('dragstart', function (ev) {
       '<div class="stage-shade" aria-hidden="true"></div>' +
       '<div class="stage-edge" aria-hidden="true"></div>' +
       '<nav class="side-nav" aria-label="補助機能">' +
-      '<a class="side-btn is-back" href="' + (isPersona ? '#identities' : esc(base + 'character/')) + '" aria-label="' + (isPersona ? '人格一覧へ戻る' : 'ハブへ戻る') + '">' + ICON_BACK + '</a>' +
+      '<a class="side-btn is-back" href="' + (isPersona ? hashFor('identities') : '#/') + '" aria-label="' + (isPersona ? '人格一覧へ戻る' : 'ハブへ戻る') + '">' + ICON_BACK + '</a>' +
       sideBtn('説明', 'desc', ICON_DESC) +
       sideBtn('メモ', 'memo', ICON_MEMO) +
       '</nav>' +
@@ -819,7 +835,7 @@ document.addEventListener('dragstart', function (ev) {
       (isEgoTab && curEgo && curEgo.sp != null
         ? '<div class="head-sp">' + img('image/icon/sanity.png', 'head-sp-icon', '') + '<span>精神消耗量</span><b>' + esc(curEgo.sp) + '</b></div>'
         : '') +
-      (isPersona ? equipBtnHtml(eq) : '<a class="persona-btn" href="' + (isEgoTab ? '#egos' : '#identities') + '">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>') +
+      (isPersona ? equipBtnHtml(eq) : '<a class="persona-btn" href="' + (isEgoTab ? hashFor('egos') : hashFor('identities')) + '">' + (isEgoTab ? 'E.G.O一覧' : '人格一覧') + '</a>') +
       '</div></div>' +
       modeNav +
 
@@ -925,18 +941,41 @@ document.addEventListener('dragstart', function (ev) {
   }
 
   function onUser(db, user) {
+    state.user = user || null;
+    if (!charId) { return; }
     if (!user || user.isAnonymous) {
       state.roles = { admin: false, gm: false, player: false };
       if (!state.editing) { render(); }
       return;
     }
+    var forId = charId;
     Promise.all([
       readRole(db, 'admin/' + user.uid, function (v) { return v === true; }),
       readRole(db, 'gm/' + user.uid, function (v) { return v === true; }),
-      readRole(db, 'player/' + user.uid, function (v) { return v === charId; })
+      readRole(db, 'player/' + user.uid, function (v) { return v === forId; })
     ]).then(function (r) {
+      if (forId !== charId) { return; }
       state.roles = { admin: r[0], gm: r[1], player: r[2] };
       if (!state.editing) { render(); }
+    });
+  }
+
+  // 表示中の囚人のデータを購読する(囚人を切り替えるときは前の購読を外す)
+  function attachRef() {
+    if (state.ref) { state.ref.off(); state.ref = null; }
+    if (!state.db || !charId) { return; }
+    var forId = charId;
+    state.ref = state.db.ref('characters/' + forId);
+    state.ref.on('value', function (snap) {
+      if (forId !== charId) { return; }
+      state.remote = snap.val() || {};
+      state.waiting = false;
+      if (!state.editing) { render(); }
+    }, function (e) {
+      if (forId !== charId) { return; }
+      state.status = '保存済みのデータを読み込めませんでした。' + (e && e.message ? e.message : '');
+      state.waiting = false;
+      render();
     });
   }
 
@@ -951,15 +990,7 @@ document.addEventListener('dragstart', function (ev) {
         var app = fb.apps && fb.apps.length ? fb.apps[0] : fb.initializeApp(cfg);
         var db = fb.database(app);
         state.db = db;
-        db.ref('characters/' + charId).on('value', function (snap) {
-          state.remote = snap.val() || {};
-          state.waiting = false;
-          if (!state.editing) { render(); }
-        }, function (e) {
-          state.status = '保存済みのデータを読み込めませんでした。' + (e && e.message ? e.message : '');
-          state.waiting = false;
-          render();
-        });
+        attachRef();
         fb.auth(app).onAuthStateChanged(function (user) { onUser(db, user); });
       })
       .catch(function (e) {
@@ -969,33 +1000,102 @@ document.addEventListener('dragstart', function (ev) {
       });
   }
 
-  function init() {
-    if (!charId) { showError('囚人が指定されていません。'); return; }
-    Promise.all([loadJson('data/prisoners.json'), loadJson('data/' + charId + '/identities.json'), loadJson('data/' + charId + '/egos.json'), loadJson('data/seasons.json').catch(function () { return {}; })])
+  function hubHtml() {
+    var h = '<div class="hub"><h1 class="hub-title">キャラクターシート</h1><ul class="hub-list">';
+    var ids = Object.keys(allPrisoners || {}).sort(function (a, b) {
+      var na = typeof allPrisoners[a].no === 'number' ? allPrisoners[a].no : Infinity;
+      var nb = typeof allPrisoners[b].no === 'number' ? allPrisoners[b].no : Infinity;
+      return na - nb;
+    });
+    ids.forEach(function (id) {
+      var p = allPrisoners[id];
+      h += '<li><a class="hub-card" href="#/' + esc(id) + '">' +
+        '<span class="hub-card-icon"><img alt="" src="' + esc(base + p.icon) + '"></span>' +
+        '<span class="hub-card-name">' + esc(p.name) + '</span></a></li>';
+    });
+    if (!ids.length) { h += '<li class="hub-note">囚人が登録されていません。</li>'; }
+    return h + '</ul><a class="hub-back" href="../">メインページへ戻る</a></div>';
+  }
+
+  var loadToken = 0;
+
+  function leavePrisoner() {
+    if (state.ref) { state.ref.off(); state.ref = null; }
+    charId = '';
+    state.prisoner = null;
+    state.remote = {};
+    state.roles = { admin: false, gm: false, player: false };
+    state.editing = false;
+    state.panel = '';
+    state.status = '';
+    state.waiting = false;
+  }
+
+  function loadPrisoner(id) {
+    var token = ++loadToken;
+    leavePrisoner();
+    charId = id;
+    state.identities = {};
+    state.egos = {};
+    state.waiting = firebaseUsable;
+    if (!allPrisoners[id]) { showError('囚人「' + id + '」のデータがありません。'); return; }
+    Promise.all([loadJson('data/' + id + '/identities.json'), loadJson('data/' + id + '/egos.json')])
       .then(function (r) {
-        state.prisoner = r[0][charId];
-        state.identities = r[1];
-        state.egos = r[2];
-        state.seasons = r[3] || {};
-        if (!state.prisoner) { throw new Error('囚人「' + charId + '」のデータがありません。'); }
+        if (token !== loadToken) { return; }
+        state.prisoner = allPrisoners[id];
+        state.identities = r[0];
+        state.egos = r[1];
         document.title = state.prisoner.name + ' | キャラクターシート | LCBTRPG';
-        appEl.addEventListener('click', onClick);
-        window.addEventListener('hashchange', function () {
-          route();
-          render();
-          window.scrollTo(0, 0);
-        });
-        state.waiting = firebaseUsable;
         route();
         render();
-        initFirebase();
+        attachRef();
+        if (state.db && state.user) { onUser(state.db, state.user); }
         // 通信が遅い・途切れている場合でも、画面が空のままにならないようにする
         setTimeout(function () {
-          if (state.waiting) {
+          if (token === loadToken && state.waiting) {
             state.waiting = false;
             render();
           }
         }, 4000);
+      })
+      .catch(function (e) { if (token === loadToken) { showError(e.message); } });
+  }
+
+  // アドレスの # 以降(#/<囚人ID>/<画面>)に合わせて表示を切り替える。ページは読み込み直さない
+  function applyRoute() {
+    var id = (location.hash || '').replace(/^#\/?/, '').split('/')[0];
+    if (!id) {
+      leavePrisoner();
+      loadToken += 1;
+      state.view = 'hub';
+      document.title = 'キャラクターシート | LCBTRPG';
+      render();
+      return;
+    }
+    if (id !== charId) {
+      loadPrisoner(id);
+      return;
+    }
+    if (!state.prisoner) { return; }
+    route();
+    render();
+  }
+
+  function init() {
+    loadJson('data/prisoners.json')
+      .then(function (all) {
+        allPrisoners = all;
+        return loadJson('data/seasons.json').catch(function () { return {}; });
+      })
+      .then(function (seasons) {
+        state.seasons = seasons || {};
+        appEl.addEventListener('click', onClick);
+        window.addEventListener('hashchange', function () {
+          applyRoute();
+          window.scrollTo(0, 0);
+        });
+        initFirebase();
+        applyRoute();
       })
       .catch(function (e) { showError(e.message); });
   }
