@@ -14,7 +14,6 @@
   el.innerHTML = '<div class="lc-loading-ring"></div><span class="lc-loading-text">LOADING</span>';
   document.documentElement.appendChild(el);
 
-  // 各ページが表示の準備を終えたときに呼ぶ。呼ばれなくても TIMEOUT_MS で消える
   function done() {
     if (finished) { return; }
     finished = true;
@@ -23,7 +22,6 @@
     removeTimer = setTimeout(function () { if (el.parentNode) { el.parentNode.removeChild(el); } }, FADE_MS);
   }
 
-  // ページ内で画面を切り替えるときなど、もう一度Loadingを出す
   function show() {
     if (!finished) { return; }
     finished = false;
@@ -34,7 +32,6 @@
     limitTimer = setTimeout(done, TIMEOUT_MS);
   }
 
-  // container内の画像(背景画像を含む)が読み込み終わってから消す。画像が来なくても IMAGE_WAIT_MS で消える
   function doneAfterImages(container) {
     if (finished) { return; }
     var pending = [];
