@@ -10,133 +10,119 @@
       "ルナリスカンパニー"
     ],
     "rarity": "1",
-    "hp": 225,
+    "hp": 250,
     "speed": [
-      3,
+      2,
       6
     ],
     "thr": [
-      70,
-      40
+      60,
+      30
     ],
     "resist": {
-      "slash": 0.5,
-      "pierce": 1,
-      "blunt": 2
+      "slash": 1,
+      "pierce": 2,
+      "blunt": 0.5
     },
     "skills": [
       {
         "tier": 1,
-        "sin": "gloom",
-        "type": "slash",
-        "name": "斬り下ろし",
-        "base": 4,
-        "coin": 6,
-        "coins": 1,
+        "sin": "gluttony",
+        "type": "blunt",
+        "name": "体制崩し",
+        "base": 3,
+        "coin": 3,
+        "coins": 2,
         "effects": [
           {
-            "coin": 1,
-            "timing": "hit",
+            "coin": 2,
+            "timing": "headsHit",
             "type": "grant",
-            "status": "bleed",
-            "power": 2
+            "status": "bind",
+            "power": 1,
+            "delay": "nextTurn",
+            "text": "次のターンに{bind}1を付与"
           }
         ]
       },
       {
         "tier": 2,
-        "sin": "lust",
-        "type": "pierce",
-        "name": "入り突き",
+        "sin": "envy",
+        "type": "blunt",
+        "name": "打ち倒し",
         "base": 4,
-        "coin": 4,
-        "coins": 2,
+        "coin": 10,
+        "coins": 1,
         "effects": [
           {
             "coin": 1,
-            "timing": "hit",
-            "type": "gain",
-            "status": "bleed",
-            "count": 2
-          },
-          {
-            "coin": 2,
-            "timing": "hit",
+            "timing": "headsHit",
             "type": "grant",
-            "status": "paralysis",
+            "status": "dmgDown",
             "power": 1,
-            "delay": "nextTurn"
+            "delay": "nextTurn",
+            "text": "次のターンに{dmgDown}1を付与"
           }
         ]
       },
       {
         "tier": 3,
-        "sin": "envy",
-        "type": "slash",
-        "name": "流斬り",
-        "base": 3,
-        "coin": 3,
-        "coins": 3,
+        "sin": "pride",
+        "type": "blunt",
+        "name": "打開",
+        "base": 7,
+        "coin": 12,
+        "coins": 1,
         "effects": [
           {
             "coin": 1,
-            "timing": "hit",
+            "timing": "headsHit",
             "type": "grant",
-            "status": "bleed",
-            "power": 2
-          },
-          {
-            "coin": 2,
-            "timing": "hit",
-            "type": "grant",
-            "status": "bleed",
-            "power": 2
-          },
-          {
-            "coin": 3,
-            "timing": "hit",
-            "type": "gain",
-            "status": "bleed",
-            "count": 3
+            "status": "atkPowerDown",
+            "power": 2,
+            "delay": "nextTurn",
+            "text": "次のターンに{atkPowerDown}2を付与"
           }
         ]
       }
     ],
     "passive": {
-      "name": "伴走",
-      "sin": "envy",
-      "count": 3,
+      "name": "状況分析",
+      "sin": "pride",
+      "count": 4,
       "effects": [
         {
-          "timing": "matchWin",
-          "type": "dmgBonus",
-          "percent": 10,
+          "timing": "battleStart",
           "timingLabel": false,
-          "text": "マッチ勝利時、ダメージ量 +10%"
+          "type": "matchPowerBonus",
+          "value": 1,
+          "winProbMax": 40,
+          "text": "勝率が不利であるマッチを進行時、マッチ威力 +1"
         }
       ]
     },
     "support": {
-      "name": "安否確認",
-      "sin": "lust",
+      "name": "アドバイス",
+      "sin": "gluttony",
       "count": 2,
       "resonance": true,
       "effects": [
         {
-          "type": "grant",
-          "target": "allAllies",
-          "status": "defPowerUp",
-          "power": 1,
-          "text": "全員の、守備スキルの最終威力 +1"
+          "timing": "battleStart",
+          "timingLabel": false,
+          "type": "spHealLowest",
+          "count": 1,
+          "amount": 5,
+          "text": "戦闘開始時、現在の精神力が最も低い味方1名の精神力が5回復"
         }
       ]
     },
     "defense": {
-      "sin": "envy",
-      "type": "guard",
-      "name": "ガード",
-      "base": 7,
-      "coin": 3,
+      "sin": "pride",
+      "type": "evade",
+      "name": "回避",
+      "base": 2,
+      "coin": 10,
       "coins": 1,
       "effects": []
     }
