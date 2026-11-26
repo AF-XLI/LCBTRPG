@@ -1008,9 +1008,7 @@ textarea {
 }
  
 .subtab.is-rank {
-  font-family:
-    "Noto Sans Hebrew",
-    var(--font-body);
+  font-family: "Noto Sans Hebrew", var(--font-body);
   font-size: 1.5rem;
 }
  
