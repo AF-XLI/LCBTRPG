@@ -6,7 +6,9 @@
       "LCB",
       "囚人"
     ],
-    "affiliation": "ルナリスカンパニー",
+    "keywords": [
+      "ルナリスカンパニー"
+    ],
     "rarity": "1",
     "hp": 250,
     "speed": [
