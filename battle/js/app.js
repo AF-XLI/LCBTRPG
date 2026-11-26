@@ -24,6 +24,7 @@
   var roster = [];
   var rosterSel = {};
   var retarget = false;
+  var changeMode = false;
   var gmPick = null;
   var scrollKey = '';
   var logOpen = false;
@@ -75,7 +76,7 @@
     var isGm = me.role === 'gm';
     var ctx = {
       me: me, mode: mode, conn: conn, auto: auto, arrowMode: arrowMode, manualTarget: manualTarget, pressed: pressed, canSetTarget: false, gmPick: gmPick,
-      canSeeEnemySpeed: isGm,
+      canSeeEnemySpeed: isGm, changeMode: changeMode,
       roster: roster, rosterSel: rosterSel,
       pairs: null, targeting: false, selectedPid: null
     };
@@ -410,7 +411,7 @@
       if (!blank) { popupState = { kind: 'piece', id: pid }; }
       render();
     },
-    'skill-list': function () { popupState = { kind: 'skill', id: me.unitId }; refreshPopup(); },
+    'skill-list': function () { changeMode = false; popupState = { kind: 'skill', id: me.unitId }; refreshPopup(); },
     'log-toggle': function () { logOpen = !logOpen; render(); },
     'gm-pick': function (el) {
       var pid = el.dataset.pid;
@@ -461,6 +462,19 @@
         commit(function (s) { L.selectChoice(s, id, key, Date.now()); });
       }
     },
+    'skill-change': function () { changeMode = !changeMode; refreshPopup(); },
+    'skill-revert': function () { changeMode = false; commit(function (s) { L.revertSkill(s, me.unitId); }); },
+    chg: function (el) {
+      var key = el.dataset.sel;
+      changeMode = false;
+      if (key.indexOf('ego:') === 0) {
+        var pp = key.split(':');
+        commit(function (s) { L.changeSkill(s, me.unitId, 'ego', { i: Number(pp[1]), mode: pp[2] }); });
+      } else {
+        commit(function (s) { L.changeSkill(s, me.unitId, 'def'); });
+      }
+    },
+    'gm-auto-target': function () { commit(function (s) { L.autoTargetPieces(s, rng); }); },
     'gm-confirm': function () {
       var missing = A(S.pieces).filter(function (P) { var sk = L.pieceSkill(S, P); return sk && (sk.kind === 'attack' || sk.kind === 'defense') && !P.target; });
       if (missing.length && !confirm('対象が未設定の敵スキルが ' + missing.length + ' 件あります。このまま確定しますか?(未設定の攻撃・守備は行われません)')) { return; }
@@ -627,8 +641,10 @@
       mode = st.mode;
       if (me.role === 'gm') { loadRoster(); }
       if (me.role === 'player' && st.unitId) { me.unitId = st.unitId; me.locked = true; saveMe(); }
+      loaded();
       render();
     }).catch(function (e) {
+      loaded();
       alert('接続できませんでした。設定を確認してください。\n' + e.message);
       if (me && me.role === 'gm') { me.role = 'player'; saveMe(); }
       $('lobby').hidden = false;
@@ -636,8 +652,11 @@
     });
   }
 
+  function loaded() { if (window.LC_LOADING) { window.LC_LOADING.done(); } }
+
   function init() {
     me = loadMe();
+    fetch('../data/level.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d && typeof d.level === 'number') { L.setDefaultLevel(d.level); } }).catch(function () {});
     $('lobbyMode').textContent = window.LCStore.hasFirebase() ? 'Firebase に接続して共有します。' : 'Firebase が未設定のため、同じブラウザ内(タブ間)のローカル動作になります。';
     $('lobbyJoin').addEventListener('click', function () {
       var room = $('lobbyRoom').value.trim().replace(/[.#$\[\]\/]/g, '_');
@@ -645,7 +664,7 @@
       me = { room: room, role: $('lobbyRole').value, unitId: '' };
       enter();
     });
-    if (me && me.room) { enter(); } else { $('lobby').hidden = false; }
+    if (me && me.room) { enter(); } else { $('lobby').hidden = false; loaded(); }
   }
 
   init();
