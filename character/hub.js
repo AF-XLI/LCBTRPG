@@ -10,6 +10,8 @@ document.addEventListener('dragstart', function (ev) {
 
   var list = document.getElementById('hubList');
 
+  function loaded() { if (window.LC_LOADING) { window.LC_LOADING.done(); } }
+
   function esc(v) {
     return String(v == null ? '' : v)
       .replace(/&/g, '&amp;')
@@ -36,6 +38,7 @@ document.addEventListener('dragstart', function (ev) {
           '<span class="hub-card-name">' + esc(p.name) + '</span></a></li>';
       });
       list.innerHTML = h || '<li class="hub-note">囚人が登録されていません。</li>';
+      loaded();
     })
-    .catch(function (e) { list.innerHTML = '<li class="hub-note">' + esc(e.message) + '</li>'; });
+    .catch(function (e) { list.innerHTML = '<li class="hub-note">' + esc(e.message) + '</li>'; loaded(); });
 }());
