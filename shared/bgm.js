@@ -1,5 +1,3 @@
-// BGM(各ページ共通)。読み込むページの script タグに data-track="audio/○○.mp3"(サイトのトップからの相対パス)を書く
-// ON/OFF と音量はブラウザに保存し、ページを移動しても続きの位置から再開する(ON/OFF の操作はメインページの #bgmToggle・#bgmVolume)
 (function (root) {
   'use strict';
 
@@ -28,7 +26,7 @@
   }
 
   function writeJson(key, value) {
-    try { root.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* 保存できない環境では保存しない */ }
+    try { root.localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
   }
 
   function loadSettings() {
@@ -41,7 +39,6 @@
     writeJson(SETTINGS_KEY, settings);
   }
 
-  // 再生位置: 鳴っている間だけ保存する。離れてから RESUME_MS(10秒)以内に開いたページだけ、移動にかかった時間を足して続きから再開し、それより間が空いたときは最初から始める
   function savePosition() {
     if (!audio || audio.paused || !isFinite(audio.currentTime)) { return; }
     var pos = readJson(POSITION_KEY, {}) || {};
@@ -86,12 +83,11 @@
     audio.src = src;
     var t = savedPosition();
     if (t > 0) {
-      try { audio.currentTime = t; } catch (e) { /* 位置を合わせられないときは最初から */ }
+      try { audio.currentTime = t; } catch (e) {}
     }
     return audio;
   }
 
-  // ブラウザの自動再生の制限で止められたときは、次の操作(タップ・クリック・キー入力)で再生を始める
   function setWaiting(on) {
     if (on === waiting) { return; }
     waiting = on;
@@ -170,7 +166,6 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') { savePosition(); }
   });
-  // 別のタブで ON/OFF や音量を変えたときも合わせる
   root.addEventListener('storage', function (e) {
     if (e.key !== SETTINGS_KEY) { return; }
     settings = loadSettings();
