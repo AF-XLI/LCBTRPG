@@ -12,7 +12,7 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
 | `character/` | キャラクターシート(ハブ `character/` と、囚人ごとのページ `character/<囚人ID>/`。説明は下の「キャラクターシート」) |
 | `extraction/` | 抽出(人格のガチャ)。チケットを使って、未所持の人格を1つずつ引きます。GMはチケットと人格を付与できます |
 | `data/` | キャラクターシートのマスターデータ(JSON。`prisoners.json` と、囚人ごとのフォルダ `data/<囚人ID>/` に人格・E.G.O) |
-| `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理 / `bgm.js`: BGM) |
+| `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理 / `bgm.js`: BGM / `loading.js`・`loading.css`: 読み込み中の黒画面とクルクル / `keywords.js`: 人格のキーワードの読み取りと判定) |
 | `tools/` | データの検査ツール(`node tools/validate.js` で `data/` の人格・E.G.Oの誤りを調べます) |
 | `audio/` | BGMの音声ファイル(`window.mp3`: メインページ・キャラクターシート用 / `extract.mp3`: 抽出用) |
 | `image/` | 画像(各ページで共用) |
@@ -124,7 +124,7 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 入口は `character/`(メインページの「キャラクターシート」から入れます)。囚人ごとのページは `character/<囚人ID>/index.html` です(試験用: `character/gray/`)。
 - 表示するデータは `data/` のJSONで、管理者がGitHubに置きます。プレイヤーは書き換えられません。
   - `data/prisoners.json`: 囚人(名前、立ち絵・アイコン・背景の画像、所持している人格・E.G.OのID、装備の初期値 `default`)
-  - `data/<囚人ID>/identities.json`: その囚人の人格(名前、所属、レアリティ、体力、速度、混乱区間 `thr`、耐性の倍率 `resist`、スキル1〜3、守備、パッシブ、サポートパッシブ)
+  - `data/<囚人ID>/identities.json`: その囚人の人格(名前、キーワード `keywords`、レアリティ、体力、速度、混乱区間 `thr`、耐性の倍率 `resist`、スキル1〜3、守備、パッシブ、サポートパッシブ)
   - `data/<囚人ID>/egos.json`: その囚人のE.G.O(ランク、名前、罪悪、物理属性、基礎威力、コイン威力、コイン枚数、精神消耗量、必要資源、耐性、効果、パッシブ)
   - スキル・パッシブ・E.G.Oの効果は `effects` に1効果ずつ書きます(書き方は [battle/README.md](battle/README.md) の「効果(effects)」)。表示は効果から自動で作られ、戦闘システムも同じデータを読みます。
   - 人格・E.G.OのIDは囚人ごとに独立しているので、別の囚人に同じ名前の人格があっても、性能は囚人ごとに別に書けます。`prisoners.json` の `identities` `egos` `default` には、その囚人のフォルダ内のIDを書きます。
@@ -144,3 +144,13 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 - 抽出ページ(`extraction/`)は、ログインした本人の囚人だけを表示します。管理者とGMは、囚人を切り替えて、チケットと人格を付与できます。
 - 抽出のルール: 人格のみ・被りなし・1枚で1回(単発)・確率は均等です。ピックアップに選んだ人格は、確率が3倍になります(倍率は `extraction/script.js` の `PICKUP_RATE`)。
 - `node tools/validate.js` は、`season` が `data/seasons.json` にあるか、既定の人格が初期人格か、なども調べます。
+
+## 読み込み中の表示
+
+- 全ページの `head` で `shared/loading.css` と `shared/loading.js` を読み込み、表示の準備が整うまで画面全体を黒くして中央に回転する円弧と LOADING を出します。
+- 各ページのスクリプトが準備完了時に `LC_LOADING.done()` を呼ぶと消えます。呼ばれなかった場合も10秒で消えます。
+
+## キーワード
+
+- 人格の `keywords` は配列です。要素は文字列、または打消し線つきの `{ "text": "W社", "strike": true }` です。打消し線は見た目だけで、効果・パッシブの判定には影響しません。
+- 判定には `LC_KEYWORDS.has(identity, '○○')`(完全一致)または `LC_KEYWORDS.names(identity)` を使います。
