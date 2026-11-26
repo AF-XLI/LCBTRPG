@@ -167,7 +167,6 @@
     return any ? c : null;
   }
 
-  // 体力の条件。vs:'self' なら対象と自分の現体力を比べ、unit:'percent' なら最大体力に対する割合で見る
   function hpCond(of, h) {
     var one = { of: of, op: BATTLE_OPS[h.op] };
     if (h.vs) { one.vs = h.vs; }
