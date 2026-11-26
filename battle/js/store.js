@@ -59,7 +59,7 @@
     try { state = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { state = {}; }
     var chan = null;
     try { chan = new BroadcastChannel(key); } catch (e) { chan = null; }
-    function save() { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) { /* 保存できなくても動作は続ける */ } }
+    function save() { try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {} }
     function emit() { onState(JSON.parse(JSON.stringify(state))); }
     if (chan) {
       chan.onmessage = function (ev) {
@@ -68,7 +68,7 @@
     }
     root.addEventListener('storage', function (ev) {
       if (ev.key === key && ev.newValue) {
-        try { state = JSON.parse(ev.newValue); emit(); } catch (e) { /* 無視 */ }
+        try { state = JSON.parse(ev.newValue); emit(); } catch (e) {}
       }
     });
     setTimeout(emit, 0);
@@ -99,7 +99,6 @@
     });
   }
 
-  // GMとプレイヤーはハブ(トップページ)でGoogleログインしておく(観戦は匿名)。GM権限は admin(管理者)または gm(GM)の (UID) が true、プレイヤーは player/(UID) にキャラのIDが登録されている必要がある
   function signIn(fb, auth, wantGoogle) {
     return authReady(auth).then(function (user) {
       if (wantGoogle) {
