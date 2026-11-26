@@ -41,7 +41,6 @@
     read(db, 'player/' + user.uid, 'hubChar', function (v) { return typeof v === 'string' && v ? v : '未登録'; });
   }
 
-  // データベースの読み取り。ルールの不備や接続不良で返事が来ないときも、表示が「確認しています…」のまま止まらないようにする
   function read(db, path, id, fmt) {
     var done = false;
     var timer = setTimeout(function () {
