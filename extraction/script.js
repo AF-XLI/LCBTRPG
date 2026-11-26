@@ -188,6 +188,27 @@
       (extra ? '<span class="ex-card-extra">' + extra + '</span>' : '') + '</span>';
   }
 
+  // 描画後、画面内の画像(背景画像を含む)が読み込み終わってからLoadingを消す(最大5秒待つ)
+  function finishLoading() {
+    if (!root.LC_LOADING) { return; }
+    var urls = [];
+    [].slice.call(app.querySelectorAll('img')).forEach(function (im) { if (!im.complete) { urls.push(im); } });
+    [].slice.call(app.querySelectorAll('[style*="background-image"]')).forEach(function (el) {
+      var m = /url\(["']?([^"')]+)["']?\)/.exec(el.getAttribute('style') || '');
+      if (m) { var im = new Image(); im.src = m[1]; if (!im.complete) { urls.push(im); } }
+    });
+    var left = urls.length;
+    var ended = false;
+    function end() { if (!ended) { ended = true; root.LC_LOADING.done(); } }
+    if (!left) { end(); return; }
+    urls.forEach(function (im) {
+      var one = function () { left -= 1; if (left <= 0) { end(); } };
+      im.addEventListener('load', one);
+      im.addEventListener('error', one);
+    });
+    setTimeout(end, 5000);
+  }
+
   function message(text) {
     if (root.LC_LOADING) { root.LC_LOADING.done(); }
     app.innerHTML = '<h1 class="ex-title">抽出</h1><p class="ex-note">' + esc(text) + '</p>' +
@@ -234,7 +255,7 @@
       h += '<span class="ex-tag-identity">' + esc(pu.name) + '</span>' +
         '<span class="ex-tag-name">' + esc(p.name) + '</span>' +
         '<span class="ex-tag-sub">' + rarityTag(pu) + '</span>' +
-        '<a class="ex-mag" href="../character/' + esc(pid) + '/#identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
+        '<a class="ex-mag" href="../character/#/' + esc(pid) + '/identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
         '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"></circle><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></a>';
     } else {
       h += '<span class="ex-tag-identity">PU未選択</span><span class="ex-tag-name">' + esc(p.name) + '</span><span class="ex-tag-sub is-empty"></span>';
@@ -405,7 +426,7 @@
       '<div class="ex-res-art is-' + art.kind + '"><img alt="" src="' + esc(art.src) + '"' + (art.kind === 'placeholder' ? ' onerror="this.remove()"' : '') + '></div>' +
       '<div class="ex-res-info">' + (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
       '<span class="ex-res-name">' + esc(o.name) + '</span>' + rarityTag(o) + '</div>' +
-      '<div class="ex-res-btns"><a class="ex-btn" href="../character/' + esc(pid) + '/#identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
+      '<div class="ex-res-btns"><a class="ex-btn" href="../character/#/' + esc(pid) + '/identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
       '<button class="ex-btn" type="button" data-act="close">閉じる</button></div></div></div>';
   }
 
@@ -489,12 +510,12 @@
     state.ref = state.db.ref('characters/' + pid);
     state.ref.on('value', function (snap) {
       state.remote = snap.val() || {};
-      if (root.LC_LOADING) { root.LC_LOADING.done(); }
       render();
+      finishLoading();
     }, function (e) {
       state.status = '読み込めませんでした。' + (e && e.message ? e.message : '');
-      if (root.LC_LOADING) { root.LC_LOADING.done(); }
       render();
+      finishLoading();
     });
     render();
   }
