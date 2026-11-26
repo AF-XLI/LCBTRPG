@@ -1,0 +1,61 @@
+.lc-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.8rem;
+  justify-content: center;
+  background: rgb(0, 0, 0);
+  transition: opacity 0.3s;
+}
+ 
+.lc-loading.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+ 
+.lc-loading-ring {
+  box-sizing: border-box;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0.125rem solid rgba(237, 205, 164, 0.15);
+  border-radius: 50%;
+  border-top-color: rgb(237, 205, 164);
+  animation: lc-loading-spin 0.9s linear infinite;
+}
+ 
+.lc-loading-text {
+  padding-inline-start: 0.3em;
+  color: rgb(237, 205, 164);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  animation: lc-loading-pulse 1.4s ease-in-out infinite;
+}
+ 
+@keyframes lc-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+ 
+@keyframes lc-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  .lc-loading-ring {
+    animation-duration: 3s;
+  }
+}
