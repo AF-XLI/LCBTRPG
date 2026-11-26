@@ -189,6 +189,7 @@
   }
 
   function message(text) {
+    if (root.LC_LOADING) { root.LC_LOADING.done(); }
     app.innerHTML = '<h1 class="ex-title">抽出</h1><p class="ex-note">' + esc(text) + '</p>' +
       '<a class="ex-link" href="../">メインページへ戻る</a>';
   }
@@ -488,9 +489,11 @@
     state.ref = state.db.ref('characters/' + pid);
     state.ref.on('value', function (snap) {
       state.remote = snap.val() || {};
+      if (root.LC_LOADING) { root.LC_LOADING.done(); }
       render();
     }, function (e) {
       state.status = '読み込めませんでした。' + (e && e.message ? e.message : '');
+      if (root.LC_LOADING) { root.LC_LOADING.done(); }
       render();
     });
     render();
