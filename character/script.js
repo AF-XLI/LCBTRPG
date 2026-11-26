@@ -723,6 +723,7 @@ document.addEventListener('dragstart', function (ev) {
   function render() {
     // 保存済みの装備を読み込むまでは描画しない(既定の人格が一瞬映るのを防ぐ)
     if (state.waiting) { return; }
+    if (root.LC_LOADING) { root.LC_LOADING.done(); }
     if (state.view === 'list' || state.view === 'egolist') {
       appEl.innerHTML = listHtml();
       return;
@@ -773,7 +774,7 @@ document.addEventListener('dragstart', function (ev) {
       '<div class="head-ghost" aria-hidden="true">' + esc(p.name) + '</div>' +
       '<div class="head-body">' +
       '<div class="head-top">' +
-      '<div class="head-affiliation">' + esc(identity.affiliation || '') + '</div>' +
+      '<div class="head-keywords">' + keywordsHtml(identity) + '</div>' +
       (isPersona && seasonName(identity) ? '<div class="head-season">' + esc(seasonName(identity)) + '</div>' : '') +
       (identity.rarity != null ? img('image/icon/rarity/' + identity.rarity + '.png', 'head-rarity', 'レアリティ') : '') +
       '</div>' +
@@ -828,7 +829,14 @@ document.addEventListener('dragstart', function (ev) {
       confirmHtml();
   }
 
+  function keywordsHtml(identity) {
+    return root.LC_KEYWORDS.list(identity).map(function (k) {
+      return '<span class="head-keyword' + (k.strike ? ' is-strike' : '') + '">' + esc(k.text) + '</span>';
+    }).join(' / ');
+  }
+
   function showError(message) {
+    if (root.LC_LOADING) { root.LC_LOADING.done(); }
     appEl.innerHTML = '<div class="load-error">' + esc(message) + '</div>';
   }
 
