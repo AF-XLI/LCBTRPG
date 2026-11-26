@@ -418,10 +418,14 @@ textarea {
   margin-inline-end: 0.875rem;
 }
  
-.head-affiliation {
+.head-keywords {
   margin-block-end: 1rem;
   color: rgb(196, 178, 150);
   font-size: 0.813rem;
+}
+ 
+.head-keyword.is-strike {
+  text-decoration: line-through;
 }
  
 .head-season {
