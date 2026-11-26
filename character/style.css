@@ -53,8 +53,8 @@ textarea {
  
 .sheet {
   display: flex;
-  height: 50.625rem;
   min-width: 80rem;
+  height: 50.625rem;
   overflow: hidden;
 }
  
@@ -72,8 +72,8 @@ textarea {
   left: 50%;
   display: block;
   width: 41.25rem;
-  height: auto;
   max-width: none;
+  height: auto;
   transform: translateX(-50%);
 }
  
@@ -469,8 +469,8 @@ textarea {
   left: 50%;
   display: block;
   width: 4.9rem;
-  height: 4.9rem;
   max-width: none;
+  height: 4.9rem;
   transform: translate(-50%, -50%);
 }
  
@@ -600,9 +600,9 @@ textarea {
   left: 50%;
   width: 0;
   height: 0;
-  border-top: 0.625rem solid var(--gold);
-  border-right: 0.625rem solid transparent;
   border-left: 0.625rem solid transparent;
+  border-right: 0.625rem solid transparent;
+  border-top: 0.625rem solid var(--gold);
   filter: drop-shadow(0 0 0.125rem rgba(232, 178, 56, 0.8));
   transform: translateX(-50%);
 }
@@ -645,7 +645,9 @@ textarea {
   bottom: 0;
   right: 0;
   z-index: -1;
-  background: linear-gradient(rgba(33, 26, 18, 0.5), rgba(33, 26, 18, 0.5)), url("../image/bg/panel.png") 0 0 / 58.875rem auto rgb(33, 26, 18);
+  background:
+    linear-gradient(rgba(33, 26, 18, 0.5), rgba(33, 26, 18, 0.5)),
+    url("../image/bg/panel.png") 0 0 / 58.875rem auto rgb(33, 26, 18);
   clip-path: polygon(0 0, calc(100% - 0.707rem) 0, 100% 0.707rem, 100% calc(100% - 0.707rem), calc(100% - 0.707rem) 100%, 0 100%);
   mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
   -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.12) 0.6rem, rgba(0, 0, 0, 0.5) 1.3rem, rgb(0, 0, 0) 2rem);
@@ -742,7 +744,6 @@ textarea {
   position: relative;
   top: -0.375rem;
   left: -0.063rem;
-  align-self: flex-start;
   width: 1.75rem;
   margin-block-start: 0.725rem;
   font-family: var(--font-num);
@@ -750,12 +751,12 @@ textarea {
   font-weight: 700;
   line-height: 1;
   text-align: end;
+  align-self: flex-start;
 }
  
 .skill-mult {
   display: flex;
   align-items: center;
-  align-self: flex-end;
   gap: 0.125rem;
   width: 2.375rem;
   margin-inline-start: -0.625rem;
@@ -764,6 +765,7 @@ textarea {
   font-size: 2.25rem;
   font-weight: 700;
   line-height: 1;
+  align-self: flex-end;
 }
  
 .skill-mult .mult-x {
@@ -1006,7 +1008,9 @@ textarea {
 }
  
 .subtab.is-rank {
-  font-family: "Noto Sans Hebrew", var(--font-body);
+  font-family:
+    "Noto Sans Hebrew",
+    var(--font-body);
   font-size: 1.5rem;
 }
  
@@ -1027,7 +1031,9 @@ textarea {
     inset -0.25rem 0 0.375rem 0 rgb(14, 12, 10),
     inset 0 0 0.375rem 0.125rem rgb(14, 12, 10);
   paint-order: stroke fill;
-  text-shadow: 0 0 0.625rem rgb(251, 124, 0), 0 0 0.25rem rgb(251, 124, 0);
+  text-shadow:
+    0 0 0.625rem rgb(251, 124, 0),
+    0 0 0.25rem rgb(251, 124, 0);
   -webkit-text-stroke: 0.063rem rgb(251, 124, 0);
 }
  
@@ -1268,9 +1274,9 @@ textarea {
   right: -1.25rem;
   width: 0;
   height: 0;
-  border-top: 0.625rem solid transparent;
   border-bottom: 0.625rem solid transparent;
   border-left: 0.625rem solid var(--gold);
+  border-top: 0.625rem solid transparent;
   filter: drop-shadow(0 0 0.125rem rgba(232, 178, 56, 0.8));
   transform: translateY(-50%);
 }
@@ -1446,12 +1452,7 @@ textarea {
   font-size: 3.25rem;
   font-weight: 700;
   line-height: 1;
-} 
- 
- 
- 
- 
- 
+}
  
 .hub {
   max-width: 32rem;
@@ -1512,8 +1513,8 @@ textarea {
   top: 50%;
   left: 50%;
   width: 3.5rem;
-  height: 3.5rem;
   max-width: none;
+  height: 3.5rem;
   transform: translate(-50%, -50%);
 }
  
@@ -1527,7 +1528,9 @@ textarea {
   background: rgb(145, 144, 143);
   color: var(--gold-text);
   cursor: default;
-  text-shadow: 0 0 0.625rem rgb(251, 124, 0), 0 0 0.25rem rgb(251, 124, 0);
+  text-shadow:
+    0 0 0.625rem rgb(251, 124, 0),
+    0 0 0.25rem rgb(251, 124, 0);
 }
  
 .persona-btn.is-on::before {
@@ -1575,8 +1578,8 @@ textarea {
  
 .pl {
   position: relative;
-  height: 50.625rem;
   min-width: 80rem;
+  height: 50.625rem;
   background: rgb(15, 15, 15);
   color: var(--cream);
   overflow: hidden;
@@ -1589,7 +1592,7 @@ textarea {
   left: 0;
   bottom: 0;
   right: 0;
-  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 4px);
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 0.062rem, transparent 0.062rem, transparent 0.25rem);
   pointer-events: none;
 }
  
@@ -1621,7 +1624,9 @@ textarea {
   color: rgb(40, 28, 18);
   font-family: var(--font-display);
   font-weight: 700;
-  box-shadow: inset 0 0.063rem 0 rgba(255, 255, 255, 0.5), 0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 0.063rem 0 rgba(255, 255, 255, 0.5),
+    0 0.125rem 0.25rem rgba(0, 0, 0, 0.45);
   cursor: pointer;
   text-decoration: none;
 }
@@ -1677,8 +1682,8 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 3rem;
   min-width: 6.5rem;
+  height: 3rem;
   font-size: 1.5rem;
 }
  
@@ -1686,7 +1691,9 @@ textarea {
   background: rgb(34, 24, 16);
   border-color: rgb(255, 140, 20);
   color: rgb(255, 150, 10);
-  box-shadow: 0 0 0.375rem rgb(255, 120, 0), inset 0 0 0.375rem rgba(255, 120, 0, 0.55);
+  box-shadow:
+    0 0 0.375rem rgb(255, 120, 0),
+    inset 0 0 0.375rem rgba(255, 120, 0, 0.55);
   text-shadow: 0 0 0.375rem rgb(255, 120, 0);
 }
  
@@ -1724,7 +1731,9 @@ textarea {
   border-radius: 0.25rem;
   font-family: var(--font-display);
   font-weight: 700;
-  box-shadow: 0 0 0.375rem rgb(255, 120, 0), inset 0 0 0.375rem rgba(255, 120, 0, 0.5);
+  box-shadow:
+    0 0 0.375rem rgb(255, 120, 0),
+    inset 0 0 0.375rem rgba(255, 120, 0, 0.5);
 }
  
 .pl-own {
@@ -1841,8 +1850,8 @@ textarea {
 }
  
 .pl-note {
-  grid-column: 1 / -1;
   color: var(--sub);
+  grid-column: 1 / -1;
 }
  
 .pl-card {
@@ -1860,7 +1869,9 @@ textarea {
   left: 0.5rem;
   bottom: 0.5rem;
   right: 0.5rem;
-  background: linear-gradient(rgba(28, 20, 14, 0.55), rgba(28, 20, 14, 0.55)), url("../image/bg/panel.png") 0 0 / 44rem auto rgb(28, 20, 14);
+  background:
+    linear-gradient(rgba(28, 20, 14, 0.55), rgba(28, 20, 14, 0.55)),
+    url("../image/bg/panel.png") 0 0 / 44rem auto rgb(28, 20, 14);
   border-radius: 0.375rem;
 }
  
@@ -1899,8 +1910,8 @@ textarea {
   top: 0;
   left: 50%;
   width: auto;
-  height: calc(100% / var(--fit));
   max-width: none;
+  height: calc(100% / var(--fit));
   transform: translate(calc(-50% + var(--x)), calc(var(--shift) * -1));
 }
  
@@ -1991,7 +2002,9 @@ textarea {
   letter-spacing: 0.063rem;
   text-align: center;
   box-shadow: 0 0 0.5rem rgba(255, 50, 20, 0.55);
-  text-shadow: 0 0 0.5rem rgb(255, 120, 40), 0 0 0.188rem rgb(255, 90, 30);
+  text-shadow:
+    0 0 0.5rem rgb(255, 120, 40),
+    0 0 0.188rem rgb(255, 90, 30);
   transform: translateY(-50%);
 }
  
@@ -2126,7 +2139,9 @@ textarea {
   background: rgb(20, 8, 6);
   border: 0.25rem solid rgb(78, 34, 20);
   border-radius: 0.5rem;
-  box-shadow: inset 0 0 0 0.063rem rgb(130, 60, 36), 0 0 0 0.063rem rgb(10, 4, 3);
+  box-shadow:
+    inset 0 0 0 0.063rem rgb(130, 60, 36),
+    0 0 0 0.063rem rgb(10, 4, 3);
 }
  
 .pl-side-title {
@@ -2209,7 +2224,6 @@ textarea {
     font-size: min(calc(100vw / 80), calc(100vh / 50.625));
     font-size: min(calc(100vw / 80), calc(100dvh / 50.625));
   }
- 
   html:has(.sheet, .pl) body {
     display: grid;
     place-items: center;
@@ -2217,7 +2231,6 @@ textarea {
     min-height: 100dvh;
     background: url("../image/bg/letterbox.png") center / cover no-repeat rgb(0, 0, 0);
   }
- 
   .sheet,
   .pl {
     width: 80rem;
