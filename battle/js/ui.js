@@ -110,7 +110,6 @@
     return out + pendingBadges(b);
   }
 
-  // 次ターンに付与される予定の状態。アイコンだけを半透明にして、バッジ列の最後尾に並べる(挑発値は表示しない)
   function pendingBadges(b) {
     var nx = O(b && b.next);
     var order = Object.keys(L.STATUS);
@@ -134,11 +133,8 @@
     return out;
   }
 
-  // バリア(ガードなどのバリア+充電力場のバリア)。体力バーを水色で延長して表示する
   function barrierOf(b) { return L.num(b && b.barrier, 0) + L.num(b && b.cbar, 0); }
-  // 体力+バリアが最大体力を超えたら、バー全体の長さは変えずに基準を伸ばして縮尺を合わせる
   function barBase(info, bar) { return Math.max(info.max, info.cur + bar, 1); }
-  // バリアがあるあいだは、体力の数字の代わりにバリアの数値だけを水色で表示する
   function hpNum(cur, bar) { return bar > 0 ? '<span class="shield-num">' + bar + '</span>' : String(cur); }
 
   function hpBar(info, lines, cls, curOnly, bar) {
@@ -158,7 +154,6 @@
     return '<span class="sp ' + cls + '" title="精神力 / 表の確率 ' + Math.round(L.headsProb(sp) * 100) + '%">' + (sp > 0 ? '+' : '') + sp + '</span>';
   }
 
-  // レベル(攻撃レベル・守備レベル)。個別に設定がなければ共通の既定レベル
   function levelLine(unit, part, b) {
     var li = L.levelInfo(unit, part, b);
     return '<div class="line">レベル ' + li.lv + ' / 攻撃レベル ' + li.atk + ' / 防御レベル ' + li.def + '</div>';
