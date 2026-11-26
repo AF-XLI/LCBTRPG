@@ -6,7 +6,9 @@
       "LCB",
       "囚人"
     ],
-    "affiliation": "ルナリスカンパニー",
+    "keywords": [
+      "ルナリスカンパニー"
+    ],
     "rarity": "1",
     "hp": 220,
     "speed": [
@@ -144,7 +146,9 @@
       "W社3級",
       "整理要員"
     ],
-    "affiliation": "W社",
+    "keywords": [
+      "W社"
+    ],
     "rarity": "2",
     "hp": 200,
     "speed": [
