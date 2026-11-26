@@ -23,12 +23,18 @@
   var SP_MIN = -45;
   var SP_MAX = 45;
   var KIND_LABEL = { attack: '攻撃', defense: '守備', counter: '反撃' };
+  // 特殊振動(通常以外の振動の種類)。振動の状態の k に種類のIDを入れる
+  var VIB_KINDS = {
+    chain: { label: '鎖', glyph: '鎖', icon: 'tremor-chain.png', text: '振動威力10につき、マッチ威力が1減少(最大3)' },
+    decay: { label: '崩壊', glyph: '崩', icon: 'tremor-decay.png', text: '振動威力4につき、防御レベルが1減少' }
+  };
 
   var STATUS = {
     burn: { label: '火傷', type: 'pc', kind: 'debuff', glyph: '火', color: 'rgb(235, 110, 50)', text: 'ラウンド終了時に威力分のダメージ' },
     bleed: { label: '出血', type: 'pc', kind: 'debuff', glyph: '血', color: 'rgb(210, 50, 70)', text: 'コイントス時に威力分のダメージ' },
     vibration: { label: '振動', type: 'pc', kind: 'debuff', glyph: '振', color: 'rgb(140, 170, 235)', text: '振動爆発で混乱線が前進する' },
     rupture: { label: '破裂', type: 'pc', kind: 'debuff', glyph: '破', color: 'rgb(235, 130, 190)', text: 'ダメージ時に威力分の固定ダメージ' },
+    echoesOfTheManor: { label: '邸宅の木霊', type: 'val', kind: 'debuff', glyph: '霊', color: 'rgb(150, 110, 190)', keep: true, text: 'スキル・コイン効果で沈潜が付与されるとき、50%で沈潜回数+1。精神力を持つ対象は、精神力-20以下で士気低下(マッチ威力-1、表面的中時のダメージ量+10%)、パニックのタイプが邸宅の木霊に変化(マッチ威力-2、ダメージ量増加1を得る。行動できる)。パニックになると次のターンに自分以外の同じ陣営のランダムな2名へ邸宅の木霊2を付与。精神力を持たない対象は表面の確率-10%。ターン終了時に数値が1減少' },
     sinking: { label: '沈潜', type: 'pc', kind: 'debuff', glyph: '沈', color: 'rgb(80, 130, 210)', text: 'ダメージ時に威力分の精神力ダメージ' },
     breath: { label: '呼吸', type: 'pc', kind: 'buff', keepPotency: true, glyph: '呼', color: 'rgb(110, 205, 150)', text: '威力×5%でクリティカル' },
     charge: { label: '充電', type: 'pc', kind: 'buff', glyph: '充', color: 'rgb(240, 215, 80)', maxCount: 20, keepPotency: true, charge: true, text: '消耗でスキルが強化される' },
@@ -40,6 +46,8 @@
     atkPowerDown: { label: '攻撃威力減少', type: 'val', kind: 'debuff', glyph: '攻威↓', color: 'rgb(170, 140, 140)', text: '攻撃スキルの最終威力を減らす' },
     defPowerDown: { label: '守備威力減少', type: 'val', kind: 'debuff', glyph: '守威↓', color: 'rgb(170, 140, 140)', text: '守備スキルの最終威力を減らす' },
     matchPowerDown: { label: 'マッチ威力減少', type: 'val', kind: 'debuff', glyph: '合威↓', color: 'rgb(170, 140, 140)', text: 'マッチ時の最終威力を減らす' },
+    offenseLevelDown: { label: '攻撃レベル減少', type: 'val', kind: 'debuff', glyph: '攻Lv↓', color: 'rgb(170, 140, 140)', text: '攻撃レベルが数値分減少(1ターンの間)' },
+    defenseLevelDown: { label: '防御レベル減少', type: 'val', kind: 'debuff', glyph: '防Lv↓', color: 'rgb(170, 140, 140)', text: '防御レベルが数値分減少(1ターンの間)' },
     coinWeak: { label: '加算コイン弱化', type: 'val', kind: 'debuff', glyph: '幣↓', color: 'rgb(170, 140, 140)', text: 'コインの加算分を減らす' },
     quick: { label: 'クイック', type: 'val', kind: 'buff', glyph: '速', color: 'rgb(120, 210, 230)', text: '速度が増加' },
     dmgUp: { label: 'ダメージ量増加', type: 'val', kind: 'buff', glyph: '攻↑', color: 'rgb(240, 170, 90)', max: 10, text: '与えるダメージが数値×10%増加' },
@@ -48,10 +56,15 @@
     atkPowerUp: { label: '攻撃威力増加', type: 'val', kind: 'buff', glyph: '攻威↑', color: 'rgb(240, 170, 90)', text: '攻撃スキルの最終威力を増やす' },
     defPowerUp: { label: '守備威力増加', type: 'val', kind: 'buff', glyph: '守威↑', color: 'rgb(240, 170, 90)', text: '守備スキルの最終威力を増やす' },
     matchPowerUp: { label: 'マッチ威力増加', type: 'val', kind: 'buff', glyph: '合威↑', color: 'rgb(240, 170, 90)', text: 'マッチ時の最終威力を増やす' },
+    offenseLevelUp: { label: '攻撃レベル増加', type: 'val', kind: 'buff', glyph: '攻Lv↑', color: 'rgb(240, 170, 90)', text: '攻撃レベルが数値分増加(1ターンの間)' },
+    defensiveStance: { label: '防御態勢', type: 'val', kind: 'buff', glyph: '態', color: 'rgb(240, 200, 110)', max: 2, keep: true, text: '付与の次のターンから、数値のターン数の間、速度が最低値に固定・防御レベル増加5・挑発値増加・速度に関係なくマッチ操作が可能・マッチ勝利時に相手へ振動爆発・ダメージで混乱しない。ターン終了時に1減少(0のターンも効果あり)。数値は合算(上限2)、効果は重ならない' },
+    defenseLevelUp: { label: '防御レベル増加', type: 'val', kind: 'buff', glyph: '防Lv↑', color: 'rgb(240, 170, 90)', text: '防御レベルが数値分増加(1ターンの間)' },
     coinStrong: { label: '加算コイン強化', type: 'val', kind: 'buff', glyph: '幣↑', color: 'rgb(240, 170, 90)', text: 'コインの加算分を増やす' },
     weakDmg: { label: '弱点攻撃時にダメージ量増加', type: 'val', kind: 'buff', glyph: '弱↑', color: 'rgb(240, 170, 90)', text: '相手が脆弱な属性(物理・罪悪)を攻撃するとき、ダメージが数値%増加' },
     critDmgUp: { label: 'クリティカルダメージ増加', type: 'val', kind: 'buff', glyph: '会↑', color: 'rgb(240, 120, 90)', max: 10, text: 'クリティカル時のダメージが数値×10%増加' },
-    egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', glyph: '資↑', color: 'rgb(240, 200, 90)', text: 'スキル使用時に獲得するE.G.O資源が数値分増加' }
+    egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', glyph: '資↑', color: 'rgb(240, 200, 90)', text: 'スキル使用時に獲得するE.G.O資源が数値分増加' },
+    aggro: { label: '挑発値', type: 'val', kind: 'neutral', glyph: '挑', color: 'rgb(240, 150, 40)', max: 9999, min: -1, text: '敵のメインターゲットに選ばれやすくなる(全員の初期値は1。数値分だけ仮想スキルスロットが増える)。ラウンド終了時に失う' },
+    chargeBarrier: { label: '充電力場', type: 'val', kind: 'buff', glyph: '力', color: 'rgb(90, 200, 230)', text: '付与時に(数値×3)のバリアを得る(W社職員は×5)。このバリアが0になると数値が1減る。ラウンド終了時に数値分の充電回数を得て、この効果とバリアを失う' }
   };
 
   function A(x) { return Array.isArray(x) ? x : []; }
@@ -103,9 +116,20 @@
   }
   function staggerPhysMult(level) { return 2 + 0.5 * (level - 1); }
 
-  function incap(b) { return !!(b && (b.stagger || b.panic)); }
+  function incap(b) { return !!(b && (b.stagger || (b.panic && !b.panic.echo))); }
 
   function headsProb(sp) { return clamp(50 + num(sp, 0), 0, 100) / 100; }
+  // 邸宅の木霊: 精神力を持たない(またはパニックタイプが変わらない)対象は表面の確率-10%
+  function headsP(b) {
+    var p = b.noSp ? 0.5 : headsProb(b.sp);
+    if (O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0 && (b.noSp || b.fixedPanic)) { p -= 0.1; }
+    return clamp(p, 0, 1);
+  }
+  function echoHeld(b) { return !!(b && !b.noSp && !b.fixedPanic && O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0); }
+  // 士気低下: 邸宅の木霊を持ち、精神力が-20以下(パニック前)
+  function echoMorale(b) { return echoHeld(b) && !b.panic && num(b.sp, 0) <= -20; }
+  function echoHeldAny(b) { return !!(b && O(b.st).echoesOfTheManor && num(b.st.echoesOfTheManor.v, 0) > 0); }
+  function echoPanicOn(b) { return !!(b && b.panic && b.panic.echo); }
 
   function newState() {
     return { round: 0, phase: 'setup', units: {}, res: resEmpty(), pieces: [], plan: [], proc: { i: 0 }, log: [], fx: { seq: 0, items: [] }, settings: { autoNext: false }, result: '' };
@@ -327,8 +351,11 @@
     list.forEach(function (u, i) { u.rank = i; });
   }
 
-  function resoPartial(n) { return n >= 7 ? 2 : (n >= 3 ? 1 : 0); }
-  function resoFull(n) { return n >= 8 ? 3 : (n >= 6 ? 2 : (n >= 3 ? 1 : 0)); }
+  // 共鳴は攻撃レベルの上昇量。(罪悪名)共鳴は同罪悪の左から n 番目のスキルが n 番目の値、完全共鳴は連なりの個数に応じた同じ値を全員が受ける
+  var RESO_PARTIAL = [0, 0, 1, 3, 3, 5, 5, 7];
+  var RESO_FULL = [0, 0, 0, 3, 5, 5, 7, 7, 9];
+  function resoPartial(n) { return RESO_PARTIAL[Math.min(n, RESO_PARTIAL.length - 1)] || 0; }
+  function resoFull(n) { return RESO_FULL[Math.min(n, RESO_FULL.length - 1)] || 0; }
 
   function calcReso(state) {
     var list = [];
@@ -452,6 +479,8 @@
         p.name = p.name || ('部位' + (idx + 1));
         if (p.noSp === undefined) { p.noSp = !!u.noSp; }
         p.noSp = !!p.noSp;
+        if (p.fixedPanic === undefined) { p.fixedPanic = !!u.fixedPanic; }
+        p.fixedPanic = !!p.fixedPanic;
         p.slotWeight = Math.max(1, Math.floor(num(p.slotWeight, 1)));
         if (u.spShared) { p.noSp = false; p.sp = u.sp; }
         else if (u.kind === 'abnormality') { p.noSp = true; }
@@ -589,8 +618,23 @@
     } else {
       cur = cur || { v: 0 };
       cur.v = Math.min(def.max || 99, num(cur.v, 0) + num(amt.v, 0));
-      if (cur.v <= 0) { delete b.st[id]; } else { b.st[id] = cur; }
+      if (def.min !== undefined) { cur.v = Math.max(def.min, cur.v); }
+      if (def.min !== undefined ? cur.v === 0 : cur.v <= 0) { delete b.st[id]; } else { b.st[id] = cur; }
     }
+  }
+  function hasKeyword(unit, word) {
+    return A(unit && unit.keywords).some(function (k) { return (typeof k === 'string' ? k : O(k).text) === word; });
+  }
+  // 防御態勢: 効果が働いているのは、ターン開始時にすでに状態を持っていたターン(act)。付与されたターン自体は働かない
+  function stanceActive(b) { var st = O(b && b.st).defensiveStance; return !!(st && st.act); }
+  // 味方1人が持つスキルスロット数(今は1人1駒)
+  function allySlotCount() { return 1; }
+  function chargeBarrierGain(b, unit, v) {
+    v = num(v, 0);
+    if (v <= 0) { return 0; }
+    var gain = v * (hasKeyword(unit, 'W社') ? 5 : 3);
+    b.cbar = num(b.cbar, 0) + gain;
+    return gain;
   }
   function sumVal(b, base, skill) {
     var st = O(b && b.st);
@@ -645,7 +689,15 @@
       if (q[pos] === undefined) { return null; }
       return { pos: pos, num: q[pos], skill: slotSkill(state, unit, q[pos]) };
     }
-    return { sel: [card(0), card(1)], preview: card(2), def: { num: 0, skill: O(unit.skills)[0] || null } };
+    var out = { sel: [card(0), card(1)], preview: card(2), def: { num: 0, skill: O(unit.skills)[0] || null }, swap: null };
+    var sw = unit.swap;
+    if (sw && q.length) {
+      var egoD = sw.kind === 'ego' ? A(unit.egos)[sw.i] : null;
+      var sk = sw.kind === 'def' ? out.def.skill : egoD ? egoSkillOf(egoD, sw.mode) : null;
+      out.swap = sw;
+      out.sel[0] = { pos: 0, num: 0, skill: sk, swap: sw };
+    }
+    return out;
   }
 
   function chosenSkill(state, unit) {
@@ -772,23 +824,33 @@
     state.proc = { i: 0 };
     state.fx = { seq: (state.fx ? state.fx.seq : 0) + 1, items: [] };
     log(state, '--- ラウンド' + state.round + ' 開始 ---');
-    function activate(b) {
+    function activate(b, owner) {
       b.st = O(b.st);
-      Object.keys(O(b.next)).forEach(function (id) { addStatus(b, id, b.next[id]); });
+      Object.keys(O(b.next)).forEach(function (id) {
+        addStatus(b, id, b.next[id]);
+        if (id === 'chargeBarrier') { chargeBarrierGain(b, owner, b.next[id].v); }
+      });
       b.next = {};
     }
     function drawSpeed(b) {
-      var base = randInt(b.speed[0], b.speed[1], rng);
+      var base = stanceActive(b) ? b.speed[0] : randInt(b.speed[0], b.speed[1], rng);
       b.spd = Math.max(0, base + vOf(b, 'quick') - vOf(b, 'bind'));
     }
     Object.keys(state.units).forEach(function (id) {
       var u = state.units[id];
       if (u.dead) { return; }
       if (u.side === 'ally') {
-        activate(u);
+        if (O(u.st).defensiveStance) {
+          u.st.defensiveStance.act = true;
+          addStatus(u, 'defenseLevelUp', { v: 5 });
+          var slots = allySlotCount(u);
+          addStatus(u, 'aggro', { v: slots * Math.floor(10 / slots) });
+          log(state, u.name + ' の防御態勢が働いている(速度最低値・防御レベル増加5・挑発値増加)');
+        }
+        activate(u, u);
         u.choice = null;
         ensureDeck(u, rng);
-        if (u.panicNext) { u.panic = u.panicNext; u.panicNext = null; }
+        if (u.panicNext) { u.panic = u.panicNext; u.panicNext = null; beginPanic(state, u, u); }
         if (incap(u)) { u.choice = { sel: 'stag', target: null, confirmed: true, ts: 0 }; }
         else if (u.erosionNext) {
           u.erosionNext = false;
@@ -797,10 +859,33 @@
         }
       } else {
         u.parts.forEach(function (p) {
-          activate(p);
-          if (p.panicNext) { p.panic = p.panicNext; p.panicNext = null; }
+          activate(p, u);
+          if (p.panicNext) { p.panic = p.panicNext; p.panicNext = null; beginPanic(state, u, p); }
         });
       }
+    });
+    var pendSpread = A(state.echoSpread);
+    state.echoSpread = pendSpread.filter(function (x) { return x.round > state.round; });
+    pendSpread.filter(function (x) { return x.round <= state.round; }).forEach(function (x) {
+      var src = state.units[x.from];
+      if (!src) { return; }
+      var pool = [];
+      Object.keys(state.units).forEach(function (id) {
+        var tu = state.units[id];
+        if (tu.side !== src.side || tu.dead) { return; }
+        if (tu.side === 'ally') {
+          if (id !== x.from) { pool.push({ unit: tu, b: tu, ref: { u: id, p: null } }); }
+          return;
+        }
+        A(tu.parts).forEach(function (pb, bi) {
+          if ((id === x.from && bi === x.part) || isOut(getB(state, { u: id, p: bi }))) { return; }
+          pool.push({ unit: tu, b: pb, ref: { u: id, p: bi } });
+        });
+      });
+      shuffle(pool, activeRng).slice(0, 2).forEach(function (t) {
+        addStatus(t.b, 'echoesOfTheManor', { v: 2 });
+        log(state, nameOf(state, t.ref) + ' は邸宅の木霊を2得た');
+      });
     });
     if (state.round === 1) { fireUnitTiming(state, 'firstRound'); firePassives(state, 'firstRound'); }
     fireUnitTiming(state, 'roundStart');
@@ -844,7 +929,7 @@
       if (!ch || !ch.target) { return; }
       var sk = chosenSkill(state, u);
       if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
-      list.push({ id: id, ts: num(ch.ts, 0), pid: ch.target, spd: u.spd, def: sk.kind === 'defense' });
+      list.push({ id: id, ts: num(ch.ts, 0), pid: ch.target, spd: u.spd, def: sk.kind === 'defense', stance: stanceActive(u) });
     });
     list.sort(function (a, b) { return a.ts - b.ts; });
     return list;
@@ -865,7 +950,7 @@
       var sk = pieceSkill(state, P);
       if (!sk || sk.kind !== 'attack') { return; }
       if (sk.noMatch && !a.def) { return; }
-      if (a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
+      if (a.stance || a.spd > pieceSpeed(state, P)) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
       else if (P.target === a.id) { matchOf[P.pid] = a.id; defenders[P.pid] = a.def; }
     });
     Object.keys(matchOf).forEach(function (pid) { allyMatch[matchOf[pid]] = pid; });
@@ -896,6 +981,7 @@
   function checkStagger(state, ref) {
     var g = getB(state, ref);
     if (!g || isOut(g)) { return false; }
+    if (stanceActive(g.b)) { return false; }
     var info = hpInfo(g.unit, g.part);
     var lines = A(g.b.lines);
     var crossed = lines.filter(function (l) { return info.cur < l; });
@@ -914,6 +1000,23 @@
     var g = getB(state, ref);
     if (!g || isOut(g)) { return 0; }
     amount = Math.max(0, Math.floor(amount));
+    var cb = num(g.b.cbar, 0);
+    if (cb > 0 && amount > 0) {
+      var ac = Math.min(cb, amount);
+      g.b.cbar = cb - ac;
+      amount -= ac;
+      log(state, '  充電力場のバリアが ' + ac + ' 軽減(残り' + g.b.cbar + ')');
+      fx(state, ref, 'バリア-' + ac, 'guard');
+      if (g.b.cbar <= 0) {
+        var cbs = O(g.b.st).chargeBarrier;
+        if (cbs) {
+          cbs.v = num(cbs.v, 0) - 1;
+          if (cbs.v <= 0) { delete g.b.st.chargeBarrier; }
+          log(state, '  充電力場が1減少');
+        }
+      }
+      if (amount <= 0) { return 0; }
+    }
     var bar = num(g.b.barrier, 0);
     if (bar > 0 && amount > 0) {
       var ab = Math.min(bar, amount);
@@ -963,8 +1066,20 @@
   function canPayRes(state, res, extra) {
     return Object.keys(res).every(function (k) { return num(O(state.res)[k], 0) + num(O(extra)[k], 0) >= res[k]; });
   }
-  function refundEgoPay(state, u) {
+  function refundSwap(state, u) {
+    var sw = u.swap;
+    if (sw && sw.kind === 'ego' && sw.paid) {
+      state.res = O(state.res);
+      Object.keys(sw.paid).forEach(function (k) { state.res[k] = num(state.res[k], 0) + sw.paid[k]; });
+    }
+    u.swap = null;
+  }
+  function refundEgoPay(state, u, misfire) {
     var ch = u.choice;
+    if (misfire && u.swap && u.swap.kind === 'ego' && ch && ch.sel === 'ego' && ch.ego && ch.ego.fromSwap && !ch.egoUsed) {
+      refundSwap(state, u);
+      return;
+    }
     if (!ch || ch.sel !== 'ego' || !ch.ego || !ch.ego.paid || ch.egoUsed) { return; }
     state.res = O(state.res);
     Object.keys(ch.ego.paid).forEach(function (k) { state.res[k] = num(state.res[k], 0) + ch.ego.paid[k]; });
@@ -1007,6 +1122,17 @@
     u.choice.confirmed = canConfirm(state, u);
   }
 
+  // パニックが始まる時点で邸宅の木霊を持っていれば、パニックのタイプが邸宅の木霊になる
+  function beginPanic(state, unit, b) {
+    if (!echoHeld(b)) { return; }
+    b.panic.echo = true;
+    addStatus(b, 'dmgUp', { v: 1 });
+    log(state, unit.name + ' のパニックのタイプが邸宅の木霊になった(行動できる)');
+    var queue = A(state.echoSpread);
+    if (!queue.some(function (x) { return x.from === unit.id && x.round === state.round + 1; })) {
+      state.echoSpread = queue.concat([{ round: state.round + 1, from: unit.id, part: unit.side === 'ally' ? null : A(unit.parts).indexOf(b) }]);
+    }
+  }
   function changeSp(state, ref, delta, instant) {
     var g = getB(state, ref);
     if (!g || g.b.noSp || g.b.panic || g.b.panicNext || g.b.erosion || g.b.erosionNext) { return; }
@@ -1032,8 +1158,9 @@
       }
       var targets = g.unit.spShared ? g.unit.parts : [g.b];
       targets.forEach(function (p) {
-        if (late) { p.panicNext = { until: state.round + 1 }; }
-        else { p.panic = { until: state.round }; }
+        var rec = { until: state.round + (late ? 1 : 0) };
+        if (late) { p.panicNext = rec; }
+        else { p.panic = rec; beginPanic(state, g.unit, p); }
       });
       log(state, (g.unit.spShared ? g.unit.name : nameOf(state, ref)) + ' の精神力が' + SP_MIN + 'になった(パニック' + (late ? ': 次のラウンドから' : '') + ')');
       fx(state, ref, 'パニック', 'stagger');
@@ -1051,6 +1178,10 @@
     else { a += vOf(b, 'defPowerUp') - vOf(b, 'defPowerDown'); }
     if (clash) {
       a += vOf(b, 'matchPowerUp') - vOf(b, 'matchPowerDown');
+      var chain = O(b.st).vibration;
+      if (chain && chain.k === 'chain') { a -= Math.min(3, Math.floor(num(chain.p, 0) / 10)); }
+      a += num(b.lvMatch, 0);
+      if (echoPanicOn(b)) { a -= 2; } else if (echoMorale(b)) { a -= 1; }
       A(b.mods).forEach(function (m) { if (m.k === 'matchPower' && (m.winProbMax === undefined || m.on)) { a += num(m.n, 0); } });
     }
     return a;
@@ -1074,7 +1205,7 @@
   function tossOne(state, ref, skill, coinPower, rng) {
     var g = getB(state, ref);
     onToss(state, ref, skill);
-    var heads = rng() < headsProb(g.b.sp);
+    var heads = rng() < headsP(g.b);
     var add = heads ? coinAdd(g.b, coinPower) : 0;
     var pa = O(g.b.st).paralysis;
     if (pa && pa.v > 0) {
@@ -1095,7 +1226,7 @@
       heads.push(r.heads);
       sum += r.add;
     });
-    var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(g.b, skill, isClash !== false, resoAmt(state, g)));
+    var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(g.b, skill, isClash !== false, 0));
     return { heads: heads, power: power };
   }
 
@@ -1104,6 +1235,7 @@
     var f = 1 + 0.1 * (sumVal(atkB, 'dmgUp', skill) - sumVal(atkB, 'dmgDown', skill) + sumVal(defB, 'fragile', skill) - sumVal(defB, 'protect', skill));
     f += num(skill.dmgBonus, 0) + num(atkUnit.dmgBonus, 0);
     if (opt.crit) { f += 0.1 * sumVal(atkB, 'critDmgUp', skill); }
+    if (opt.heads && echoMorale(atkB)) { f += 0.1; }
     var wd = vOf(atkB, 'weakDmg');
     if (wd > 0 && opt.dg && isWeakTo(opt.dg, skill)) { f += wd / 100; }
     A(atkB.mods).forEach(function (m) {
@@ -1135,14 +1267,49 @@
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
     return physM > 1 || resMultOf(defG.b.resist, skill.sin) > 1;
   }
-  function resFrame(defG, skill, matches, crit) {
+  // レベル。個別の level(部位→本体の順)が無ければ、味方・敵とも共通の既定レベル(data/level.json)を使う。
+  // 攻撃レベル・守備レベルは、レベルに bearer の lvAtk / lvDef(効果で増減する加算分)を足したもの
+  var defaultLevel = 1;
+  function setDefaultLevel(n) { defaultLevel = isFinite(Number(n)) ? Number(n) : 1; }
+  // 振動 - 崩壊: 振動威力4につき防御レベルが1減少(上限なし)
+  function decayLevelDown(b) {
+    var v = O(b && b.st).vibration;
+    return v && v.k === 'decay' ? Math.floor(num(v.p, 0) / 4) : 0;
+  }
+  function levelInfo(unit, part, b, reso) {
+    var lv = part && typeof part.level === 'number' ? part.level : (unit && typeof unit.level === 'number' ? unit.level : defaultLevel);
+    var bb = b || part || unit;
+    var atk = lv + num(bb && bb.lvAtk, 0) + vOf(bb, 'offenseLevelUp') - vOf(bb, 'offenseLevelDown') + num(reso, 0);
+    var def = lv + num(bb && bb.lvDef, 0) + vOf(bb, 'defenseLevelUp') - vOf(bb, 'defenseLevelDown') - decayLevelDown(bb);
+    return { lv: lv, atk: atk, def: def };
+  }
+  // 攻撃側の攻撃レベルと受け側の防御レベルの差による耐性枠の補正: 差 / (25 + |差|)
+  function levelDamageBonus(state, ag, dg) {
+    if (!ag || !dg) { return 0; }
+    var d = levelInfo(ag.unit, ag.part, ag.b, resoAmt(state, ag)).atk - levelInfo(dg.unit, dg.part, dg.b).def;
+    return d / (25 + Math.abs(d));
+  }
+  // マッチ時、攻撃レベルが相手より高い側にだけ (差 ÷ 3 の切り捨て) の威力を加算する
+  function setLevelMatch(state, X, Y) {
+    var gx = getB(state, X.ref);
+    var gy = getB(state, Y.ref);
+    if (!gx || !gy) { return; }
+    var ax = levelInfo(gx.unit, gx.part, gx.b, resoAmt(state, gx)).atk;
+    var ay = levelInfo(gy.unit, gy.part, gy.b, resoAmt(state, gy)).atk;
+    gx.b.lvMatch = ax > ay ? Math.floor((ax - ay) / 3) : 0;
+    gy.b.lvMatch = ay > ax ? Math.floor((ay - ax) / 3) : 0;
+  }
+  function clearLevelMatch(state, X, Y) {
+    [X, Y].forEach(function (Z) { var g = getB(state, Z.ref); if (g) { delete g.b.lvMatch; } });
+  }
+  function resFrame(state, defG, skill, matches, crit, atkG) {
     var physM = defG.b.stagger ? staggerPhysMult(defG.b.stagger.level) : resMultOf(defG.b.resist, skill.phys);
     var sinM = resMultOf(defG.b.resist, skill.sin);
-    var f = 1 + resBonus(physM) + resBonus(sinM) + 0.03 * matches + (crit ? 0.2 : 0);
+    var f = 1 + resBonus(physM) + resBonus(sinM) + 0.03 * matches + (crit ? 0.2 : 0) + levelDamageBonus(state, atkG, defG);
     return Math.max(0, f);
   }
   function calcDamage(power, bf, rf) {
-    return Math.max(1, Math.floor(power * bf * rf));
+    return Math.max(1, Math.floor(power * bf * rf + 1e-9));
   }
 
   var TIMING_ALIAS = {
@@ -1241,6 +1408,11 @@
       if (!okc) { return; }
       if (gr.if && gr.if.skillType && gr.if.skillType !== O(ctx.skill || skill).phys) { return; }
       if (gr.ifDispelled && !dispelledNow) { return; }
+      if (gr.discard) {
+        var du = state.units[atkRef.u];
+        if (du && du.side === 'ally' && du.choice) { du.choice.discard = true; }
+        return;
+      }
       var onceKey = null;
       var onceLim = gr.limit !== undefined ? num(gr.limit, 1) : gr.once ? 1 : 0;
       if (onceLim) {
@@ -1410,8 +1582,20 @@
           tg.b.next[gr.status] = cur;
           log(state, nameOf(state, tref) + ' に次ラウンド付与: ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label);
         } else {
-          addStatus(tg.b, gr.status, { p: gr.p, c: gr.c, v: gr.v, k: gr.k });
+          var gcnt = gr.c;
+          if (statusParts(gr.status).base === 'sinking' && !ctx.passive && echoHeldAny(tg.b) && (num(gr.p, 0) > 0 || num(gr.c, 0) > 0) && activeRng() < 0.5) {
+            gcnt = num(gr.c, 0) + 1;
+            log(state, nameOf(state, tref) + ' は邸宅の木霊により沈潜回数が1増加');
+          }
+          addStatus(tg.b, gr.status, { p: gr.p, c: gcnt, v: gr.v, k: gr.k });
           log(state, nameOf(state, tref) + ' に ' + (STATUS[statusParts(gr.status).base] || { label: gr.status }).label + ' を付与');
+          if (gr.status === 'chargeBarrier') {
+            var cbGain = chargeBarrierGain(tg.b, tg.unit, gr.v);
+            if (cbGain > 0) {
+              log(state, '  充電力場のバリア ' + cbGain + ' を獲得');
+              fx(state, tref, 'バリア+' + cbGain, 'guard');
+            }
+          }
         }
       });
     });
@@ -1545,7 +1729,7 @@
       var r = tossOne(state, atk.ref, skill, coins[i], rng);
       if (isOut(getB(state, atk.ref))) { break; }
       sum += r.add;
-      var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(ag.b, skill, false, resoAmt(state, ag)));
+      var power = Math.max(0, num(skill.base, 0) + sum + powerAdj(ag.b, skill, false, 0));
       var critRolled = false;
       var crit = false;
       tgts.forEach(function (t, ti) {
@@ -1581,8 +1765,8 @@
         }
         var pre = precheckGrants(state, atk.ref, defRef, skill);
         if (!pre0[ti]) { pre0[ti] = pre; }
-        var bf = buffFrame(ag.b, ag.unit, dg.b, skill, { crit: crit, final: i === coins.length - 1, matches: t.matches, ag: ag, dg: dg, coinsLeft: coins.length });
-        var rf = resFrame(dg, skill, t.matches, crit);
+        var bf = buffFrame(ag.b, ag.unit, dg.b, skill, { crit: crit, heads: r.heads, final: i === coins.length - 1, matches: t.matches, ag: ag, dg: dg, coinsLeft: coins.length });
+        var rf = resFrame(state, dg, skill, t.matches, crit, ag);
         var dmg = calcDamage(power, bf, rf);
         dealHp(state, defRef, dmg, 'attack');
         hits[ti] = true;
@@ -1740,7 +1924,7 @@
     var P2 = pick.P;
     if (pick.type !== 'counter' && !P2.defActive) {
       P2.defActive = true;
-      log(state, nameOf(state, defRef) + ' の' + (pick.type === 'evade' ? '回避' : '防御') + '「' + (pick.raw.name || '') + '」が最初に受けた攻撃で発動');
+      log(state, nameOf(state, defRef) + ' の' + (pick.type === 'evade' ? '回避' : 'ガード') + '「' + (pick.raw.name || '') + '」が最初に受けた攻撃で発動');
     }
     return {
       type: pick.type,
@@ -1767,7 +1951,7 @@
   }
 
   function powerDist(state, g, skill, from) {
-    var p = g.b.noSp ? 0.5 : headsProb(g.b.sp);
+    var p = headsP(g.b);
     var para = num(O(g.b.st).paralysis && g.b.st.paralysis.v, 0) > 0;
     var dist = { 0: 1 };
     A(skill.coins).slice(from).forEach(function (c) {
@@ -1781,7 +1965,7 @@
       });
       dist = next;
     });
-    var base = num(skill.base, 0) + powerAdj(g.b, skill, true, resoAmt(state, g));
+    var base = num(skill.base, 0) + powerAdj(g.b, skill, true, 0);
     var out = {};
     Object.keys(dist).forEach(function (k) {
       var pw = Math.max(0, base + Number(k));
@@ -1794,6 +1978,7 @@
     var gx = getB(state, X.ref);
     var gy = getB(state, Y.ref);
     if (!gx || !gy) { return null; }
+    setLevelMatch(state, X, Y);
     var lx = A(X.skill.coins).length;
     var ly = A(Y.skill.coins).length;
     if (!lx || !ly) { return null; }
@@ -1847,6 +2032,7 @@
 
   function clash(state, X, Y, rng) {
     var matches = 0;
+    setLevelMatch(state, X, Y);
     setMatchPowerMods(state, X, Y);
     var guard = 0;
     while (X.coins.length && Y.coins.length && guard < 80) {
@@ -1862,6 +2048,7 @@
       else if (rx.power < ry.power) { X.coins.shift(); X.lost = num(X.lost, 0) + 1; }
       else { log(state, '  同値のため振り直し'); }
     }
+    clearLevelMatch(state, X, Y);
     var winner = null;
     var loser = null;
     if (X.coins.length && !Y.coins.length) { winner = X; loser = Y; }
@@ -1879,12 +2066,16 @@
         applyGrants(state, winner.ref, loser.ref, winner.skill, 'matchWin');
         applyGrants(state, loser.ref, winner.ref, loser.skill, 'matchLose');
         if (getB(state, winner.ref).unit.side === 'ally') { firePassives(state, 'matchWin', winner.ref.u, { defRef: loser.ref }); }
+        if (stanceActive(getB(state, winner.ref).b)) {
+          log(state, '  ' + nameOf(state, winner.ref) + ' の防御態勢によりマッチ勝利時の振動爆発');
+          vibrationBurst(state, loser.ref, rng);
+        }
         if (getB(state, loser.ref).unit.side === 'ally') { firePassives(state, 'matchLose', loser.ref.u, { defRef: winner.ref }); }
         if (winner.skill.kind === 'attack' || winner.skill.kind === 'counter') {
           attackWithReactive(state, winner, loser.ref, matches, rng);
         } else {
           log(state, '  ' + nameOf(state, winner.ref) + ' は攻撃を防いだ');
-          fx(state, winner.ref, '防御', 'guard');
+          fx(state, winner.ref, 'ガード', 'guard');
         }
       }
     }
@@ -2084,7 +2275,7 @@
       var t = reactiveType(sk);
       if (t === 'guard' || t === 'evade') {
         P.defActive = true;
-        log(state, nameOf(state, partRef) + ' の' + (t === 'evade' ? '回避' : '防御') + '「' + (sk.name || '') + '」が発動可能になった');
+        log(state, nameOf(state, partRef) + ' の' + (t === 'evade' ? '回避' : 'ガード') + '「' + (sk.name || '') + '」が発動可能になった');
       }
     });
   }
@@ -2105,7 +2296,7 @@
         var gr = tossSet(state, defRef, skill, skill.coins, rng, false);
         var gg = getB(state, defRef);
         gg.b.barrier = num(gg.b.barrier, 0) + gr.power;
-        log(state, nameOf(state, defRef) + ' が防御「' + (skill.name || '') + '」でバリア ' + gr.power + ' を獲得');
+        log(state, nameOf(state, defRef) + ' がガード「' + (skill.name || '') + '」でバリア ' + gr.power + ' を獲得');
         fx(state, defRef, 'バリア+' + gr.power, 'guard');
         applyGrants(state, defRef, atk.ref, skill, 'use');
         gainRes(state, defRef, skill, true);
@@ -2196,14 +2387,15 @@
     var u = state.units[e.unitId];
     var ch = u.choice;
     if (u.dead) { return; }
-    if (incap(u)) { log(state, u.name + ' は' + (u.stagger ? '混乱' : 'パニック') + 'で行動できない'); refundEgoPay(state, u); return; }
+    if (incap(u)) { log(state, u.name + ' は' + (u.stagger ? '混乱' : 'パニック') + 'で行動できない'); refundEgoPay(state, u, true); return; }
     if (ch.sel === 'def') {
       log(state, u.name + ' は守備の構え');
       return;
     }
     var base = chosenSkill(state, u);
-    if (!base) { refundEgoPay(state, u); return; }
+    if (!base) { refundEgoPay(state, u, true); return; }
     if (base.kind === 'defense' || base.kind === 'counter') {
+      ch.defFromC1 = ch.sel === 'c1' && !!u.swap;
       ch.sel = 'def';
       ch.acted = true;
       return;
@@ -2213,18 +2405,18 @@
     var P = null;
     if (blind) {
       var pk = blindMain(state, u, ch.ego.mode, rng);
-      if (!pk) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u); return; }
+      if (!pk) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u, true); return; }
       if (pk.pid) { ch.target = pk.pid; P = getPiece(state, pk.pid); } else { allyMain = pk.allyId; }
       ch.blindMain = pk;
     } else {
       P = getPiece(state, ch.target);
     }
-    if (!P && !allyMain) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u); return; }
+    if (!P && !allyMain) { log(state, u.name + ' の対象がありません'); refundEgoPay(state, u, true); return; }
     var tg = getB(state, allyMain ? { u: allyMain, p: null } : pieceRef(P));
     if (isOut(tg)) {
       log(state, u.name + ' の攻撃は対象が既にいないため取り消された');
       fx(state, { u: u.id, p: null }, '取消', 'cancel');
-      refundEgoPay(state, u);
+      refundEgoPay(state, u, true);
       return;
     }
     if (allyMain) {
@@ -2298,7 +2490,7 @@
       au.choice.defActive = true;
       au.choice.acted = true;
       var dsk = chosenSkill(state, au);
-      log(state, au.name + ' の' + (dsk && dsk.sub === 'evade' ? '回避' : '防御') + '「' + (dsk ? dsk.name || '' : '') + '」が発動可能になった');
+      log(state, au.name + ' の' + (dsk && dsk.sub === 'evade' ? '回避' : 'ガード') + '「' + (dsk ? dsk.name || '' : '') + '」が発動可能になった');
     }
     var X = sideOfPiece(state, P, skill, allyId);
     var partnerOk = false;
@@ -2389,9 +2581,21 @@
         var ch = b.st[k];
         if (cdef && cdef.charge && ch) { ch.c -= 1; if (ch.c <= 0) { ch.c = 0; ch.p = ch.p || 0; if (!(ch.p > 0)) { delete b.st[k]; } } }
       });
+      var cbs = O(b.st).chargeBarrier;
+      if (cbs && num(cbs.v, 0) > 0) {
+        addStatus(b, 'charge', { c: num(cbs.v, 0) });
+        log(state, nameOf(state, ref) + ' は充電力場により充電回数を ' + num(cbs.v, 0) + ' 得た');
+      }
+      b.cbar = 0;
+      var stn = O(b.st).defensiveStance;
+      if (stn) {
+        if (num(stn.v, 0) >= 1) { stn.v -= 1; stn.act = false; } else { delete b.st.defensiveStance; }
+      }
+      var mec = O(b.st).echoesOfTheManor;
+      if (mec) { mec.v = num(mec.v, 0) - 1; if (mec.v <= 0) { delete b.st.echoesOfTheManor; } }
       Object.keys(O(b.st)).forEach(function (k) {
         var def = STATUS[statusParts(k).base];
-        if (def && def.type === 'val') { delete b.st[k]; }
+        if (def && def.type === 'val' && !def.keep) { delete b.st[k]; }
       });
       if (b.panic && b.panic.until <= state.round) {
         log(state, nameOf(state, ref) + ' のパニックが収まった(精神力は0に戻る)');
@@ -2419,15 +2623,20 @@
       var defUsedUp = !!(csk && (csk.kind === 'defense' || csk.kind === 'counter'));
       if (ch && ch.sel === 'ego' && !ch.egoUsed) {
         if (ch.ego && ch.ego.paid) { log(state, u.name + ' のE.G.Oは不発だったため、資源が返却された'); }
-        refundEgoPay(state, u);
+        refundEgoPay(state, u, true);
       }
       if (ch && (ch.acted || ch.sel === 'def' || defUsedUp)) {
         var q = A(u.deck.q);
-        if (ch.sel === 'def') { q.splice(0, 1); }
-        else if (ch.sel === 'ego') { q.splice(0, 1); }
-        else if (ch.sel === 'c0') { q.splice(0, 1); }
-        else if (ch.sel === 'c1') { q.splice(1, 1); }
+        var usedPos = ch.defFromC1 || ch.sel === 'c1' ? 1 : 0;
+        var swapHead = !!u.swap && !ch.defFromC1 && (ch.sel === 'def' || (ch.sel === 'ego' && ch.egoUsed));
+        var dropPos = [usedPos];
+        if (ch.discard) {
+          var otherPos = usedPos === 1 ? 0 : 1;
+          if (!(otherPos === 0 && u.swap)) { dropPos.push(otherPos); }
+        }
+        dropPos.sort(function (x, y) { return y - x; }).forEach(function (pp) { if (pp < q.length) { q.splice(pp, 1); } });
         u.deck.q = q;
+        if (swapHead) { u.swap = null; }
       }
       ensureDeck(u, rng);
     });
@@ -2456,13 +2665,79 @@
     return true;
   }
 
+  function changeSkill(state, unitId, kind, egoOpt) {
+    var u = state.units[unitId];
+    if (!u || u.side !== 'ally' || u.dead || incap(u) || u.erosion) { return false; }
+    var cur = u.swap;
+    var next = null;
+    var prev = cur ? cur.prev || null : null;
+    if (cur && cur.kind === 'ego' && cur.round < state.round) { prev = { kind: 'ego', i: cur.i, mode: cur.mode, round: cur.round }; }
+    if (kind === 'def') {
+      if (cur && cur.kind === 'def') { return false; }
+      if (!O(u.skills)[0]) { return false; }
+      refundSwap(state, u);
+      next = { kind: 'def', round: state.round, prev: prev };
+    } else if (kind === 'ego') {
+      var oi = Math.floor(num(O(egoOpt).i, -1));
+      var mode = O(egoOpt).mode || 'awaken';
+      var eg = A(u.egos)[oi];
+      if (mode === 'erodeEnemy') { mode = 'erode'; }
+      if (!eg || !egoModeOk(eg, mode) || mode === 'forced') { return false; }
+      var back = cur && cur.kind === 'ego' && cur.paid ? cur.paid : {};
+      mode = egoErodeMode(state, eg, mode, back);
+      if (cur && cur.kind === 'ego' && cur.i === oi && cur.mode === mode) { return false; }
+      var cost = egoCost(eg, mode);
+      if (!canPayRes(state, cost.res, back)) { return false; }
+      refundSwap(state, u);
+      payRes(state, cost.res);
+      next = { kind: 'ego', i: oi, mode: mode, paid: cost.res, spCost: cost.sp, round: state.round, prev: prev };
+    } else { return false; }
+    u.swap = next;
+    refundEgoPay(state, u);
+    var ch = u.choice;
+    if (ch && (ch.sel === 'c0' || ch.sel === 'def' || ch.sel === 'ego')) { u.choice = null; }
+    return true;
+  }
+  // 変更の取り消し: 守備スキルはいつでも、E.G.Oは変更したターンのみ(資源は返却)
+  function revertSkill(state, unitId) {
+    var u = state.units[unitId];
+    var sw = u && u.swap;
+    if (!sw || u.dead || incap(u)) { return false; }
+    if (sw.kind === 'ego' && sw.round !== state.round) { return false; }
+    var pv = sw.prev;
+    if (pv) {
+      var pe = A(u.egos)[pv.i];
+      if (!pe) { return false; }
+      var pcost = egoCost(pe, pv.mode);
+      if (!canPayRes(state, pcost.res, sw.kind === 'ego' && sw.paid ? sw.paid : {})) { return false; }
+      refundSwap(state, u);
+      payRes(state, pcost.res);
+      u.swap = { kind: 'ego', i: pv.i, mode: pv.mode, paid: pcost.res, spCost: pcost.sp, round: pv.round };
+      var ch0 = u.choice;
+      if (ch0 && (ch0.sel === 'def' || ch0.sel === 'ego')) { u.choice = null; }
+      return true;
+    }
+    refundSwap(state, u);
+    var ch = u.choice;
+    if (ch && (ch.sel === 'def' || ch.sel === 'ego')) { u.choice = null; }
+    return true;
+  }
   function selectChoice(state, unitId, sel, ts, egoOpt) {
     var u = state.units[unitId];
     if (!u || u.dead || incap(u) || u.erosion) { return; }
     var old = u.choice || {};
     var same = old.sel === sel;
     var egoNew = null;
-    if (sel === 'ego') {
+    var sw = u.swap;
+    if (sw) {
+      if (sel === 'swap') { sel = sw.kind; egoOpt = sw.kind === 'ego' ? { i: sw.i, mode: sw.mode } : null; }
+      else if (sel === 'c0' || sel === 'def' || sel === 'ego') { return; }
+    } else if (sel === 'swap') { return; }
+    if (sel === 'ego' && sw) {
+      refundEgoPay(state, u);
+      egoNew = { i: sw.i, mode: sw.mode, paid: null, spCost: sw.spCost, fromSwap: true };
+      same = old.sel === 'ego' && !!old.ego && old.ego.i === sw.i;
+    } else if (sel === 'ego') {
       var oi = Math.floor(num(O(egoOpt).i, -1));
       var mode = O(egoOpt).mode || 'awaken';
       var eg = A(u.egos)[oi];
@@ -2501,6 +2776,34 @@
       var sk = pieceSkill(state, P);
       P.subs = allyId && sk && sk.kind === 'attack' ? pickSubs(state, 'enemy', pid, sk, allyId, []) : [];
     });
+  }
+
+  // 挑発値(初期1+付与分。0未満にはならない)。敵のメインターゲット抽選の重みになる
+  function aggroOf(u) { return Math.max(0, 1 + vOf(u, 'aggro')); }
+
+  // 敵スキル駒の対象を全て引き直す。メインターゲットは生存中の味方から挑発値を重みにしたランダム(サブは従来通り)
+  function autoTargetPieces(state, rng) {
+    var r = rng || Math.random;
+    var pieces = A(state.pieces);
+    pieces.forEach(function (P) { P.target = null; P.subs = []; });
+    var cands = Object.keys(state.units).filter(function (id) { return state.units[id].side === 'ally' && !state.units[id].dead; });
+    if (!cands.length) { return 0; }
+    var n = 0;
+    pieces.forEach(function (P) {
+      var sk = pieceSkill(state, P);
+      if (!sk || (sk.kind !== 'attack' && sk.kind !== 'defense')) { return; }
+      var ws = cands.map(function (id) { return aggroOf(state.units[id]); });
+      var total = ws.reduce(function (a, w) { return a + w; }, 0);
+      var pick = cands.length - 1;
+      if (total <= 0) { pick = Math.min(cands.length - 1, Math.floor(r() * cands.length)); }
+      else {
+        var x = r() * total;
+        for (var i = 0; i < ws.length; i++) { x -= ws[i]; if (x < 0) { pick = i; break; } }
+      }
+      setPieceTarget(state, P.pid, cands[pick]);
+      n += 1;
+    });
+    return n;
   }
 
   function vibrationBurst(state, ref, rng) {
@@ -2572,16 +2875,16 @@
   }
 
   return {
-    SINS: SINS, RES_ORDER: RES_ORDER, resOf: resOf, gainRes: gainRes, setRes: setRes, passiveOk: passiveOk, calcReso: calcReso, resoOf: resoOf, resoCount: resoCount, allyRank: allyRank, assignRanks: assignRanks, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
+    SINS: SINS, RES_ORDER: RES_ORDER, resOf: resOf, gainRes: gainRes, setRes: setRes, passiveOk: passiveOk, calcReso: calcReso, resoOf: resoOf, resoCount: resoCount, allyRank: allyRank, assignRanks: assignRanks, PHYS: PHYS, RES_MULT: RES_MULT, RES_LABEL: RES_LABEL, STATUS: STATUS, KIND_LABEL: KIND_LABEL, VIB_KINDS: VIB_KINDS, SP_MIN: SP_MIN, SP_MAX: SP_MAX,
     A: A, O: O, clone: clone, normalize: normalize, clamp: clamp, num: num, shuffle: shuffle, randInt: randInt,
     newState: newState, parseSetup: parseSetup, loadUnits: loadUnits, initUnit: initUnit,
     getB: getB, nameOf: nameOf, hpInfo: hpInfo, isOut: isOut, resBonus: resBonus, resMultOf: resMultOf, staggerPhysMult: staggerPhysMult, incap: incap,
     handOf: handOf, chosenSkill: chosenSkill, slotSkill: slotSkill, getPiece: getPiece, pieceSkill: pieceSkill, pieceRef: pieceRef, pieceId: pieceId, parsePid: parsePid,
     startRound: startRound, beginCombat: beginCombat, gmConfirm: gmConfirm, planEnemyPieces: planEnemyPieces, rebuildPiecesFor: rebuildPiecesFor,
     computePairs: computePairs, allConfirmed: allConfirmed, canConfirm: canConfirm,
-    buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, setTarget: setTarget, setPieceTarget: setPieceTarget, pickSubs: pickSubs,
+    buildPlan: buildPlan, stepProcess: stepProcess, selectChoice: selectChoice, changeSkill: changeSkill, revertSkill: revertSkill, setTarget: setTarget, setPieceTarget: setPieceTarget, autoTargetPieces: autoTargetPieces, stanceActive: stanceActive, setDefaultLevel: setDefaultLevel, levelInfo: levelInfo, levelDamageBonus: levelDamageBonus, aggroOf: aggroOf, pickSubs: pickSubs,
     addStatus: addStatus, debuffKeys: debuffKeys, statusParts: statusParts, dealHp: dealHp, changeSp: changeSp, syncSp: syncSp, checkStagger: checkStagger, checkEnd: checkEnd,
     egoCost: egoCost, egoModeOk: egoModeOk, egoSkillOf: egoSkillOf, canPayRes: canPayRes, egoErodeMode: egoErodeMode, egoPassiveOn: egoPassiveOn, erodePool: erodePool, EGO_RANKS: EGO_RANKS, vibrationBurst: vibrationBurst, convertVibration: convertVibration, reviveUnit: reviveUnit, applyEgo: applyEgo, ALL_RES_KEYS: ALL_RES_KEYS,
-    winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, powerAdj: powerAdj, resFrame: resFrame, headsProb: headsProb, log: log
+    headsP: headsP, applyGrants: applyGrants, echoMorale: echoMorale, powerAdj: powerAdj, buffFrame: buffFrame, winProb: winProb, previewSkill: previewSkill, endOfRound: endOfRound, enemyOrder: enemyOrder, moveSlot: moveSlot, engage: engage, findReactive: findReactive, calcDamage: calcDamage, buffFrame: buffFrame, powerAdj: powerAdj, resFrame: resFrame, headsProb: headsProb, log: log
   };
 }));
