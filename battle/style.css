@@ -331,6 +331,19 @@ h4 {
   background: rgb(190, 60, 60);
 }
  
+.bar .shield,
+.bar-track .shield {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--blue);
+}
+ 
+.shield-num {
+  color: var(--blue);
+  white-space: nowrap;
+}
+ 
 .bar .mark {
   position: absolute;
   top: 0;
@@ -417,6 +430,10 @@ h4 {
  
 .st.inert {
   opacity: 0.4;
+}
+ 
+.st.pending .st-ic {
+  opacity: 0.45;
 }
  
 .st-ic {
@@ -1513,6 +1530,32 @@ h4 {
  
 .ally .a-piece.picked .p-frame {
   filter: drop-shadow(0 0 0.375rem var(--gold));
+}
+ 
+.a-aggro {
+  position: absolute;
+  top: -1.25rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  pointer-events: none;
+}
+ 
+.a-aggro .st-ic {
+  position: relative;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: rgb(240, 150, 40);
+}
+ 
+.a-aggro-v {
+  color: rgb(255, 190, 90);
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-shadow: 0 0 0.125rem rgb(0, 0, 0);
 }
  
 .dock {
