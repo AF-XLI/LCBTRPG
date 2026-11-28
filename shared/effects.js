@@ -55,8 +55,10 @@
     weakDmg: { label: '弱点攻撃時にダメージ量増加', type: 'val', kind: 'buff', icon: 'weak-resist-dmg-boost.png' },
     egoResUp: { label: 'E.G.O資源獲得量+', type: 'val', kind: 'buff', icon: 'e.g.o-resource-amp.png' },
     critDmgUp: { label: 'クリティカルダメージ増加', type: 'val', kind: 'buff', icon: 'crit-dmg-up.png' },
-    tremorBurst: { label: '振動爆発', type: 'none', kind: 'neutral', icon: 'tremor-burst.png' }
+    tremorBurst: { label: '振動爆発', type: 'none', kind: 'neutral', icon: 'tremor-burst.png' },
+    amplitudeConversion: { label: '振幅変換', type: 'none', kind: 'neutral', icon: 'amplitude-conversion.png' }
   };
+  var VIB_LABEL = { chain: '振動 - 鎖', decay: '振動 - 崩壊' };
   var DEFAULT_STATUS_COLOR = 'rgb(237, 205, 164)';
   var KIND_COLOR = {
     buff: 'rgb(252, 198, 0)',
@@ -253,6 +255,19 @@
       },
       render: function (e) {
         return head(e, new Segs().status('tremorBurst'));
+      }
+    },
+    convert: {
+      required: ['vibration'],
+      statuses: function () { return ['amplitudeConversion']; },
+      grants: function (e) {
+        return [{ convert: e.vibration, to: battleTo(e) }];
+      },
+      render: function (e) {
+        var s = new Segs();
+        if (e.target && e.target !== 'target' && e.target !== 'enemy') { s.text(TARGETS[e.target] + 'の振動を'); }
+        else { s.text('振動を'); }
+        return head(e, s.text('「' + (VIB_LABEL[e.vibration] || e.vibration) + '」に').status('amplitudeConversion'));
       }
     },
     takenBonus: {
@@ -664,6 +679,7 @@
       if (e.type === 'grant') {
         items(e).forEach(function (i) { if (i.power === undefined && i.count === undefined) { err('付与する威力(power)か回数(count)がありません'); } });
       }
+      if (e.type === 'convert' && e.vibration !== undefined && !VIB_LABEL[e.vibration]) { err('未登録の振動の種類 "' + e.vibration + '"'); }
       type.statuses(e).forEach(function (id) {
         if (!id) { err('状態異常が指定されていません'); } else if (!statusInfo(id).known) { err('未登録の状態異常 "' + id + '"'); }
       });
