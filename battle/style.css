@@ -863,6 +863,7 @@ h4 {
 }
  
 .row.enemies {
+  align-items: stretch;
   margin-block-end: 7rem;
 }
  
@@ -888,6 +889,7 @@ h4 {
  
 .e-top {
   width: 100%;
+  margin-block-start: auto;
 }
  
 .e-name {
