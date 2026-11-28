@@ -249,7 +249,7 @@
       h += '<span class="ex-tag-identity">' + esc(pu.name) + '</span>' +
         '<span class="ex-tag-name">' + esc(p.name) + '</span>' +
         '<span class="ex-tag-sub">' + rarityTag(pu) + '</span>' +
-        '<a class="ex-mag" href="../character/#/' + esc(pid) + '/identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
+        '<a class="ex-mag" data-detail href="../character/#/' + esc(pid) + '/identities/' + esc(pu.id) + '" target="_blank" rel="noopener" aria-label="人格の詳細を見る">' +
         '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"></circle><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path></svg></a>';
     } else {
       h += '<span class="ex-tag-identity">PU未選択</span><span class="ex-tag-name">' + esc(p.name) + '</span><span class="ex-tag-sub is-empty"></span>';
@@ -419,7 +419,7 @@
       '<div class="ex-res-art is-' + art.kind + '"><img alt="" src="' + esc(art.src) + '"' + (art.kind === 'placeholder' ? ' onerror="this.remove()"' : '') + '></div>' +
       '<div class="ex-res-info">' + (sl ? '<span class="ex-tag-season">' + esc(sl) + '</span>' : '') +
       '<span class="ex-res-name">' + esc(o.name) + '</span>' + rarityTag(o) + '</div>' +
-      '<div class="ex-res-btns"><a class="ex-btn" href="../character/#/' + esc(pid) + '/identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
+      '<div class="ex-res-btns"><a class="ex-btn" data-detail href="../character/#/' + esc(pid) + '/identities/' + esc(o.id) + '" target="_blank" rel="noopener">詳細を見る</a>' +
       '<button class="ex-btn" type="button" data-act="close">閉じる</button></div></div></div>';
   }
 
@@ -465,6 +465,89 @@
         render();
       }, Math.max(0, FX_MS - (Date.now() - t0)));
     }, fail);
+  }
+
+  var detailEl = null;
+  var detailUi = null;
+
+  function baseIdentity(pid, id) {
+    return (data.identities[pid] && data.identities[pid][id]) || null;
+  }
+
+  function isHeld(pid, id, o) {
+    return !!o.initial || (pid === state.prisoner && ownedMap()[id] === true);
+  }
+
+  function equippedId(pid) {
+    var p = data.prisoners[pid] || {};
+    var id = pid === state.prisoner && state.remote ? state.remote.identity : '';
+    var o = id ? baseIdentity(pid, id) : null;
+    if (!o || (p.identities || []).indexOf(id) < 0 || !isOpen(o) || !isHeld(pid, id, o)) {
+      return p.default && p.default.identity;
+    }
+    return id;
+  }
+
+  function equipState(pid, id, o) {
+    if (id === equippedId(pid)) { return 'on'; }
+    if (!isHeld(pid, id, o)) { return 'unowned'; }
+    return state.db && canChange(pid) ? 'can' : 'none';
+  }
+
+  function openDetail(pid, id) {
+    var p = data.prisoners[pid];
+    var o = baseIdentity(pid, id);
+    if (detailEl || !p || !o) { return false; }
+    detailEl = document.createElement('div');
+    detailEl.className = 'ex-detail';
+    document.body.appendChild(detailEl);
+    detailUi = root.LCSheet.mount(detailEl, {
+      p: p,
+      identity: o,
+      identityId: id,
+      seasons: data.seasons,
+      equip: equipState(pid, id, o),
+      saveEquip: function (identityId) {
+        return state.db ? state.db.ref('characters/' + pid + '/identity').set(identityId) : null;
+      },
+      onEquipped: closeDetail,
+      back: { href: '#', label: '抽出へ戻る', act: 'back' },
+      onBack: closeDetail
+    });
+    root.history.pushState({ exDetail: true }, '');
+    return true;
+  }
+
+  function removeDetail() {
+    if (!detailEl) { return; }
+    detailUi.destroy();
+    detailEl.remove();
+    detailEl = null;
+    detailUi = null;
+  }
+
+  function closeDetail() {
+    if (!detailEl) { return; }
+    if (root.history.state && root.history.state.exDetail) {
+      root.history.back();
+    } else {
+      removeDetail();
+    }
+  }
+
+  function onDetailClick(ev) {
+    var a = ev.target.closest ? ev.target.closest('a[data-detail]') : null;
+    if (!a || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) { return; }
+    var m = /#\/([^/]+)\/identities\/([^/]+)$/.exec(a.getAttribute('href') || '');
+    if (m && openDetail(decodeURIComponent(m[1]), decodeURIComponent(m[2]))) { ev.preventDefault(); }
+  }
+
+  function bindDetail() {
+    document.addEventListener('click', onDetailClick);
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') { closeDetail(); }
+    });
+    root.addEventListener('popstate', removeDetail);
   }
 
   function onClick(ev) {
@@ -541,6 +624,7 @@
   }
 
   function init() {
+    bindDetail();
     if (!usable) { message('Firebase が設定されていません。'); return; }
     getJson('../data/prisoners.json').then(function (pr) {
       data.prisoners = pr;
