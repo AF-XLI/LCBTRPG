@@ -594,6 +594,22 @@ button {
   background: rgba(0, 0, 0, 0.78);
 }
  
+.ex-detail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  background: url("../image/bg/letterbox.png") center / cover no-repeat rgb(0, 0, 0);
+  overflow: auto;
+}
+ 
+.ex-detail > .lc-sheet-host {
+  margin: auto;
+}
+ 
 .ex-modal {
   display: flex;
   flex-direction: column;
