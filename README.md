@@ -12,7 +12,7 @@ LimbusCompanyを元にした二次創作TRPG「LCBTRPG」のサイトです。Gi
 | `character/` | キャラクターシート(`character/index.html` 1枚で、ハブと囚人ごとのページを兼ねます。説明は下の「キャラクターシート」) |
 | `extraction/` | 抽出(人格のガチャ)。チケットを使って、未所持の人格を1つずつ引きます。GMはチケットと人格を付与できます |
 | `data/` | キャラクターシートのマスターデータ(JSON。`prisoners.json` と、囚人ごとのフォルダ `data/<囚人ID>/` に人格・E.G.O) |
-| `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理 / `bgm.js`: BGM / `loading.js`・`loading.css`: 読み込み中の黒画面とクルクル / `keywords.js`: 人格のキーワードの読み取りと判定) |
+| `shared/` | キャラクターシートと戦闘システムで共用するスクリプト(`effects.js`: 状態異常・タイミング・効果の種類と、その表示・戦闘用の処理 / `bgm.js`: BGM / `loading.js`・`loading.css`: 読み込み中の黒画面とクルクル / `keywords.js`: 人格のキーワードの読み取りと判定 / `sheet.js`・`sheet.css`: 人格の詳細の描画と操作。色の変数(`--gold` など)は、`sheet.css` の `.sheet` と `character/style.css` の `:root` の両方にあります) |
 | `tools/` | データの検査ツール(`node tools/validate.js` で `data/` の人格・E.G.Oの誤りを調べます) |
 | `audio/` | BGMの音声ファイル(`window.mp3`: メインページ・キャラクターシート用 / `extract.mp3`: 抽出用) |
 | `image/` | 画像(各ページで共用) |
@@ -130,6 +130,8 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
   - 人格・E.G.OのIDは囚人ごとに独立しているので、別の囚人に同じ名前の人格があっても、性能は囚人ごとに別に書けます。`prisoners.json` の `identities` `egos` `default` には、その囚人のフォルダ内のIDを書きます。
 - Firebase に保存するのは、説明・メモ・装備です(`characters/<囚人ID>`)。装備が未保存のときは、`data/prisoners.json` の `default` を表示します。
 - 囚人を増やすには、`data/prisoners.json` に追記して `data/<囚人ID>/` に人格・E.G.Oを置きます。ページの追加は不要で、`data/prisoners.json` に書いた囚人は、そのまま `character/#/<囚人ID>` で開けます。画像は `image/character/<囚人ID>/` に `portrait.png`(立ち絵)・`icon.png`(アイコン)・`bg.png`(立ち絵の背景)を置き、`data/prisoners.json` の `portrait` `icon` `background` で指定します。レアリティ画像は `image/icon/rarity/<レア>.png`(例: レア1は `1.png`)で、人格の `rarity` にその数字を書きます。
+- 人格の立ち絵: `stageImage`(立ち絵と背景が1枚)があればそれを、`portrait`(立ち絵のみ)があれば囚人の背景に重ねて表示します。囚人の既定の人格は囚人の立ち絵、どれも無ければプレースホルダーです。抽出ページの人格カードも同じ規則です。
+- 戦闘用の囚人データ(`shared/roster.js`)は、装備を Firebase の `characters/<囚人ID>` から読み、無ければ `default` の装備を使います。
 - 閲覧は全員、説明・メモの編集は管理者と担当プレイヤー、装備の変更はこれに加えてGMが可能です(装備の変更画面は未実装)。
 - 今のところ、スマートフォンでは PC 版と同じ画面を横スクロールで表示します(見栄えの調整は後で行います)。
 
@@ -149,6 +151,15 @@ Spark の Realtime Database は同時接続100・保存1GB・ダウンロード�
 
 - 全ページの `head` で `shared/loading.css` と `shared/loading.js` を読み込み、表示の準備が整うまで画面全体を黒くして中央に回転する円弧と LOADING を出します。
 - 各ページのスクリプトが準備完了時に `LC_LOADING.done()` を呼ぶと消えます。呼ばれなかった場合も10秒で消えます。
+- `LC_LOADING.doneAfterImages(要素)` は、要素内の画像(背景画像を含む)が読み込み終わってから消します(画像が来なくても5秒で消えます)。`LC_LOADING.show()` は、ページ内で画面を切り替えるときにもう一度Loadingを出します。
+
+## 実装メモ
+
+- メインページ(`script.js`)のデータベース読み取りは、ルールの不備や接続不良で返事が来ないときも、表示が「確認しています…」のまま止まらないようにしています。
+- キャラクターシート(`character/script.js`)は、保存済みの装備を読み込むまで人格を描画しません(既定の人格が一瞬映るのを防ぐため)。囚人を切り替えるときは前の囚人のデータの購読を外します。通信が遅い・途切れている場合でも、画面が空のままにならないよう、一定時間で表示します。
+- 抽出ページ(`extraction/script.js`)は、立ち絵の上半身(画像の高さの20〜50%)の横方向の重心を測り、枠の中央に被写体が来るように補正します。
+- 人格の詳細(スキル・パッシブ・ステータス・耐性・装備ボタン)の描画と操作は、`shared/sheet.js`(`LCSheet`)と `shared/sheet.css` にまとめてあります。キャラクターシートの囚人ページ・人格ページ、抽出の詳細、今後の戦闘の詳細は、どれもこの部品を使います。`LCSheet.mount(要素, 設定)` で詳細を描画し、設定の `equip`(`on` / `unowned` / `can` / `none`)で装備ボタンの表示を、`actionHtml` でそのボタンの位置に別の部品(戦闘の体力バーなど)を差し込めます。
+- 抽出の詳細(虫眼鏡・「詳細を見る」)は、抽出ページの上に重ねて開きます。BGMは切り替わりません。閉じるには、戻るボタン、Escキー、ブラウザの戻るのどれかを使います。装備を確定したときも閉じます。Ctrl・Shift・中クリックでリンクを開くと、従来どおり別タブで開きます。
 
 ## キーワード
 
